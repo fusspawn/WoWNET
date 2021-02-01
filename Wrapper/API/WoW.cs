@@ -29,6 +29,12 @@ namespace Wrapper.API
 
 
         /// <summary>
+        /// @CSharpLua.Template = "__LB__.UnitTagHandler(UnitReaction, {0})" 
+        /// </summary>
+        public static extern int UnitReaction(string GUID);
+
+
+        /// <summary>
         /// @CSharpLua.Template = "C_Timer.NewTicker({1}, {0})" 
         /// </summary>
         public static extern void NewTicker(Action Func, float Duration);

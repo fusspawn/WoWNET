@@ -20,7 +20,7 @@ namespace Wrapper
         {
             foreach (var player in ObjectManager.ObjectManager.GetAllPlayers(100))
             {
-                Console.WriteLine($"Found Player: {player.Name} Health: {player.Health}  HealthMax: {player.HealthMax}");
+                Console.WriteLine($"Found Player: {player.Name} Health: {player.Health}  HealthMax: {player.HealthMax} Position: {player.Position}");
             }            
         }
     }
