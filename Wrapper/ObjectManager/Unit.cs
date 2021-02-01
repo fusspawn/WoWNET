@@ -20,5 +20,10 @@ namespace Wrapper.ObjectManager
             Health = WoW.UnitHealth(_GUID);
             HealthMax = WoW.UnitHealthMax(_GUID);
         }
+
+        public override void Update()
+        {
+            base.Update();
+        }
     }
 }

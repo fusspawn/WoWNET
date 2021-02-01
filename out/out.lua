@@ -17546,19 +17546,22 @@ System.import(function (out)
 end)
 System.namespace("Wrapper", function (namespace)
   namespace.class("Program", function (namespace)
-    local Main
+    local Main, DumpPlayers
     Main = function (args)
       WrapperObjectManager.ObjectManager.getInstance():Pulse()
 
-      System.Console.WriteLine("Creating Ticker")
       C_Timer.NewTicker(0.1, function ()
-        System.Console.WriteLine("Pulsing OM")
         WrapperObjectManager.ObjectManager.getInstance():Pulse()
       end)
-      System.Console.WriteLine("Done With Ticker")
+    end
+    DumpPlayers = function ()
+      for _, player in System.each(WrapperObjectManager.ObjectManager.GetAllPlayers(100)) do
+        System.Console.WriteLine("Found Player: " .. System.toString(player.Name) .. " Health: " .. player.Health .. "  HealthMax: " .. player.HealthMax)
+      end
     end
     return {
-      Main = Main
+      Main = Main,
+      DumpPlayers = DumpPlayers
     }
   end)
 end)
@@ -17566,13 +17569,14 @@ end)
 end
 do
 local System = System
+local SystemNumerics = System.Numerics
 local WrapperAPI
 System.import(function (out)
   WrapperAPI = Wrapper.API
 end)
 System.namespace("Wrapper.API", function (namespace)
   namespace.class("LuaBox", function (namespace)
-    local _instance, getInstance, class, __ctor__
+    local _instance, getInstance, ObjectPositionVector3, class, __ctor__
     namespace.enum("EClientTypes", function ()
       return {
         Classic = 1,
@@ -18128,8 +18132,14 @@ System.namespace("Wrapper.API", function (namespace)
       end
       return _instance
     end
+    ObjectPositionVector3 = function (this, GUIDorUnitID)
+      local x, y, z
+      x, y, z =  __LB__.ObjectPosition(GUIDorUnitID)
+      return SystemNumerics.Vector3(x, y, z)
+    end
     class = {
       getInstance = getInstance,
+      ObjectPositionVector3 = ObjectPositionVector3,
       __ctor__ = __ctor__
     }
     return class
@@ -18168,16 +18178,22 @@ end)
 end
 do
 local System = System
+local SystemNumerics = System.Numerics
 System.namespace("Wrapper.ObjectManager", function (namespace)
   namespace.class("WoWGameObject", function (namespace)
-    local __ctor__
+    local Update, __ctor__
     __ctor__ = function (this, _GUID)
+      this.Position = System.default(SystemNumerics.Vector3)
       this.GUID = _GUID
       this.Name =  __LB__.ObjectName(this.GUID)
       this.ObjectType = __LB__.ObjectType(this.GUID)
     end
+    Update = function (this)
+      --this.Position = LuaBox.Instance.ObjectPositionVector3(this.GUID);
+    end
     return {
       ObjectType = 0,
+      Update = Update,
       __ctor__ = __ctor__
     }
   end)
@@ -18186,6 +18202,7 @@ end)
 end
 do
 local System = System
+local Linq = System.Linq.Enumerable
 local ListString = System.List(System.String)
 local WrapperObjectManager
 local DictStringWoWGameObject
@@ -18195,7 +18212,7 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.ObjectManager", function (namespace)
   namespace.class("ObjectManager", function (namespace)
-    local _instance, getInstance, Pulse, CreateWowObject, class, __ctor__
+    local _instance, getInstance, Pulse, CreateWowObject, GetAllPlayers, class, __ctor__
     __ctor__ = function (this)
       this.AllObjects = DictStringWoWGameObject()
     end
@@ -18209,7 +18226,7 @@ System.namespace("Wrapper.ObjectManager", function (namespace)
     Pulse = function (this)
       for _, GUID in System.each(__LB__.GetObjects(500)) do
         if not this.AllObjects:ContainsKey(GUID) then
-          System.Console.WriteLine("Created WoW Object In OM: " .. System.toString(GUID))
+          --Console.WriteLine($"Created WoW Object In OM: {GUID}");
           this.AllObjects:set(GUID, CreateWowObject(this, GUID))
         end
       end
@@ -18219,11 +18236,13 @@ System.namespace("Wrapper.ObjectManager", function (namespace)
       for _, kvp in System.each(this.AllObjects) do
         if not  __LB__.ObjectExists(kvp.Key) then
           RemovalList:Add(kvp.Key)
+        else
+          kvp.Value:Update()
         end
       end
 
       RemovalList:ForEach(function (item)
-        System.Console.WriteLine("Removed Object From OM: " .. System.toString(item))
+        --Console.WriteLine($"Removed Object From OM: {item}");
         this.AllObjects:RemoveKey(item)
       end)
     end
@@ -18239,9 +18258,17 @@ System.namespace("Wrapper.ObjectManager", function (namespace)
         end
       until 1
     end
+    GetAllPlayers = function (Yards)
+      return Linq.Select(Linq.Where(getInstance().AllObjects:getValues(), function (x)
+        return x.ObjectType == 6 --[[EObjectType.Player]]
+      end), function (x)
+        return System.as(x, WrapperObjectManager.WoWPlayer)
+      end, WrapperObjectManager.WoWPlayer)
+    end
     class = {
       getInstance = getInstance,
       Pulse = Pulse,
+      GetAllPlayers = GetAllPlayers,
       __ctor__ = __ctor__
     }
     return class
@@ -18253,11 +18280,14 @@ do
 local System = System
 System.namespace("Wrapper.ObjectManager", function (namespace)
   namespace.class("WoWPlayer", function (namespace)
-    local __ctor__
+    local Update, __ctor__
     __ctor__ = function (this, _GUID)
       System.base(this).__ctor__(this, _GUID)
       this.Health = __LB__.UnitTagHandler(UnitHealth, _GUID)
       this.HealthMax = __LB__.UnitTagHandler(UnitHealthMax, _GUID)
+    end
+    Update = function (this)
+      System.base(this).Update(this)
     end
     return {
       base = function (out)
@@ -18267,6 +18297,7 @@ System.namespace("Wrapper.ObjectManager", function (namespace)
       end,
       Health = 0,
       HealthMax = 0,
+      Update = Update,
       __ctor__ = __ctor__
     }
   end)
@@ -18277,11 +18308,14 @@ do
 local System = System
 System.namespace("Wrapper.ObjectManager", function (namespace)
   namespace.class("WoWUnit", function (namespace)
-    local __ctor__
+    local Update, __ctor__
     __ctor__ = function (this, _GUID)
       System.base(this).__ctor__(this, _GUID)
       this.Health = __LB__.UnitTagHandler(UnitHealth, _GUID)
       this.HealthMax = __LB__.UnitTagHandler(UnitHealthMax, _GUID)
+    end
+    Update = function (this)
+      System.base(this).Update(this)
     end
     return {
       base = function (out)
@@ -18292,6 +18326,7 @@ System.namespace("Wrapper.ObjectManager", function (namespace)
       Health = 0,
       HealthMax = 0,
       Level = 0,
+      Update = Update,
       __ctor__ = __ctor__
     }
   end)

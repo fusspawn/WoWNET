@@ -4,20 +4,24 @@ using Wrapper.ObjectManager;
 
 namespace Wrapper
 {
-    class Program
+    public class Program
     {
         
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             ObjectManager.ObjectManager.Instance.Pulse();
 
-            Console.WriteLine("Creating Ticker");
-            WoW.NewTicker(() => {
-                Console.WriteLine("Pulsing OM");
+            WoW.NewTicker(() => {                
                 ObjectManager.ObjectManager.Instance.Pulse();
             }, 0.1f);
-            Console.WriteLine("Done With Ticker");
         }
 
+        public static void DumpPlayers()
+        {
+            foreach (var player in ObjectManager.ObjectManager.GetAllPlayers(100))
+            {
+                Console.WriteLine($"Found Player: {player.Name} Health: {player.Health}  HealthMax: {player.HealthMax}");
+            }            
+        }
     }
 }

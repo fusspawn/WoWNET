@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
 namespace Wrapper.API
@@ -499,6 +500,13 @@ namespace Wrapper.API
         /// @CSharpLua.Template = " __LB__.ObjectPosition({0})"
         /// </summary>
         public extern void ObjectPosition(string GuidOrUnitId, out float x, out float y, out float z);
+
+        public Vector3 ObjectPositionVector3(string GUIDorUnitID)
+        {
+            float x, y, z;
+            LuaBox.Instance.ObjectPosition(GUIDorUnitID, out x, out y, out z);
+            return new Vector3(x,y,z);
+        }
 
 
         /// <summary>
