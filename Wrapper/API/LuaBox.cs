@@ -6,6 +6,8 @@ namespace Wrapper.API
 {
     public class LuaBox
     {
+        private static LuaBox _instance;
+        public static LuaBox Instance { get { if (_instance == null) { _instance = new LuaBox(); } return _instance; } }
 
         public Navigator Navigator = new Navigator();
 
@@ -246,6 +248,24 @@ namespace Wrapper.API
             RestrictPartyInteraction = 4096
         }
 
+
+        public enum EObjectType
+        {
+            Object = 0,
+            Item = 1,
+            Container = 2,
+            AzeriteEmpoweredItem = 3,
+            AzeriteItem = 4,
+            Unit = 5,
+            Player = 6,
+            ActivePlayer = 7,
+            GameObject = 8,
+            DynamicObject = 9,
+            Corpse = 10,
+            AreaTrigger = 11,
+            SceneObject = 12,
+            ConversationData = 13
+        }
         /// <summary>
         /// @CSharpLua.Template = "__LB__.CancelPendingSpell()"        /// 
         /// Cancel pending spells
@@ -265,12 +285,12 @@ namespace Wrapper.API
         public extern void CloseGame();
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.CreateDirectory({0})"
+        /// @CSharpLua.Template = " __LB__.CreateDirectory({0})"
         /// </summary>
         public extern bool CreateDirectory(string Directory);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.DirectoryExists({0})"
+        /// @CSharpLua.Template = " __LB__.DirectoryExists({0})"
         /// </summary>
         public extern bool DirectoryExists(string Directory);
 
@@ -280,87 +300,87 @@ namespace Wrapper.API
         public extern void DisableRelogger();
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.FileExists({0})"
+        /// @CSharpLua.Template = " __LB__.FileExists({0})"
         /// </summary>
         public extern bool FileExists(string Directory);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GameObjectHasLockType({0}, {1})"
+        /// @CSharpLua.Template = " __LB__.GameObjectHasLockType({0}, {1})"
         /// </summary>
         public extern bool GameObjectHasLockType(string GUID, LuaBox.ELockTypes LockType);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GameObjectLockTypes({0})"
+        /// @CSharpLua.Template = " __LB__.GameObjectLockTypes({0})"
         /// </summary>
         public extern LuaBox.ELockTypes[] GameObjectLockTypes(string GUID);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GameObjectType({0})"
+        /// @CSharpLua.Template = "__LB__.GameObjectType({0})"
         /// </summary>
         public extern LuaBox.EGameObjectTypes GameObjectType(string GUID);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetBaseDirectory()"
+        /// @CSharpLua.Template = " __LB__.GetBaseDirectory()"
         /// </summary>
         public extern string GetBaseDirectory();
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetCameraAngles()"
+        /// @CSharpLua.Template = " __LB__.GetCameraAngles()"
         /// </summary>
         public extern void GetCameraAngles(out float facing, out float pitch);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetClientType()"
+        /// @CSharpLua.Template = " __LB__.GetClientType()"
         /// </summary>
         public extern LuaBox.EClientTypes GetClientType();
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetDevMode()"
+        /// @CSharpLua.Template = " __LB__.GetDevMode()"
         /// </summary>
         public extern bool GetDevMode();
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetDirectories({0})"
+        /// @CSharpLua.Template = " __LB__.GetDirectories({0})"
         /// </summary>
         public extern string[] GetDirectories(string Path);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetFiles({0})"
+        /// @CSharpLua.Template = " __LB__.GetFiles({0})"
         /// </summary>
         public extern string[] GetFiles(string Path);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetGameAccountName()"
+        /// @CSharpLua.Template = " __LB__.GetGameAccountName()"
         /// </summary>
         public extern string GetGameAccountName();
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetGameDirectory()"
+        /// @CSharpLua.Template = " __LB__.GetGameDirectory()"
         /// </summary>
         public extern string GetGameDirectory();
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetDistance3D({0}, {1}, {2}, {3}, {4}, {5})"
+        /// @CSharpLua.Template = " __LB__.GetDistance3D({0}, {1}, {2}, {3}, {4}, {5})"
         /// </summary>
         public extern float GetDistance3D(float x, float y, float z, float a, float b, float c);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetDistance3D({0}, {1})"
+        /// @CSharpLua.Template = " __LB__.GetDistance3D({0}, {1})"
         /// </summary>
         public extern float GetDistance3D(string UnitIdFrom, string UnitIdTo);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetLastWorldClickPosition()"
+        /// @CSharpLua.Template = " __LB__.GetLastWorldClickPosition()"
         /// </summary>
         public extern void GetLastWorldClickPosition(out float x, out float y, out float z);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetMapId()"
+        /// @CSharpLua.Template = " __LB__.GetMapId()"
         /// </summary>
         public extern int GetMapId();
 
@@ -388,24 +408,24 @@ namespace Wrapper.API
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetPlayerCorpsePosition()"
+        /// @CSharpLua.Template = " __LB__.GetPlayerCorpsePosition()"
         /// </summary>
         public extern void GetPlayerCorpsePosition(out float x, out float y, out float z);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.GetWindowSize()"
+        /// @CSharpLua.Template = " __LB__.GetWindowSize()"
         /// </summary>
         public extern void GetWindowSize(out float width, out float height);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.HttpAsyncGet({0}, {1}, {2}, {3}, {4}, {5})"
+        /// @CSharpLua.Template = " __LB__.HttpAsyncGet({0}, {1}, {2}, {3}, {4}, {5})"
         /// </summary>
         public extern bool HttpAsyncGet(string host, int port, bool isHttps, string path, Func<string> OnSuccess, Func<string> OnError);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.HttpAsyncPost({0}, {1}, {2}, {3}, {4}, {5}, {6})"
+        /// @CSharpLua.Template = " __LB__.HttpAsyncPost({0}, {1}, {2}, {3}, {4}, {5}, {6})"
         /// </summary>
         public extern bool HttpAsyncPost(string host, int port, bool isHttps, string path, string postData, Func<string> OnSuccess, Func<string> OnError);
 
@@ -416,85 +436,85 @@ namespace Wrapper.API
         public extern void LoadScript(string Hash);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.IsAoEPending({0})"
+        /// @CSharpLua.Template = " __LB__.IsAoEPending({0})"
         /// </summary>
         public extern bool IsAoEPending(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.ObjectCreator({0})"
+        /// @CSharpLua.Template = " __LB__.ObjectCreator({0})"
         /// </summary>
         public extern string ObjectCreator(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.ObjectDynamicFlags({0})"
+        /// @CSharpLua.Template = " __LB__.ObjectDynamicFlags({0})"
         /// </summary>
         public extern int ObjectDynamicFlags(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.ObjectExists({0})"
+        /// @CSharpLua.Template = " __LB__.ObjectExists({0})"
         /// </summary>
         public extern bool ObjectExists(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.ObjectFacing({0})"
+        /// @CSharpLua.Template = " __LB__.ObjectFacing({0})"
         /// </summary>
         public extern float ObjectFacing(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.ObjectHasDynamicFlag({0}, {1})"
+        /// @CSharpLua.Template = " __LB__.ObjectHasDynamicFlag({0}, {1})"
         /// </summary>
         public extern bool ObjectHasDynamicFlag(string GuidOrUnitId, LuaBox.EUnitDynamicFlags Flag);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.ObjectId({0}, {1})"
+        /// @CSharpLua.Template = " __LB__.ObjectId({0}, {1})"
         /// </summary>
         public extern int ObjectId(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = "local func = function (...) return __LB__.Unlock(__LB__.ObjectInteract, ...) end return func({0})"
+        /// @CSharpLua.Template = "local func = function (...) return __LB__.Unlock(__LB__.ObjectInteract, ...) end func({0})"
         /// </summary>
-        public extern bool ObjectInteract(string GuidOrUnitId);
+        public extern void ObjectInteract(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.ObjectLocked({0})"
+        /// @CSharpLua.Template = "__LB__.ObjectLocked({0})"
         /// </summary>
         public extern bool ObjectLocked(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.ObjectName({0})"
+        /// @CSharpLua.Template = " __LB__.ObjectName({0})"
         /// </summary>
         public extern string ObjectName(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.ObjectPitch({0})"
+        /// @CSharpLua.Template = " __LB__.ObjectPitch({0})"
         /// </summary>
         public extern float ObjectPitch(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.ObjectPointer({0})"
+        /// @CSharpLua.Template = " __LB__.ObjectPointer({0})"
         /// </summary>
         public extern string ObjectPointer(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.ObjectPosition({0})"
+        /// @CSharpLua.Template = " __LB__.ObjectPosition({0})"
         /// </summary>
         public extern void ObjectPosition(string GuidOrUnitId, out float x, out float y, out float z);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.ObjectType({0})"
+        /// @CSharpLua.Template = "__LB__.ObjectType({0})"
         /// </summary>
-        public extern EGameObjectTypes ObjectType(string GuidOrUnitId);
+        public extern EObjectType ObjectType(string GuidOrUnitId);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.PlayerSpecializationId({0})"
+        /// @CSharpLua.Template = " __LB__.PlayerSpecializationId({0})"
         /// </summary>
         public extern int PlayerSpecializationId(string GuidOrUnitId);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.Raycast({0}, {1}, {2}, {3}, {4}, {5}, {6})"
+        /// @CSharpLua.Template = " __LB__.Raycast({0}, {1}, {2}, {3}, {4}, {5}, {6})"
         /// </summary>
         public extern bool Raycast(float x, float y, float z, float a, float b, float c, int Flags);
 
@@ -511,111 +531,111 @@ namespace Wrapper.API
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitAuras({0})"
+        /// @CSharpLua.Template = " __LB__.UnitAuras({0})"
         /// </summary>
         public extern Dictionary<int, string> UnitAuras(string UnitGuidOrUnitID);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitAurasInfo({0}, {1})"
+        /// @CSharpLua.Template = " __LB__.UnitAurasInfo({0}, {1})"
         /// </summary>
         public extern UnitAura[] UnitAurasInfo(string UnitGuidOrUnitID, int[] SpellIds);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitBoundingHeight({0})"
+        /// @CSharpLua.Template = " __LB__.UnitBoundingHeight({0})"
         /// </summary>
         public extern float UnitBoundingHeight(string UnitGuidOrUnitID);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitBoundingRadius({0})"
+        /// @CSharpLua.Template = " __LB__.UnitBoundingRadius({0})"
         /// </summary>
         public extern float UnitBoundingRadius(string UnitGuidOrUnitID);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitCastingInfo({0})"
+        /// @CSharpLua.Template = " __LB__.UnitCastingInfo({0})"
         /// </summary>
         public extern float UnitCastingInfo(string UnitGuidOrUnitID, out string CastGUID, out string TargetGUID, out float TimeLeftInSeconds, out bool NotInterruptible);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitChannelInfo({0})"
+        /// @CSharpLua.Template = " __LB__.UnitChannelInfo({0})"
         /// </summary>
         public extern float UnitChannelInfo(string UnitGuidOrUnitID, out string CastGUID, out string TargetGUID, out float TimeLeftInSeconds, out bool NotInterruptible);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitCollisionScale({0})"
+        /// @CSharpLua.Template = " __LB__.UnitCollisionScale({0})"
         /// </summary>
         public extern float UnitCollisionScale(string UnitGuidOrUnitID);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitCombatReach({0})"
+        /// @CSharpLua.Template = " __LB__.UnitCombatReach({0})"
         /// </summary>
         public extern float UnitCombatReach(string UnitGuidOrUnitID);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitFlags({0})"
+        /// @CSharpLua.Template = " __LB__.UnitFlags({0})"
         /// </summary>
         public extern int UnitFlags(string UnitGuidOrUnitID);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitFlags2({0})"
+        /// @CSharpLua.Template = " __LB__.UnitFlags2({0})"
         /// </summary>
         public extern int UnitFlags2(string UnitGuidOrUnitID);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitHasFlag({0}, {1})"
+        /// @CSharpLua.Template = " __LB__.UnitHasFlag({0}, {1})"
         /// </summary>
         public extern bool UnitHasFlag(string UnitGuidOrUnitID, EUnitFlags Flag);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitHasFlag2({0}, {1})"
+        /// @CSharpLua.Template = " __LB__.UnitHasFlag2({0}, {1})"
         /// </summary>
         public extern bool UnitHasFlag2(string UnitGuidOrUnitID, EUnitFlags2 Flag);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitHasNpcFlag({0}, {1})"
+        /// @CSharpLua.Template = " __LB__.UnitHasNpcFlag({0}, {1})"
         /// </summary>
         public extern bool UnitHasNpcFlag(string UnitGuidOrUnitID, ENpcFlags Flag);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitIsLootable({0})"
+        /// @CSharpLua.Template = " __LB__.UnitIsLootable({0})"
         /// </summary>
         public extern bool UnitIsLootable(string UnitGuidOrUnitID);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitMovementFlags({0})"
+        /// @CSharpLua.Template = " __LB__.UnitMovementFlags({0})"
         /// </summary>
         public extern int UnitMovementFlags(string UnitGuidOrUnitID);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitNpcFlags({0})"
+        /// @CSharpLua.Template = " __LB__.UnitNpcFlags({0})"
         /// </summary>
         public extern int UnitNpcFlags(string UnitGuidOrUnitID);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UnitTarget({0})"
+        /// @CSharpLua.Template = " __LB__.UnitTarget({0})"
         /// </summary>
         public extern string UnitTarget(string UnitGuidOrUnitID);
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UpdateAFK()"
+        /// @CSharpLua.Template = " __LB__.UpdateAFK()"
         /// </summary>
         public extern void UpdateAFK();
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.UpdatePlayerMovement()"
+        /// @CSharpLua.Template = " __LB__.UpdatePlayerMovement()"
         /// </summary>
         public extern void UpdatePlayerMovement();
 
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.WriteFile({0}, {1}, {2})"
+        /// @CSharpLua.Template = " __LB__.WriteFile({0}, {1}, {2})"
         /// </summary>
         public extern bool WriteFile(string Path, string Contents, bool IsAppend=true);
 
@@ -641,12 +661,12 @@ namespace Wrapper.API
     public class Navigator
     {
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.Navigator:GetDestination()"
+        /// @CSharpLua.Template = " __LB__.Navigator:GetDestination()"
         /// </summary>
         public extern void GetDestination(out float x, out float y, out float z);
 
         /// <summary>
-        /// @CSharpLua.Template = "return __LB__.Navigator:MoveTo({0}, {1}, {2})"
+        /// @CSharpLua.Template = " __LB__.Navigator:MoveTo({0}, {1}, {2})"
         /// </summary>
         public extern void MoveTo(float x, float y, float z, int index = 1, float proximityTolerance = 1);
 

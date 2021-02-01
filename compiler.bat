@@ -1,3 +1,5 @@
-set dir=D:\WoWNET\
-dotnet "%dir%CSharp.lua.Launcher.dll" -p -a -e -c -include -s Wrapper -d out
-"../__bin/lua5.1/lua" launcher.lua
+D:
+cd D:\WoWNET\WoWNET
+set dir=D:\WoWNET\Compiler\
+set coredir=D:\WoWNET\CoreSystem.Lua\
+dotnet "%dir%CSharp.lua.Launcher.dll" -p -a -e -c -include %coredir% -s Wrapper -d out

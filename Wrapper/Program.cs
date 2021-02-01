@@ -1,5 +1,6 @@
 ﻿using System;
 using Wrapper.API;
+using Wrapper.ObjectManager;
 
 namespace Wrapper
 {
@@ -8,12 +9,15 @@ namespace Wrapper
         
         static void Main(string[] args)
         {
-            var lb = new LuaBox();
+            ObjectManager.ObjectManager.Instance.Pulse();
 
-           foreach(var GUID in lb.GetObjects(100))
-            {
-                Console.WriteLine($"Found GUID: {GUID}");
-            }
+            Console.WriteLine("Creating Ticker");
+            WoW.NewTicker(() => {
+                Console.WriteLine("Pulsing OM");
+                ObjectManager.ObjectManager.Instance.Pulse();
+            }, 0.1f);
+            Console.WriteLine("Done With Ticker");
         }
+
     }
 }
