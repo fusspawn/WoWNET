@@ -384,7 +384,6 @@ namespace Wrapper.API
         /// </summary>
         public extern void GetLastWorldClickPosition(out double x, out double y, out double z);
 
-
         /// <summary>
         /// @CSharpLua.Template = " __LB__.GetMapId()"
         /// </summary>
@@ -434,7 +433,6 @@ namespace Wrapper.API
         /// @CSharpLua.Template = " __LB__.HttpAsyncPost({0}, {1}, {2}, {3}, {4}, {5}, {6})"
         /// </summary>
         public extern bool HttpAsyncPost(string host, int port, bool isHttps, string path, string postData, Func<string> OnSuccess, Func<string> OnError);
-
 
         /// <summary>
         /// @CSharpLua.Template = "__LB__.LoadScript({0})"
@@ -540,7 +538,6 @@ namespace Wrapper.API
         /// @CSharpLua.Template = " __LB__.SetCameraAngles({0}, {1})"
         /// </summary>
         public extern void SetCameraAngles(double facing, double pitch);
-
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.UnitAuras({0})"
@@ -686,6 +683,11 @@ namespace Wrapper.API
         /// @CSharpLua.Template = "__LB__.Navigator.Stop()"
         /// </summary>
         public extern void Stop();
+
+        /// <summary>
+        /// @CSharpLua.Template = "__LB__.Navigator.AllowMounting({0})"
+        /// </summary>
+        public extern void AllowMounting(bool Allow);
     }
 
 }

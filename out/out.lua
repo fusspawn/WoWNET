@@ -17591,12 +17591,8 @@ System.namespace("Wrapper", function (namespace)
     RunBattleGroundLogic = function (this)
       -- Console.WriteLine("In Battleground");
 
-
-
       this.SmartMove:Pulse()
       this.SmartTarget:Pulse()
-
-
 
       local BestMove = this.SmartMove:GetBestUnit()
       local BestTarget = this.SmartTarget:GetBestUnit()
@@ -17607,13 +17603,10 @@ System.namespace("Wrapper", function (namespace)
           RepopMe()
         end
 
+        __LB__.Navigator.Stop()
         return
       end
 
-
-      if WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() or WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling() then
-        return
-      end
 
       if BestTarget ~= nil then
         --Console.WriteLine("BestTarget: " + BestTarget.Name);
@@ -17622,7 +17615,8 @@ System.namespace("Wrapper", function (namespace)
           RunMacroText("/startattack")
         end
 
-        if WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, BestTarget.Position) > 25 or not BestTarget.LineOfSight then
+        if (WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, BestTarget.Position) > 25 or not BestTarget.LineOfSight) and not (WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() or WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling()) then
+          __LB__.Navigator.AllowMounting(false)
           __LB__.Navigator.MoveTo(BestTarget.Position.X, BestTarget.Position.Y, BestTarget.Position.Z, 1, 15)
           return
         else
@@ -17638,6 +17632,7 @@ System.namespace("Wrapper", function (namespace)
         this.LastDestination = BestMove.Position:__clone__()
 
         if WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, this.LastDestination:__clone__()) > 15 then
+          __LB__.Navigator.AllowMounting(WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, this.LastDestination:__clone__()) > 40)
           __LB__.Navigator.MoveTo(this.LastDestination.X, this.LastDestination.Y, this.LastDestination.Z, 1, 1)
         else
           __LB__.Navigator.Stop()
@@ -17655,6 +17650,21 @@ System.namespace("Wrapper", function (namespace)
       HasBGStart = false,
       Pulse = Pulse,
       __ctor__ = __ctor__
+    }
+  end)
+
+  namespace.class("CameraFaceTarget", function (namespace)
+    local Pulse
+    Pulse = function (this)
+      System.base(this).Pulse(this)
+    end
+    return {
+      base = function (out)
+        return {
+          out.Wrapper.BotBase
+        }
+      end,
+      Pulse = Pulse
     }
   end)
 end)
@@ -17677,11 +17687,19 @@ System.namespace("Wrapper", function (namespace)
     Main = function (args)
       __LB__.LoadScript("NavigatorNightly")
 
+      System.Console.WriteLine("Pulsed OM")
       WrapperWoW.ObjectManager.getInstance():Pulse()
+      System.Console.WriteLine("Pulsed OM Complete")
 
       C_Timer.NewTicker(0.1, function ()
-        WrapperWoW.ObjectManager.getInstance():Pulse()
-        Base:Pulse()
+        System.try(function ()
+          WrapperWoW.ObjectManager.getInstance():Pulse()
+          Base:Pulse()
+          --Console.WriteLine("New Ticker");
+        end, function (default)
+          local E = default
+          System.Console.WriteLine("Exception in mainBot Thread: " .. System.toString(E:getMessage()))
+        end)
       end)
     end
     DumpPlayers = function ()
@@ -18498,7 +18516,7 @@ System.namespace("Wrapper.Helpers", function (namespace)
         local target =  __LB__.UnitTarget(player.GUID)
         if target ~= nil then
           if target == WrapperWoW.ObjectManager.getInstance().Player.GUID and __LB__.UnitTagHandler(UnitAffectingCombat, target) then
-            score = score + 500
+            score = score + 1500
           end
         end
 
@@ -19178,6 +19196,7 @@ System.init({
     "Wrapper.API.Navigator",
     "Wrapper.API.UnitAura",
     "Wrapper.API.WoWAPI.PVPClassification",
+    "Wrapper.CameraFaceTarget",
     "Wrapper.Helpers.ScoredWowPlayer",
     "Wrapper.Helpers.SmartMovePVP",
     "Wrapper.Helpers.SmartTargetPVP",

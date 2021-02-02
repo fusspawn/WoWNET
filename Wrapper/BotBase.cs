@@ -68,12 +68,8 @@ namespace Wrapper
         {
             // Console.WriteLine("In Battleground");
 
-
-
             SmartMove.Pulse();
             SmartTarget.Pulse();
-
-
 
             var BestMove = SmartMove.GetBestUnit();
             var BestTarget = SmartTarget.GetBestUnit();
@@ -86,14 +82,10 @@ namespace Wrapper
                     WoWAPI.RepopMe();
                 }
 
+                LuaBox.Instance.Navigator.Stop();
                 return; 
             }
 
-
-            if (ObjectManager.Instance.Player.IsCasting || ObjectManager.Instance.Player.IsChanneling)
-            {
-                return;
-            }
 
             if (BestTarget != null)
             {
@@ -105,8 +97,10 @@ namespace Wrapper
                     WoWAPI.RunMacroText("/startattack");
                 }
 
-                if(Vector3.Distance(ObjectManager.Instance.Player.Position, BestTarget.Position) > 25 || !BestTarget.LineOfSight)
+                if((Vector3.Distance(ObjectManager.Instance.Player.Position, BestTarget.Position) > 25 
+                    || !BestTarget.LineOfSight) && !(ObjectManager.Instance.Player.IsCasting || ObjectManager.Instance.Player.IsChanneling))
                 {
+                    LuaBox.Instance.Navigator.AllowMounting(false);
                     LuaBox.Instance.Navigator.MoveTo(BestTarget.Position.X, BestTarget.Position.Y, BestTarget.Position.Z, 1, 15);
                     return;
                 } 
@@ -126,6 +120,7 @@ namespace Wrapper
                 
                 if (Vector3.Distance(ObjectManager.Instance.Player.Position, LastDestination) > 15)
                 {
+                    LuaBox.Instance.Navigator.AllowMounting(Vector3.Distance(ObjectManager.Instance.Player.Position, LastDestination) > 40);
                     LuaBox.Instance.Navigator.MoveTo(LastDestination.X, LastDestination.Y, LastDestination.Z);
                 }
                 else
@@ -138,6 +133,16 @@ namespace Wrapper
         private void Rotation()
         {
 
+        }
+    }
+
+    public class CameraFaceTarget : BotBase
+    {
+        public override void Pulse()
+        {
+
+           
+            base.Pulse();
         }
     }
 }

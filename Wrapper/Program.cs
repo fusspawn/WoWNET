@@ -12,11 +12,23 @@ namespace Wrapper
         {
             LuaBox.Instance.LoadScript("NavigatorNightly");
 
+            Console.WriteLine("Pulsed OM");
             ObjectManager.Instance.Pulse();
+            Console.WriteLine("Pulsed OM Complete");
 
-            WoWAPI.NewTicker(() => {                
-                ObjectManager.Instance.Pulse();
-                Base.Pulse();
+            WoWAPI.NewTicker(() => {
+                try
+                {
+
+                    ObjectManager.Instance.Pulse();
+                    Base.Pulse();
+                    //Console.WriteLine("New Ticker");
+                } 
+                catch( Exception E )
+                {
+                    Console.WriteLine("Exception in mainBot Thread: " + E.Message);
+                }
+
             }, 0.1f);
         }
 
@@ -35,6 +47,7 @@ namespace Wrapper
             var TargetGUID = LuaBox.Instance.UnitTarget("player");
             if (TargetGUID == null)
             {
+
                 Console.WriteLine("[NavTestFailed] Unable to find Target");
                 return;
             }

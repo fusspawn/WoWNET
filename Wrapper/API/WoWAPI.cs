@@ -111,6 +111,26 @@ namespace Wrapper.API
         /// </summary>
         public static extern void RunMacroText(string Text);
 
+
+        /// <summary>
+        /// @CSharpLua.Template = "MoveViewDownStart()" 
+        /// </summary>
+        public static extern void MoveViewDownStart();
+
+            // <summary>
+        /// @CSharpLua.Template = "MoveViewDownStart()" 
+        /// </summary>
+        public static extern void MoveViewDownStop();
+        // <summary>
+        /// @CSharpLua.Template = "MoveViewDownStart()" 
+        /// </summary>
+        public static extern void MoveViewUpStart();
+        // <summary>
+        /// @CSharpLua.Template = "MoveViewDownStart()" 
+        /// </summary>
+        public static extern void MoveViewUpStop();
+
+
         public enum PVPClassification {
             None = -1,
             FlagCarrierHorde,

@@ -46,7 +46,7 @@ namespace Wrapper.Helpers
                    if (target == ObjectManager.Instance.Player.GUID
                         && WoWAPI.UnitAffectingCombat(target))
                    {
-                        score = score + 500;
+                        score = score + 1500;
                    }     
                 }
 
