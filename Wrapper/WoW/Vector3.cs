@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Wrapper.ObjectManager
+namespace Wrapper.WoW
 {
     public struct Vector3 : IEquatable<Vector3>
     {
@@ -357,13 +357,15 @@ namespace Wrapper.ObjectManager
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder(32);
+            StringBuilder sb = new StringBuilder();
             sb.Append("{X:");
             sb.Append(this.X);
             sb.Append(" Y:");
             sb.Append(this.Y);
             sb.Append(" Z:");
             sb.Append(this.Z);
+            sb.Append(" Distance From Player: ");
+            sb.Append(Vector3.Distance(this, ObjectManager.Instance.Player.Position));
             sb.Append("}");
             return sb.ToString();
         }

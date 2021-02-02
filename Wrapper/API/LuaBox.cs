@@ -1,14 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Wrapper.ObjectManager;
+using Wrapper.WoW;
 
 namespace Wrapper.API
 {
     public class LuaBox
     {
         private static LuaBox _instance;
-        public static LuaBox Instance { get { if (_instance == null) { _instance = new LuaBox(); } return _instance; } }
+        public static LuaBox Instance { get { if (_instance == null) { _instance = new LuaBox(); _instance.Navigator = new Navigator(); } return _instance; } }
+
+        /// <summary>
+        /// @CSharpLua.Template = "(__LB__.Navigator ~= nil)"       
+        /// Cancel pending spells
+        /// </summary>
+        public extern bool IsNavLoaded();
 
         public Navigator Navigator = new Navigator();
 
@@ -278,7 +284,7 @@ namespace Wrapper.API
         /// Perform on click on the terrain at the given location
         /// If rightClick parameter is true, a right click is performed
         /// </summary>
-        public extern void ClickPosition(float x, float y, float z, bool rightClick = false);
+        public extern void ClickPosition(double x, double y, double z, bool rightClick = false);
 
         /// <summary>
         /// @CSharpLua.Template = "__LB__.CloseGame()"
@@ -329,7 +335,7 @@ namespace Wrapper.API
         /// <summary>
         /// @CSharpLua.Template = " __LB__.GetCameraAngles()"
         /// </summary>
-        public extern void GetCameraAngles(out float facing, out float pitch);
+        public extern void GetCameraAngles(out double facing, out double pitch);
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.GetClientType()"
@@ -365,19 +371,19 @@ namespace Wrapper.API
         /// <summary>
         /// @CSharpLua.Template = " __LB__.GetDistance3D({0}, {1}, {2}, {3}, {4}, {5})"
         /// </summary>
-        public extern float GetDistance3D(float x, float y, float z, float a, float b, float c);
+        public extern double GetDistance3D(double x, double y, double z, double a, double b, double c);
 
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.GetDistance3D({0}, {1})"
         /// </summary>
-        public extern float GetDistance3D(string UnitIdFrom, string UnitIdTo);
+        public extern double GetDistance3D(string UnitIdFrom, string UnitIdTo);
 
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.GetLastWorldClickPosition()"
         /// </summary>
-        public extern void GetLastWorldClickPosition(out float x, out float y, out float z);
+        public extern void GetLastWorldClickPosition(out double x, out double y, out double z);
 
 
         /// <summary>
@@ -389,35 +395,35 @@ namespace Wrapper.API
         /// <summary>
         /// @CSharpLua.Template = "__LB__.GetObjects({0})"
         /// </summary>
-        public extern string[] GetObjects(float Distance);
+        public extern string[] GetObjects(double Distance);
 
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.GetObjects({0}, {1})"
         /// </summary>
-        public extern string[] GetObjects(float Distance, LuaBox.EGameObjectTypes Type);
+        public extern string[] GetObjects(double Distance, LuaBox.EGameObjectTypes Type);
 
         /// <summary>
         /// @CSharpLua.Template = "__LB__.GetObjects({0}, {1}, {2})"
         /// </summary>
-        public extern string[] GetObjects(float Distance, LuaBox.EGameObjectTypes Type, LuaBox.EGameObjectTypes Type2);
+        public extern string[] GetObjects(double Distance, LuaBox.EGameObjectTypes Type, LuaBox.EGameObjectTypes Type2);
 
         /// <summary>
         /// @CSharpLua.Template = "__LB__.GetObjects({0}, {1}, {2}, {3})"
         /// </summary>
-        public extern string[] GetObjects(float Distance, LuaBox.EGameObjectTypes Type, LuaBox.EGameObjectTypes Type2, LuaBox.EGameObjectTypes Type3);
+        public extern string[] GetObjects(double Distance, LuaBox.EGameObjectTypes Type, LuaBox.EGameObjectTypes Type2, LuaBox.EGameObjectTypes Type3);
 
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.GetPlayerCorpsePosition()"
         /// </summary>
-        public extern void GetPlayerCorpsePosition(out float x, out float y, out float z);
+        public extern void GetPlayerCorpsePosition(out double x, out double y, out double z);
 
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.GetWindowSize()"
         /// </summary>
-        public extern void GetWindowSize(out float width, out float height);
+        public extern void GetWindowSize(out double width, out double height);
 
 
         /// <summary>
@@ -459,7 +465,7 @@ namespace Wrapper.API
         /// <summary>
         /// @CSharpLua.Template = " __LB__.ObjectFacing({0})"
         /// </summary>
-        public extern float ObjectFacing(string GuidOrUnitId);
+        public extern double ObjectFacing(string GuidOrUnitId);
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.ObjectHasDynamicFlag({0}, {1})"
@@ -489,7 +495,7 @@ namespace Wrapper.API
         /// <summary>
         /// @CSharpLua.Template = " __LB__.ObjectPitch({0})"
         /// </summary>
-        public extern float ObjectPitch(string GuidOrUnitId);
+        public extern double ObjectPitch(string GuidOrUnitId);
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.ObjectPointer({0})"
@@ -499,11 +505,11 @@ namespace Wrapper.API
         /// <summary>
         /// @CSharpLua.Template = " __LB__.ObjectPosition({0})"
         /// </summary>
-        public extern void ObjectPosition(string GuidOrUnitId, out float x, out float y, out float z);
+        public extern void ObjectPosition(string GuidOrUnitId, out double x, out double y, out double z);
 
         public Vector3 ObjectPositionVector3(string GUIDorUnitID)
         {
-            float x, y, z;
+            double x, y, z;
             LuaBox.Instance.ObjectPosition(GUIDorUnitID, out x, out y, out z);
             return new Vector3(x,y,z);
         }
@@ -522,9 +528,9 @@ namespace Wrapper.API
 
 
         /// <summary>
-        /// @CSharpLua.Template = " __LB__.Raycast({0}, {1}, {2}, {3}, {4}, {5}, {6})"
+        /// @CSharpLua.Template = " (__LB__.Raycast({0}, {1}, {2}, {3}, {4}, {5}, {6}) ~= nil)"
         /// </summary>
-        public extern bool Raycast(float x, float y, float z, float a, float b, float c, int Flags);
+        public extern bool Raycast(double x, double y, double z, double a, double b, double c, int Flags);
 
 
         /// <summary>
@@ -535,7 +541,7 @@ namespace Wrapper.API
         /// <summary>
         /// @CSharpLua.Template = " __LB__.SetCameraAngles({0}, {1})"
         /// </summary>
-        public extern void SetCameraAngles(float facing, float pitch);
+        public extern void SetCameraAngles(double facing, double pitch);
 
 
         /// <summary>
@@ -552,34 +558,34 @@ namespace Wrapper.API
         /// <summary>
         /// @CSharpLua.Template = " __LB__.UnitBoundingHeight({0})"
         /// </summary>
-        public extern float UnitBoundingHeight(string UnitGuidOrUnitID);
+        public extern double UnitBoundingHeight(string UnitGuidOrUnitID);
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.UnitBoundingRadius({0})"
         /// </summary>
-        public extern float UnitBoundingRadius(string UnitGuidOrUnitID);
+        public extern double UnitBoundingRadius(string UnitGuidOrUnitID);
 
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.UnitCastingInfo({0})"
         /// </summary>
-        public extern float UnitCastingInfo(string UnitGuidOrUnitID, out string CastGUID, out string TargetGUID, out float TimeLeftInSeconds, out bool NotInterruptible);
+        public extern double UnitCastingInfo(string UnitGuidOrUnitID, out string CastGUID, out string TargetGUID, out double TimeLeftInSeconds, out bool NotInterruptible);
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.UnitChannelInfo({0})"
         /// </summary>
-        public extern float UnitChannelInfo(string UnitGuidOrUnitID, out string CastGUID, out string TargetGUID, out float TimeLeftInSeconds, out bool NotInterruptible);
+        public extern double UnitChannelInfo(string UnitGuidOrUnitID, out string CastGUID, out string TargetGUID, out double TimeLeftInSeconds, out bool NotInterruptible);
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.UnitCollisionScale({0})"
         /// </summary>
-        public extern float UnitCollisionScale(string UnitGuidOrUnitID);
+        public extern double UnitCollisionScale(string UnitGuidOrUnitID);
 
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.UnitCombatReach({0})"
         /// </summary>
-        public extern float UnitCombatReach(string UnitGuidOrUnitID);
+        public extern double UnitCombatReach(string UnitGuidOrUnitID);
 
 
         /// <summary>
@@ -657,8 +663,8 @@ namespace Wrapper.API
         public bool CanStealOrPurge;
         public string Caster;
         public int Count;
-        public float Duration;
-        public float Expiration;
+        public double Duration;
+        public double Expiration;
         public bool Harmful;
         public string Name;
         public bool Passive;
@@ -669,17 +675,17 @@ namespace Wrapper.API
     public class Navigator
     {
         /// <summary>
-        /// @CSharpLua.Template = " __LB__.Navigator:GetDestination()"
+        /// @CSharpLua.Template = "__LB__.Navigator.GetDestination()"
         /// </summary>
-        public extern void GetDestination(out float x, out float y, out float z);
+        public extern void GetDestination(out double x, out double y, out double z);
 
         /// <summary>
-        /// @CSharpLua.Template = " __LB__.Navigator:MoveTo({0}, {1}, {2})"
+        /// @CSharpLua.Template = "__LB__.Navigator.MoveTo({0}, {1}, {2}, {3}, {4})"
         /// </summary>
-        public extern void MoveTo(float x, float y, float z, int index = 1, float proximityTolerance = 1);
+        public extern void MoveTo(double x, double y, double z, int index = 1, double proximityTolerance = 1);
 
         /// <summary>
-        /// @CSharpLua.Template = "__LB__.Navigator:Stop()"
+        /// @CSharpLua.Template = "__LB__.Navigator.Stop()"
         /// </summary>
         public extern void Stop();
     }

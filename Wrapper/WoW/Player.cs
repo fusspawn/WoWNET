@@ -3,21 +3,14 @@ using System.Collections.Generic;
 using System.Text;
 using Wrapper.API;
 
-namespace Wrapper.ObjectManager
+namespace Wrapper.WoW
 {
     public class WoWPlayer
-        : WoWGameObject
+        : WoWUnit
     {
-
-        public int Health;
-        public int HealthMax;
-
-
         public WoWPlayer(string _GUID) 
             : base(_GUID)
         {
-            Health = WoW.UnitHealth(_GUID);
-            HealthMax = WoW.UnitHealthMax(_GUID);
         }
 
         public override void Update()

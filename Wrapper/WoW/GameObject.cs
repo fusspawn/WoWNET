@@ -4,7 +4,7 @@ using System.Numerics;
 using System.Text;
 using Wrapper.API;
 
-namespace Wrapper.ObjectManager
+namespace Wrapper.WoW
 {
     public class WoWGameObject
     {
@@ -14,11 +14,15 @@ namespace Wrapper.ObjectManager
         public Vector3 Position;
 
 
+
         public WoWGameObject(string _GUID)
         {
             GUID = _GUID;
             Name = LuaBox.Instance.ObjectName(this.GUID);
             ObjectType = LuaBox.Instance.ObjectType(this.GUID);
+
+
+            Update();
         }
 
         public virtual void Update()

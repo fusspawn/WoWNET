@@ -4,29 +4,37 @@ using System.Linq;
 using System.Text;
 using Wrapper.API;
 
-namespace Wrapper.ObjectManager
+namespace Wrapper.WoW
 {
     public class ObjectManager
     {
         private static ObjectManager _instance;
         public static ObjectManager Instance
-        { 
-            get {
-                if (_instance == null) {
+        {
+            get
+            {
+                if (_instance == null)
+                {
                     _instance = new ObjectManager();
-                } 
+                    _instance.Player = new WoWPlayer("player");
+                }
 
                 return _instance;
-            } 
+            }
         }
 
         public Dictionary<string, WoWGameObject> AllObjects = new Dictionary<string, WoWGameObject>();
+        public WoWPlayer Player;
 
         public void Pulse()
         {
+
+            Player.Update();
+
             foreach (var GUID in LuaBox.Instance.GetObjects(500))
             {
-                if (!this.AllObjects.ContainsKey(GUID)) {
+                if (!this.AllObjects.ContainsKey(GUID))
+                {
 
                     //Console.WriteLine($"Created WoW Object In OM: {GUID}");
                     this.AllObjects[GUID] = CreateWowObject(GUID);
@@ -35,26 +43,29 @@ namespace Wrapper.ObjectManager
 
             var RemovalList = new List<string>();
 
-            foreach(var kvp in this.AllObjects)
+            foreach (var kvp in this.AllObjects)
             {
-                if(!LuaBox.Instance.ObjectExists(kvp.Key)){
+                if (!LuaBox.Instance.ObjectExists(kvp.Key))
+                {
                     RemovalList.Add(kvp.Key);
-                } 
+                }
                 else
                 {
                     kvp.Value.Update();
                 }
             }
 
-            RemovalList.ForEach((item) => {
+            RemovalList.ForEach((item) =>
+            {
                 //Console.WriteLine($"Removed Object From OM: {item}");
-                AllObjects.Remove(item); 
+                AllObjects.Remove(item);
             });
+
         }
 
         private WoWGameObject CreateWowObject(string GUID)
         {
-            switch(LuaBox.Instance.ObjectType(GUID))
+            switch (LuaBox.Instance.ObjectType(GUID))
             {
 
                 case LuaBox.EObjectType.Player:
@@ -68,8 +79,10 @@ namespace Wrapper.ObjectManager
 
         public static IEnumerable<WoWPlayer> GetAllPlayers(float Yards)
         {
-            return ObjectManager.Instance.AllObjects.Values.Where(x => 
-                x.ObjectType == LuaBox.EObjectType.Player).Select(x => x as WoWPlayer);
+            return ObjectManager.Instance.AllObjects.Values.Where(x =>
+                x.ObjectType == LuaBox.EObjectType.Player
+                && Vector3.Distance(x.Position, Instance.Player.Position) <= Yards)
+                .Select(x => x as WoWPlayer);
         }
     }
 }
