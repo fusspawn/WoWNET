@@ -274,14 +274,13 @@ namespace Wrapper.API
             ConversationData = 13
         }
         /// <summary>
-        /// @CSharpLua.Template = "__LB__.CancelPendingSpell()"        /// 
+        /// @CSharpLua.Template = "__LB__.CancelPendingSpell()"
         /// Cancel pending spells
         /// </summary>
         public extern void CancelPendingSpell();
 
         /// <summary>
-        /// @CSharpLua.Template = "__LB__.ClickPosition({0}, {1}, {2}, {3})"        /// 
-        /// Perform on click on the terrain at the given location
+        /// @CSharpLua.Template = "__LB__.ClickPosition({0}, {1}, {2}, {3})"
         /// If rightClick parameter is true, a right click is performed
         /// </summary>
         public extern void ClickPosition(double x, double y, double z, bool rightClick = false);
@@ -531,7 +530,6 @@ namespace Wrapper.API
         /// @CSharpLua.Template = " (__LB__.Raycast({0}, {1}, {2}, {3}, {4}, {5}, {6}) ~= nil)"
         /// </summary>
         public extern bool Raycast(double x, double y, double z, double a, double b, double c, int Flags);
-
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.RunString({0})"

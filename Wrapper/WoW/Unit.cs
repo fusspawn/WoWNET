@@ -48,7 +48,7 @@ namespace Wrapper.WoW
             }
         }
 
-        
+      
 
 
         public WoWUnit(string _GUID) 
