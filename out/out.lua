@@ -17604,6 +17604,7 @@ System.namespace("Wrapper", function (namespace)
 
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
         RepopMe()
+        return
       end
 
 

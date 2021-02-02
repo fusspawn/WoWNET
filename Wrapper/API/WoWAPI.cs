@@ -87,6 +87,11 @@ namespace Wrapper.API
         public static extern bool UnitIsDeadOrGhost(string UnitGUIDorUnitID);
 
         /// <summary>
+        /// @CSharpLua.Template = "__LB__.UnitTagHandler(UnitIsGhost, {0})" 
+        /// </summary>
+        public static extern bool UnitIsGhost(string GUID);
+
+        /// <summary>
         /// @CSharpLua.Template = "__LB__.UnitTagHandler(UnitAffectingCombat, {0})" 
         /// </summary>
         public static extern bool UnitAffectingCombat(string UnitGUIDorUnitID);
