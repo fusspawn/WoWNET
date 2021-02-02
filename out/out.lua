@@ -17604,6 +17604,7 @@ System.namespace("Wrapper", function (namespace)
 
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
         RepopMe()
+        return
       end
 
 
@@ -18382,7 +18383,7 @@ System.namespace("Wrapper.Helpers", function (namespace)
       this.Units = ListScoredWowPlayer()
     end
     Pulse = function (this)
-      if GetTime() - this.LastUpdateTime < 3 then
+      if GetTime() - this.LastUpdateTime < 5 then
         return
       end
 
@@ -18471,7 +18472,7 @@ System.namespace("Wrapper.Helpers", function (namespace)
       this.Units = ListScoredWowPlayer()
     end
     Pulse = function (this)
-      if GetTime() - this.LastUpdateTime < 2 then
+      if GetTime() - this.LastUpdateTime < 5 then
         return
       end
 
@@ -18689,7 +18690,6 @@ System.namespace("Wrapper.WoW", function (namespace)
 
       local _
       _, CastID, TargetGUID, TimeLeft, NotInterruptable =  __LB__.UnitCastingInfo(this.GUID)
-
       return not System.String.IsNullOrEmpty(CastID)
     end
     getIsChanneling = function (this)
@@ -18700,7 +18700,6 @@ System.namespace("Wrapper.WoW", function (namespace)
 
       local _
       _, CastID, TargetGUID, TimeLeft, NotInterruptable =  __LB__.UnitChannelInfo(this.GUID)
-
       return not System.String.IsNullOrEmpty(CastID)
     end
     Update = function (this)

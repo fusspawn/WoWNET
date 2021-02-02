@@ -79,8 +79,14 @@ namespace Wrapper
             var BestTarget = SmartTarget.GetBestUnit();
 
 
-            if( WoWAPI.UnitIsDeadOrGhost("player")) {
-                WoWAPI.RepopMe();
+            if( WoWAPI.UnitIsDeadOrGhost("player")) 
+            {
+                if (!WoWAPI.UnitIsGhost("player"))
+                {
+                    WoWAPI.RepopMe();
+                }
+
+                return; 
             }
 
 
