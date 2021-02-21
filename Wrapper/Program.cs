@@ -1,66 +1,74 @@
 ﻿using System;
 using Wrapper.API;
+using Wrapper.Helpers;
 using Wrapper.WoW;
 
 namespace Wrapper
 {
     public class Program
     {
-        static BotBase Base = new PVPBotBase();
-        
+        static BotBase Base = new DataLoggerBase();
+        static bool ThrowWowErrors = true;
+
+
         public static void Main(string[] args)
         {
             LuaBox.Instance.LoadScript("NavigatorNightly");
+            LuaBox.Instance.LoadScript("AntiAFK");
+            LuaBox.Instance.LoadScript("LibDrawNightly");
+            StdUI.Init();
+            LibJson.Init();
 
             Console.WriteLine("Pulsed OM");
             ObjectManager.Instance.Pulse();
+
             Console.WriteLine("Pulsed OM Complete");
-
-            WoWAPI.NewTicker(() => {
-                try
+            WoWAPI.NewTicker(() =>
+            {
+                if (!ThrowWowErrors)
                 {
+                    try
+                    {
+                        ObjectManager.Instance.Pulse();
+                        Base.Pulse();
+                        //Console.WriteLine("New Ticker");
+                    }
+                    catch (Exception E)
+                    {
+                        Console.WriteLine("Exception in mainBot Thread: " + E.Message + " StackTrace: "  + WoWAPI.DebugStack());
 
+                    }
+                }
+                else
+                {
                     ObjectManager.Instance.Pulse();
                     Base.Pulse();
-                    //Console.WriteLine("New Ticker");
-                } 
-                catch( Exception E )
-                {
-                    Console.WriteLine("Exception in mainBot Thread: " + E.Message);
                 }
 
             }, 0.1f);
-        }
 
-        public static void DumpPlayers()
-        {
-            foreach (var player in ObjectManager.GetAllPlayers(100))
+
+
+
+            WoWAPI.After(() =>
             {
-                Console.WriteLine($"Found Player: {player.Name} Health: {player.Health}  HealthMax: {player.HealthMax} Position: {player.Position}");   
-            }
+                if (LuaHelper.GetGlobal<dynamic>("BroBot") == null)
+                {
+                    Console.WriteLine("Wont load brobot cc's brobot disabled");
+                    return;
+                }
 
-            Console.WriteLine($"Found Player: {ObjectManager.Instance.Player.Name} Health: {ObjectManager.Instance.Player.Health}  HealthMax: {ObjectManager.Instance.Player.HealthMax} Position: {ObjectManager.Instance.Player.Position}");
-        }
+                //Console.WriteLine("Attempting to Register C# CC");
+                //BroBotAPI.registerFighter("CHunter", new HunterCCTest());
+                //Console.WriteLine("Has Registered Fighter");
 
-        public static void NavTest_MoveToTarget()
-        {
-            var TargetGUID = LuaBox.Instance.UnitTarget("player");
-            if (TargetGUID == null)
-            {
 
-                Console.WriteLine("[NavTestFailed] Unable to find Target");
-                return;
-            }
+                Console.WriteLine("Attempting to Register Native Behavior");
+                //BroBotAPI.registerBehavior("BroBotBehavior", new BroBotBehavior());
+                //BroBotAPI.registerBehavior("NativeGrind", new NativeBehaviors.NativeGrind());
+                Console.WriteLine("Registered Native Behaviors");
 
-            var TargetObject = ObjectManager.Instance.AllObjects[TargetGUID];
-            if (TargetObject == null)
-            {
-                Console.WriteLine("[NavTestFailed] TargetGUID not present in ObjectManager");
-                return;
-            }
-
-            Console.WriteLine($"[NavTest] Moving To: {TargetObject.Position}");
-            LuaBox.Instance.Navigator.MoveTo(TargetObject.Position.X, TargetObject.Position.Y, TargetObject.Position.Z, 1, 2);
-        }
+            }, 5);
+         }
     }
 }

@@ -17,7 +17,6 @@ namespace Wrapper.WoW
         public string TargetGUID;
         public bool LineOfSight;
 
-
         public bool Friend { get { return Reaction > 4; } }
         public bool Hostile { get { return Reaction < 4; } }
         public bool Neutral { get { return Reaction == 4; } }
@@ -75,10 +74,10 @@ namespace Wrapper.WoW
             if(ObjectManager.Instance.Player != null 
                 && Vector3.Distance(ObjectManager.Instance.Player.Position, Position) < 50)
             {
-                LineOfSight = !LuaBox.Instance.Raycast(Position.X, Position.Y, Position.Z + 1.5, 
-                    ObjectManager.Instance.Player.Position.X, ObjectManager.Instance.Player.Position.Y, ObjectManager.Instance.Player.Position.Z + 1.5, 
+                LineOfSight = !LuaBox.Instance.Raycast(Position.X, Position.Y, Position.Z + 1.5,
+                    ObjectManager.Instance.Player.Position.X, ObjectManager.Instance.Player.Position.Y, ObjectManager.Instance.Player.Position.Z + 1.5,
                     0x100010)
-                && !LuaBox.Instance.Raycast(Position.X, Position.Y, Position.Z + 2, 
+                && !LuaBox.Instance.Raycast(Position.X, Position.Y, Position.Z + 2,
                     ObjectManager.Instance.Player.Position.X, ObjectManager.Instance.Player.Position.Y, ObjectManager.Instance.Player.Position.Z + 2,
                     0x100010);
             } 

@@ -6,7 +6,10 @@ namespace Wrapper.API
 {
     public class WoWAPI
     {
-
+        /// <summary>
+        /// @CSharpLua.Template = "StartAttack()"
+        /// </summary>
+        public static extern bool StartAttack();
 
         /// <summary>
         /// @CSharpLua.Template = "__LB__.UnitTagHandler(UnitIsPlayer, {0})"
@@ -86,6 +89,11 @@ namespace Wrapper.API
         /// </summary>
         public static extern bool UnitIsDeadOrGhost(string UnitGUIDorUnitID);
 
+              /// <summary>
+              /// @CSharpLua.Template = "__LB__.UnitTagHandler(UnitIsTrivial, {0})" 
+              /// </summary>
+        public static extern bool UnitIsTrivial(string UnitGUIDorUnitID);
+
         /// <summary>
         /// @CSharpLua.Template = "__LB__.UnitTagHandler(UnitIsGhost, {0})" 
         /// </summary>
@@ -117,18 +125,63 @@ namespace Wrapper.API
         /// </summary>
         public static extern void MoveViewDownStart();
 
-            // <summary>
+
+        /// <summary>
+        /// @CSharpLua.Template = "__LB__.UnitTagHandler(UnitCreatureType, {0})" 
+        /// </summary>
+        public static extern string UnitCreatureType(string gUID);
+
+        /// <summary>
         /// @CSharpLua.Template = "MoveViewDownStart()" 
         /// </summary>
         public static extern void MoveViewDownStop();
-        // <summary>
+        /// <summary>
         /// @CSharpLua.Template = "MoveViewDownStart()" 
         /// </summary>
         public static extern void MoveViewUpStart();
-        // <summary>
+        /// <summary>
         /// @CSharpLua.Template = "MoveViewDownStart()" 
         /// </summary>
         public static extern void MoveViewUpStop();
+
+
+        /// <summary>
+        /// @CSharpLua.Template = "MoveForwardStart()" 
+        /// </summary>
+        public static extern void MoveForwardStart();
+
+        /// <summary>
+        /// @CSharpLua.Template = "MoveForwardStop()" 
+        /// </summary>
+        public static extern void MoveForwardStop();
+
+
+        /// <summary>
+        /// @CSharpLua.Template = "__LB__.UnitTagHandler(GetUnitSpeed, {0})" 
+        /// </summary>
+        public static extern float GetUnitSpeed(string UnitGuidOrID);
+
+
+        /// <summary>
+        /// @CSharpLua.Template = "__LB__.UnitTagHandler(UnitFactionGroup, {0})" 
+        /// </summary>
+        public static extern string UnitFactionGroup(string UnitGuidOrID);
+
+
+        /// <summary>
+        /// @CSharpLua.Template = "IsUsableSpell({0})" 
+        /// </summary>
+        public static extern bool IsUsableSpell(string SpellName);
+
+        /// <summary>
+        /// @CSharpLua.Template = "__LB__.UnitTagHandler(CastSpellByName, {0}, {1})" 
+        /// </summary>
+        public static extern void CastSpellByName(string SpellName, string? TargetGUID);
+
+        // <summary>
+        /// @CSharpLua.Template = "CreateFrame({0}, {1}, {2}, {3})
+        /// </summary>
+        public static extern T CreateFrame<T>(string Type, string Name=null, WoWFrame ParentFrame=null, string InheritsFrame = null);
 
 
         public enum PVPClassification {
@@ -155,5 +208,98 @@ namespace Wrapper.API
         /// @CSharpLua.Template = "C_Timer.NewTicker({1}, {0})" 
         /// </summary>
         public static extern void NewTicker(Action Func, float Duration);
+
+        /// <summary>
+        /// @CSharpLua.Template = "C_Timer.After({1}, {0})" 
+        /// </summary>
+        public static extern void After(Action Func, float Duration);
+
+        /// <summary>
+        /// @CSharpLua.Template = "GetItemCount({0})" 
+        /// </summary>
+        public static extern int GetItemCount(string ItemName);
+
+
+        /// <summary>
+        /// @CSharpLua.Template = "UseItemByName({0})" 
+        /// </summary>
+        public static extern void UseItemByName(string ItemName);
+
+
+        /// <summary>
+        /// @CSharpLua.Template = "select(2,__LB__.UnitTagHandler(UnitClass, {0}))" 
+        /// </summary>
+        public static extern string UnitClass(string GUID);
+        /// <summary>
+        /// @CSharpLua.Template = "debugstack()" 
+        /// </summary>
+        public static extern string DebugStack();
+
+
+        /// <summary>
+        /// @CSharpLua.Template = "CreateFromMixin({0})" 
+        /// </summary>
+        public static extern T CreateFromMixin<T>(object Mixin);
+
     }
+
+    public class WoWFrame
+    {
+
+
+        public WoWTexture texture;
+
+        public extern void SetScript<T>(string Name, T func);
+        public extern void SetParent(WoWFrame Parent);
+        public extern void Show();
+        public extern void SetFrameStrata(string Strata);
+        public extern void SetWidth(int Width);
+        public extern void SetHeight(int Height);
+        public extern void SetAllPoints(WoWFrame Parent);
+        public extern void SetPoint(string Relation, int x, int y);
+
+        public extern bool IsVisible();
+        public extern bool IsShown();
+
+        public extern WoWTexture CreateTexture(string name = null, string layer = null, string inheritsFrom = null);
+    }
+
+    public class WoWTexture 
+        : WoWFrame
+    {
+
+        private static WoWTexture _holder = new WoWTexture();
+        //public extern void SetTexture(double r, double g, double b, double a = 1);
+        public extern void SetTexture(string Path);
+
+     
+        
+    }
+
+    public class WoWButton
+        : WoWFrame
+    {
+        private static WoWButton _holder = new WoWButton();
+        public extern void SetText(string Name);
+        public extern void SetNormalTexture(WoWTexture Texture);
+    }
+
+
+    public interface DataProviderBase 
+    {
+        public void RemoveAllData();
+        public void RefreshAllData(bool fromOnShow);
+        public void OnShow();
+        public void OnHide();
+        public void OnEvent(string Event, params object[] args);
+
+
+        /// <summary>
+        /// @CSharpLua.Template = "this:GetMap()" 
+        /// </summary>
+        public extern dynamic GetMap();
+    }
+
+   
+
 }

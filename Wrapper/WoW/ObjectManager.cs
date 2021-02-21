@@ -26,41 +26,73 @@ namespace Wrapper.WoW
         public Dictionary<string, WoWGameObject> AllObjects = new Dictionary<string, WoWGameObject>();
         public WoWPlayer Player;
 
+        public delegate void OnNewUnitDelegate(WoWUnit Unit);
+        public OnNewUnitDelegate OnNewUnit;
+
+        public delegate void OnNewGameObjectDelegate(WoWGameObject Object);
+        public OnNewGameObjectDelegate OnNewGameObject;
+
+        public List<WoWGameObject> Pendings = new List<WoWGameObject>();
+
         public void Pulse()
         {
-
-            Player.Update();
-
-            foreach (var GUID in LuaBox.Instance.GetObjects(500))
+            try
             {
-                if (!this.AllObjects.ContainsKey(GUID))
-                {
+                Player.Update();
 
-                    //Console.WriteLine($"Created WoW Object In OM: {GUID}");
-                    this.AllObjects[GUID] = CreateWowObject(GUID);
+
+                foreach (var GUID in LuaBox.Instance.GetObjects(500))
+                {
+                    if (!this.AllObjects.ContainsKey(GUID)
+                        && LuaBox.Instance.ObjectName(GUID) != "Unknown")
+                    {
+                        this.AllObjects[GUID] = CreateWowObject(GUID);
+
+                        switch (AllObjects[GUID].ObjectType)
+                        {
+                            case LuaBox.EObjectType.Unit:
+                                if (OnNewUnit != null)
+                                {
+                                    OnNewUnit(AllObjects[GUID] as WoWUnit);
+                                }
+                                break;
+
+                            case LuaBox.EObjectType.GameObject:
+                                if (OnNewGameObject != null)
+                                {
+                                    OnNewGameObject(AllObjects[GUID]);
+                                }
+                                break;
+                        }
+                    }
                 }
+
+
+                var RemovalList = new List<string>();
+
+                foreach (var kvp in this.AllObjects)
+                {
+                    if (!LuaBox.Instance.ObjectExists(kvp.Key))
+                    {
+                        RemovalList.Add(kvp.Key);
+                    }
+                    else
+                    {
+                        kvp.Value.Update();
+                    }
+                }
+
+                RemovalList.ForEach((item) =>
+                {
+                        //Console.WriteLine($"Removed Object From OM: {item}");
+                        AllObjects.Remove(item);
+                });
+
+            } 
+            catch(Exception E)
+            {
+                Console.WriteLine("OM Error: " + E.Message + "StackTrace: " + WoWAPI.DebugStack());
             }
-
-            var RemovalList = new List<string>();
-
-            foreach (var kvp in this.AllObjects)
-            {
-                if (!LuaBox.Instance.ObjectExists(kvp.Key))
-                {
-                    RemovalList.Add(kvp.Key);
-                }
-                else
-                {
-                    kvp.Value.Update();
-                }
-            }
-
-            RemovalList.ForEach((item) =>
-            {
-                //Console.WriteLine($"Removed Object From OM: {item}");
-                AllObjects.Remove(item);
-            });
-
         }
 
         private WoWGameObject CreateWowObject(string GUID)

@@ -133,7 +133,10 @@ namespace Wrapper.WoW
         }
 
         
-
+        public static Vector3 Floor(Vector3 Vector3)
+        {
+            return new Vector3(Math.Floor(Vector3.X), Math.Floor(Vector3.Y), Math.Floor(Vector3.Z));
+        }
 
         public static Vector3 Cross(Vector3 vector1, Vector3 vector2)
         {
@@ -388,6 +391,7 @@ namespace Wrapper.WoW
 
         public static bool operator ==(Vector3 value1, Vector3 value2)
         {
+           
             return value1.X == value2.X
                 && value1.Y == value2.Y
                 && value1.Z == value2.Z;

@@ -176,6 +176,7 @@ namespace Wrapper.API
             VendorPoison = 1024,
             VendorReagent = 2048,
             WildBattlePet = 1073741824,
+            FlightMaster = 8192
         }
         public enum ERaycastFlags
         {
@@ -231,7 +232,7 @@ namespace Wrapper.API
             Silenced = 8192,
             Skinnable = 67108864,
             Stunned = 262144,
-            TaxiFlight = 1048576
+            TaxiFlight = 1048576,
         }
         public enum EUnitFlags2
         {
@@ -440,9 +441,9 @@ namespace Wrapper.API
         public extern void LoadScript(string Hash);
 
         /// <summary>
-        /// @CSharpLua.Template = " __LB__.IsAoEPending({0})"
+        /// @CSharpLua.Template = " __LB__.IsAoEPending()"
         /// </summary>
-        public extern bool IsAoEPending(string GuidOrUnitId);
+        public extern bool IsAoEPending();
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.ObjectCreator({0})"
@@ -485,22 +486,22 @@ namespace Wrapper.API
         public extern bool ObjectLocked(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = " __LB__.ObjectName({0})"
+        /// @CSharpLua.Template = "__LB__.ObjectName({0})"
         /// </summary>
         public extern string ObjectName(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = " __LB__.ObjectPitch({0})"
+        /// @CSharpLua.Template = "__LB__.ObjectPitch({0})"
         /// </summary>
         public extern double ObjectPitch(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = " __LB__.ObjectPointer({0})"
+        /// @CSharpLua.Template = "__LB__.ObjectPointer({0})"
         /// </summary>
         public extern string ObjectPointer(string GuidOrUnitId);
 
         /// <summary>
-        /// @CSharpLua.Template = " __LB__.ObjectPosition({0})"
+        /// @CSharpLua.Template = "__LB__.ObjectPosition({0})"
         /// </summary>
         public extern void ObjectPosition(string GuidOrUnitId, out double x, out double y, out double z);
 
@@ -529,6 +530,21 @@ namespace Wrapper.API
         /// </summary>
         public extern bool Raycast(double x, double y, double z, double a, double b, double c, int Flags);
 
+        public Vector3? RaycastPosition(double x, double y, double z, double a, double b, double c, int Flags)
+        {
+            double _x = 0; double _y = 0; double _z = 0;
+            /*
+              [[
+                  _x,_y,_z = __LB__.Raycast(x, y, z, a, b, c, Flags);
+                  if _x == nil then
+                    return nil
+                  end                   
+              ]]
+             */
+
+            return new Vector3(_x, _y, _z);
+        }
+
         /// <summary>
         /// @CSharpLua.Template = " __LB__.RunString({0})"
         /// </summary>
@@ -548,7 +564,6 @@ namespace Wrapper.API
         /// @CSharpLua.Template = " __LB__.UnitAurasInfo({0}, {1})"
         /// </summary>
         public extern UnitAura[] UnitAurasInfo(string UnitGuidOrUnitID, int[] SpellIds);
-
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.UnitBoundingHeight({0})"
@@ -576,12 +591,10 @@ namespace Wrapper.API
         /// </summary>
         public extern double UnitCollisionScale(string UnitGuidOrUnitID);
 
-
         /// <summary>
         /// @CSharpLua.Template = " __LB__.UnitCombatReach({0})"
         /// </summary>
         public extern double UnitCombatReach(string UnitGuidOrUnitID);
-
 
         /// <summary>
         /// @CSharpLua.Template = " __LB__.UnitFlags({0})"
@@ -631,7 +644,6 @@ namespace Wrapper.API
         /// </summary>
         public extern string UnitTarget(string UnitGuidOrUnitID);
 
-
         /// <summary>
         /// @CSharpLua.Template = " __LB__.UpdateAFK()"
         /// </summary>
@@ -642,12 +654,20 @@ namespace Wrapper.API
         /// </summary>
         public extern void UpdatePlayerMovement();
 
-
         /// <summary>
         /// @CSharpLua.Template = " __LB__.WriteFile({0}, {1}, {2})"
         /// </summary>
         public extern bool WriteFile(string Path, string Contents, bool IsAppend=true);
 
+        /// <summary>
+        /// @CSharpLua.Template = " __LB__.ReadFile({0})"
+        /// </summary>
+        public extern string ReadFile(string Path);
+
+        /// <summary>
+        /// @CSharpLua.Template = " __LB__.GetKeyState({0})"
+        /// </summary>
+        public extern bool GetKeyState(int key);
     }
 
     public class UnitAura

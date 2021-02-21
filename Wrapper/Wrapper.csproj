@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -13,6 +13,10 @@
     <Compile Remove="out\**" />
     <EmbeddedResource Remove="out\**" />
     <None Remove="out\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="API\BroBotCC.cs~RF620fa72.TMP" />
   </ItemGroup>
 
 </Project>

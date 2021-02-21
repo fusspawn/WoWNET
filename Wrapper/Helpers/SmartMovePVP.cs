@@ -63,7 +63,8 @@ namespace Wrapper.Helpers
 
                 score = 1000 + (NumFriends * FriendlyScore) + (NumHostile * HostileScore);
 
-                if ((NumHostile * HostileScore) > (NumFriends * FriendlyScore) * 1.5)
+                if ((NumHostile * HostileScore)
+                    > (NumFriends * FriendlyScore) * 1.5)
                 {
                     score = score - 1000; // No suicde plx.
                 }
@@ -76,9 +77,11 @@ namespace Wrapper.Helpers
         }
 
 
-        public WoWPlayer GetBestUnit()
+        public ScoredWowPlayer GetBestUnit()
         {
-            return Units.Count() > 0 ? Units.OrderByDescending(x=>x.Score).FirstOrDefault().Player : null;
+            return Units.Count() > 0
+                ? Units.OrderByDescending(x=>x.Score).FirstOrDefault() 
+                : null;
         }
     }
 }
