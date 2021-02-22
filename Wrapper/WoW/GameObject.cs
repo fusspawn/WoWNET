@@ -57,7 +57,6 @@ namespace Wrapper.WoW
 
         public virtual void Update()
         {
-          
             this.Position = LuaBox.Instance.ObjectPositionVector3(this.GUID);
         }
     }

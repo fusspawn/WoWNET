@@ -25,6 +25,8 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
         public override void Tick()
         {
+            Console.WriteLine("In Combat Task");
+
             var Distance = Vector3.Distance(Task.TargetUnitOrObject.Position,
                 ObjectManager.Instance.Player.Position);
 
@@ -38,12 +40,14 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
             if (Distance > CombatRange)
             {
-                Console.WriteLine($"Getting Closer: {Distance} TaskLocation: {Task.TargetUnitOrObject.Position} Player: {ObjectManager.Instance.Player.Position}");
+                BroBotAPI.BroBotDebugMessage("NativeKillTask", $"Getting Closer: {Distance} TaskLocation: {Task.TargetUnitOrObject.Position} Player: {ObjectManager.Instance.Player.Position}");
                 LuaBox.Instance.Navigator.MoveTo(Task.TargetUnitOrObject.Position.X, Task.TargetUnitOrObject.Position.Y, Task.
                     TargetUnitOrObject.Position.Z);
                 return;
             }
 
+
+            LuaBox.Instance.Navigator.Stop();
             LuaBox.Instance.UnitTarget(Task.TargetUnitOrObject.GUID);
             WoWAPI.StartAttack();
 

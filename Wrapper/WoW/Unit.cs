@@ -17,6 +17,8 @@ namespace Wrapper.WoW
         public string TargetGUID;
         public bool LineOfSight;
 
+        public bool PlayerHasFought = false;
+
         public bool Friend { get { return Reaction > 4; } }
         public bool Hostile { get { return Reaction < 4; } }
         public bool Neutral { get { return Reaction == 4; } }

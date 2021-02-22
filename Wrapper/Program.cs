@@ -1,6 +1,7 @@
 ﻿using System;
 using Wrapper.API;
 using Wrapper.Helpers;
+using Wrapper.UI;
 using Wrapper.WoW;
 
 namespace Wrapper
@@ -8,7 +9,7 @@ namespace Wrapper
     public class Program
     {
         static BotBase Base = new DataLoggerBase();
-        static bool ThrowWowErrors = true;
+        static bool ThrowWowErrors = false;
 
 
         public static void Main(string[] args)
@@ -36,7 +37,7 @@ namespace Wrapper
                     catch (Exception E)
                     {
                         Console.WriteLine("Exception in mainBot Thread: " + E.Message + " StackTrace: "  + WoWAPI.DebugStack());
-
+                        NativeErrorLoggerUI.Instance.AddErrorMessage(E.Message, WoWAPI.DebugStack());
                     }
                 }
                 else
@@ -52,7 +53,7 @@ namespace Wrapper
 
             WoWAPI.After(() =>
             {
-                if (LuaHelper.GetGlobal<dynamic>("BroBot") == null)
+                if (LuaHelper.GetGlobalFrom_G<dynamic>("BroBot") == null)
                 {
                     Console.WriteLine("Wont load brobot cc's brobot disabled");
                     return;
@@ -65,10 +66,10 @@ namespace Wrapper
 
                 Console.WriteLine("Attempting to Register Native Behavior");
                 //BroBotAPI.registerBehavior("BroBotBehavior", new BroBotBehavior());
-                //BroBotAPI.registerBehavior("NativeGrind", new NativeBehaviors.NativeGrind());
+                BroBotAPI.registerBehavior("NativeGrind", new NativeBehaviors.NativeGrind());
                 Console.WriteLine("Registered Native Behaviors");
 
-            }, 5);
+            }, 2.5f);
          }
     }
 }
