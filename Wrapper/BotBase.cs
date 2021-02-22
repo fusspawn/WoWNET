@@ -53,6 +53,10 @@ namespace Wrapper
             public StdUiInputFrame HunterScanGridMaxHorizontalRangeBeforeReset;
             public StdUiLabel NumberOfManualScanNodes;
             public StdUiButton ResetManualScanNodes;
+
+            public StdUiInputFrame ProfileNameBox;
+            public StdUiButton ProfileSaveButton;
+            public StdUiButton ProfileLoadButton;
         }
 
         public DataLoggerBase()
@@ -72,7 +76,7 @@ namespace Wrapper
 
                 #region UIConfigData
                 /*
-                    [[
+                   
                           local BroBotBlueSolid = {r=0.12156862745, g=0.21176470588, b=0.41176470588, a=1}
                           local BroBotBlueAlpha = {r=0.12156862745, g=0.21176470588, b=0.41176470588, a=0.8}
 
@@ -129,12 +133,12 @@ namespace Wrapper
                                }
                            };
 
-                   ]]
+                   
                    */
                 #endregion
 
                 UIData = new DataLoggerBaseUI();
-                UIData.MainUIFrame = _StdUI.Window(LuaHelper.GetGlobal<WoWFrame>("UIParent"), 500, IsHunter ? 600 : 400, "BroBot Data Logger");
+                UIData.MainUIFrame = _StdUI.Window(LuaHelper.GetGlobalFrom_G<WoWFrame>("UIParent"), 500, IsHunter ? 600 : 400, "BroBot Data Logger");
                 UIData.MainUIFrame.SetPoint("CENTER", 0, 0);
                 UIData.MainUIFrame.Show();
 
@@ -205,7 +209,7 @@ namespace Wrapper
                     _StdUI.AddLabel(UIData.MainUIFrame, UIData.HunterScanGridMaxHorizontalRangeBeforeReset, "Hunter Scan Max Horizontal Range", "TOP", null);
 
 
-                   UIData.NumberOfManualScanNodes = _StdUI.Label(UIData.MainUIFrame, "Manual Scan Nodes Count: " +ManualScanLocations.Count, 12, null, 150, 25);
+                   UIData.NumberOfManualScanNodes = _StdUI.Label(UIData.MainUIFrame, "Manual Scan Nodes Count: " + ManualScanLocations.Count, 12, null, 150, 25);
                     _StdUI.GlueTop(UIData.NumberOfManualScanNodes, UIData.MainUIFrame, -140, -430, "TOP");
 
                    
@@ -214,7 +218,54 @@ namespace Wrapper
                     {
                         ManualScanLocations.Clear();
                     });
+
                     _StdUI.GlueTop(UIData.ResetManualScanNodes, UIData.MainUIFrame, -140, -460, "TOP");
+
+
+
+                    UIData.ProfileNameBox = _StdUI.EditBox(UIData.MainUIFrame, 150, 25, "", null);
+                    _StdUI.AddLabel(UIData.MainUIFrame, UIData.ProfileNameBox, "Profile Name", "TOP", null);
+                    _StdUI.GlueTop(UIData.ProfileNameBox, UIData.MainUIFrame, -140, -490, "TOP");
+
+                    var DataBaseProfileFolder = $"{LuaBox.Instance.GetBaseDirectory()}\\BroBot\\Database\\Profiles\\";
+                    if (!LuaBox.Instance.DirectoryExists(DataBaseProfileFolder))
+                        LuaBox.Instance.CreateDirectory(DataBaseProfileFolder);
+
+
+                    UIData.ProfileSaveButton = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Save Profile");
+                    UIData.ProfileSaveButton.SetScript<Action>("OnClick", () =>
+                    {
+                        LuaBox.Instance.WriteFile(DataBaseProfileFolder + UIData.ProfileNameBox.GetValue<string>() + ".json", LibJson.Serialize(ManualScanLocations), false);
+                    });
+
+                    _StdUI.GlueTop(UIData.ProfileSaveButton, UIData.MainUIFrame, -140, -520, "TOP");
+
+
+
+                    UIData.ProfileLoadButton = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Load Profile");
+                    UIData.ProfileLoadButton.SetScript<Action>("OnClick", () =>
+                    {
+                        if(!LuaBox.Instance.FileExists(DataBaseProfileFolder + UIData.ProfileNameBox.GetValue<string>() + ".json"))
+                        {
+                            Console.WriteLine("Dont be a retard. file is missing");
+                            return;
+                        }
+
+                        var TempList = LibJson.Deserialize<List<Vector3>>(
+                            LuaBox.Instance.ReadFile(DataBaseProfileFolder + UIData.ProfileNameBox.GetValue<string>() + ".json")
+                        );
+
+
+                        ManualScanLocations.Clear();
+
+                        foreach(var point in TempList)
+                        {
+                            ManualScanLocations.Add(new Vector3(point.X, point.Y, point.Z));
+                        }
+
+                        Console.WriteLine("Restored: " + ManualScanLocations.Count + " points");
+                    });
+                    _StdUI.GlueTop(UIData.ProfileLoadButton, UIData.MainUIFrame, -140, -550, "TOP");
                 }
 
                 _StdUI.GlueTop(UIData.MapIdText, UIData.MainUIFrame, 75, -50, "TOP");
@@ -248,6 +299,7 @@ namespace Wrapper
                     if (UIData.HunterScanMode != null
                         && UIData.HunterScanMode.GetValue<bool>())
                     {
+                       
                         HandleHunterLogic();
                     }
 
@@ -404,9 +456,9 @@ namespace Wrapper
             } 
             else
             {
-                if(ManualScanLocations.Count < CastIndex)
+                if(ManualScanLocations.Count <= CastIndex)
                 {
-                    CastIndex = 1;
+                    CastIndex = 0;
                     Console.WriteLine("Completed Map Scan. Reset");
                 }
 

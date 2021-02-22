@@ -29,9 +29,13 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             var Distance = Vector3.Distance(Task.TargetUnitOrObject.Position,
                 ObjectManager.Instance.Player.Position);
 
+            var TaskUnit = Task.TargetUnitOrObject as WoWUnit;
+            TaskUnit.PlayerHasFought = true;
+
             if (Distance > 5)
             {
-                Console.WriteLine($"Getting Closer: {Distance} TaskLocation: {Task.TargetUnitOrObject.Position} Player: {ObjectManager.Instance.Player.Position}");
+                BroBotAPI.BroBotDebugMessage("NativeKillTask",
+                        $"Getting Closer: {Distance} TaskLocation: {Task.TargetUnitOrObject.Position} Player: {ObjectManager.Instance.Player.Position}");
                 LuaBox.Instance.Navigator.MoveTo(
                     Task.TargetUnitOrObject.Position.X, 
                     Task.TargetUnitOrObject.Position.Y,
@@ -39,6 +43,15 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 return;
             }
 
+            /* 
+            [[
+                    local xy = AngleTo("Player", "Target")
+                    LB.SetPlayerAngles(xy)
+            ]] 
+            */
+
+
+            LuaBox.Instance.Navigator.Stop();
             LuaBox.Instance.ObjectInteract(Task.TargetUnitOrObject.GUID);
             HasLooted = true;
 

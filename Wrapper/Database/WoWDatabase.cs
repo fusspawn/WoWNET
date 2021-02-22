@@ -43,9 +43,9 @@ namespace Wrapper.Database
             var IsVendor = LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Vendor);
             var IsInnKeeper = LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Innkeeper);
             var IsFlightmaster = LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.FlightMaster);
-            var IsMailBox = LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Mailbox);
+            var IsMailBox = false; //LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Mailbox);
 
-            if ((!IsRepair && !IsVendor && !IsInnKeeper && !IsFlightmaster)
+            if ((!IsRepair && !IsVendor && !IsInnKeeper && !IsFlightmaster && !IsMailBox)
                 || WoWAPI.GetUnitSpeed(Unit.GUID) > 1
                 || BannedObjectIDs.Contains(Unit.ObjectId))
             // Dont record moving NPCS. Itll ruin shit.
@@ -441,5 +441,7 @@ namespace Wrapper.Database
             var Herbs = MapDb.Nodes.Where(x => x.NodeType == NodeType.Ore).ToList();
             return Herbs;
         }
+
+
     }
 }

@@ -18,14 +18,21 @@ namespace Wrapper.API
         public static extern void registerBehavior(string Name, object Behavior);
 
         /// <summary>
-        ///   @CSharpLua.Template = (BroBot.Engine.BlackList.BannedGUIDS[{0}] ~= nil)"
+        ///   @CSharpLua.Template = (BroBot.Engine.BlackList.BannedGUIDs[{0}] ~= nil)"
         /// </summary>
         public static extern bool UnitIsOnBlackList(string GUID);
 
         /// <summary>
-        ///   @CSharpLua.Template = BroBot.Engine.Blacklist:RegisterUnitInstance({0}, {1})"
+        ///   @CSharpLua.Template = BroBot.Engine.BlackList:RegisterUnitInstance({0}, {1})"
         /// </summary>
         public static extern void RegisterOnBlackList(string GUID, double seconds);
+
+
+
+        /// <summary>
+        ///   @CSharpLua.Template = subtaskframe:SetText("[" .. {0} .. "]" .. {1})"
+        /// </summary>
+        public static extern void BroBotDebugMessage(string Task, string Message);
     }
 
 

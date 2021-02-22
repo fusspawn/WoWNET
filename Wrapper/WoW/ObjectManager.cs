@@ -16,7 +16,7 @@ namespace Wrapper.WoW
                 if (_instance == null)
                 {
                     _instance = new ObjectManager();
-                    _instance.Player = new WoWPlayer("player");
+                    _instance.Player = new LocalPlayer();
                 }
 
                 return _instance;
@@ -24,7 +24,7 @@ namespace Wrapper.WoW
         }
 
         public Dictionary<string, WoWGameObject> AllObjects = new Dictionary<string, WoWGameObject>();
-        public WoWPlayer Player;
+        public LocalPlayer Player;
 
         public delegate void OnNewUnitDelegate(WoWUnit Unit);
         public OnNewUnitDelegate OnNewUnit;
@@ -40,14 +40,12 @@ namespace Wrapper.WoW
             {
                 Player.Update();
 
-
                 foreach (var GUID in LuaBox.Instance.GetObjects(500))
                 {
                     if (!this.AllObjects.ContainsKey(GUID)
                         && LuaBox.Instance.ObjectName(GUID) != "Unknown")
                     {
                         this.AllObjects[GUID] = CreateWowObject(GUID);
-
                         switch (AllObjects[GUID].ObjectType)
                         {
                             case LuaBox.EObjectType.Unit:
@@ -67,9 +65,7 @@ namespace Wrapper.WoW
                     }
                 }
 
-
                 var RemovalList = new List<string>();
-
                 foreach (var kvp in this.AllObjects)
                 {
                     if (!LuaBox.Instance.ObjectExists(kvp.Key))
@@ -84,10 +80,8 @@ namespace Wrapper.WoW
 
                 RemovalList.ForEach((item) =>
                 {
-                        //Console.WriteLine($"Removed Object From OM: {item}");
                         AllObjects.Remove(item);
                 });
-
             } 
             catch(Exception E)
             {
@@ -114,7 +108,7 @@ namespace Wrapper.WoW
             return ObjectManager.Instance.AllObjects.Values.Where(x =>
                 x.ObjectType == LuaBox.EObjectType.Player
                 && Vector3.Distance(x.Position, Instance.Player.Position) <= Yards)
-                .Select(x => x as WoWPlayer);
+                    .Select(x => x as WoWPlayer);
         }
     }
 }
