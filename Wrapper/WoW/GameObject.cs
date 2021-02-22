@@ -26,7 +26,6 @@ namespace Wrapper.WoW
                 {
                     WasHerb = GatherableTypes.HerbNames.Any(x => x == this.Name);
                 }
-
                 return WasHerb.Value;
             }
 

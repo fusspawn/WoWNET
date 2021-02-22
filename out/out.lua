@@ -25367,7 +25367,6 @@ System.namespace("Wrapper.WoW", function (namespace)
           return x == this.Name
         end)
       end
-
       return System.Nullable.Value(this.WasHerb)
     end
     getIsOre = function (this)
