@@ -12,7 +12,6 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
     public class NativeGrindSearchForNode
         : StateMachineState
     {
-
         private NativeGrindSmartObjective ObjectiveScanner;
         private NodeLocationInfo TargetNode;
 

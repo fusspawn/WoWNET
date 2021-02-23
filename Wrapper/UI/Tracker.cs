@@ -11,6 +11,7 @@ namespace Wrapper.UI
     public class Tracker :
         BotBase
     {
+
         StdUI _StdUI;
         public StdUiFrame MainUIFrame;
         public StdUiLabel TaskLabel;
