@@ -43,11 +43,6 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
             HasMaxStateTime = true;
         }
 
-        public virtual string StringRepr()
-        {
-            return "StateMachineState";
-        }
-
         public virtual bool Complete() { return true; }
         public virtual void Tick()
         { 
