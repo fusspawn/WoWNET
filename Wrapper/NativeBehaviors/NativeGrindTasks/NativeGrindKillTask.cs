@@ -68,6 +68,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 end
                 ]]*/
 
+                _StringRepr = "Killing mob: " + Task.TargetUnitOrObject.Name + " has fought: " + (Task.TargetUnitOrObject as WoWUnit).PlayerHasFought;
                 LuaBox.Instance.Navigator.Stop();
                 LuaBox.Instance.UnitTarget(Task.TargetUnitOrObject.GUID);
                 WoWAPI.StartAttack();
