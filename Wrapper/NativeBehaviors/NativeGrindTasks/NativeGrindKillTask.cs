@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Wrapper.API;
+using Wrapper.Helpers;
 using Wrapper.WoW;
 
 namespace Wrapper.NativeBehaviors.NativeGrindTasks
@@ -40,14 +41,13 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
         {
           
             Console.WriteLine("In Combat Task");
-
             var Distance = Vector3.Distance(Task.TargetUnitOrObject.Position,
                 ObjectManager.Instance.Player.Position);
-
-            var CombatRange = BroBotAPI.GetPlayersRange();
+            var BroBotExists = LuaHelper.GetGlobalFrom_G<object>("BroBot") != null;
+            var CombatRange = BroBotExists ? BroBotAPI.GetPlayersRange() : 5;
                 /*
                   [[
-                   -- local xy = AngleTo("Target", "Player")
+                    --local xy = AngleTo("Target", "Player")
                     --__LB__.SetPlayerAngles(xy)
                  ]] 
                  */
@@ -62,10 +62,10 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             else
             {
                 /*
-                 [[
-                 if IsMounted() then
-                    Dismount()
-                end
+                [[
+                     if IsMounted() then
+                        Dismount()
+                     end
                 ]]*/
 
                 _StringRepr = "Killing mob: " + Task.TargetUnitOrObject.Name + " has fought: " + (Task.TargetUnitOrObject as WoWUnit).PlayerHasFought;

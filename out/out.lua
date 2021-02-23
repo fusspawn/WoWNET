@@ -17796,13 +17796,9 @@ System.namespace("Wrapper", function (namespace)
         _StdUI:GlueTop(class.UIData.NativeGrindEnabledCheckBox, class.UIData.MainUIFrame, 75, - 290, "TOP")
 
         C_Timer.NewTicker(0.25, function ()
-          if not IsHunter then
-            return
-          end
-
           class.UIData.NumberOfManualScanNodes:SetText("Manual Scan Nodes Count: " .. #this.ManualScanLocations)
 
-          if class.UIData.HunterScanMode ~= nil and class.UIData.HunterScanMode:GetValue(System.Boolean) then
+          if class.UIData.HunterScanMode ~= nil and class.UIData.HunterScanMode:GetValue(System.Boolean) and IsHunter then
             HandleHunterLogic(this)
           end
 
@@ -26680,10 +26676,9 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
     end
     Tick = function (this)
       System.Console.WriteLine("In Combat Task")
-
       local Distance = WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)
-
-      local CombatRange = GetPlayersRange()
+      local BroBotExists = _G["BroBot"] ~= nil
+      local CombatRange = BroBotExists and GetPlayersRange() or 5
       -- local xy = AngleTo("Target", "Player")
        --__LB__.SetPlayerAngles(xy)
 
@@ -26697,6 +26692,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
            Dismount()
                         end
 
+        this._StringRepr = "Killing mob: " .. System.toString(this.Task.TargetUnitOrObject.Name) .. " has fought: " .. System.toString((System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)).PlayerHasFought)
         __LB__.Navigator.Stop()
          __LB__.UnitTarget(this.Task.TargetUnitOrObject.GUID)
         StartAttack()
