@@ -40,7 +40,7 @@ namespace Wrapper.WoW
             {
                 Player.Update();
 
-                foreach (var GUID in LuaBox.Instance.GetObjects(500))
+                foreach (var GUID in LuaBox.Instance.GetObjects(9999999))
                 {
                     if (!this.AllObjects.ContainsKey(GUID)
                         && LuaBox.Instance.ObjectName(GUID) != "Unknown")

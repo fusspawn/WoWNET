@@ -17802,9 +17802,12 @@ System.namespace("Wrapper", function (namespace)
           class.UIData.NumberOfFlightMasters:SetText("FlightMasters: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).FlightMaster)
           class.UIData.NumberOfMailBoxes:SetText("MailBoxes: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).MailBoxes)
           class.UIData.NumberOfInnKeepers:SetText("InnKeepers: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).InnKeepers)
-          class.UIData.NumberOfManualScanNodes:SetText("Manual Scan Nodes Count: " .. #this.ManualScanLocations)
 
           --Console.WriteLine("New Ticker");
+
+          if IsHunter then
+            class.UIData.NumberOfManualScanNodes:SetText("Manual Scan Nodes Count: " .. #this.ManualScanLocations)
+          end
 
           if class.UIData.HunterScanMode ~= nil and class.UIData.HunterScanMode:GetValue(System.Boolean) then
             HandleHunterLogic(this)
@@ -24575,8 +24578,8 @@ System.namespace("Wrapper.Database", function (namespace)
       local MapId =  __LB__.GetMapId()
       local IsRepair =  __LB__.UnitHasNpcFlag(Unit.GUID, 4096 --[[ENpcFlags.Repair]])
       local IsVendor =  __LB__.UnitHasNpcFlag(Unit.GUID, 128 --[[ENpcFlags.Vendor]])
-      local IsInnKeeper =  __LB__.UnitHasNpcFlag(Unit.GUID, 65536 --[[ENpcFlags.Innkeeper]])
-      local IsFlightmaster =  __LB__.UnitHasNpcFlag(Unit.GUID, 8192 --[[ENpcFlags.FlightMaster]])
+      local IsInnKeeper = false
+      local IsFlightmaster = false
       local IsMailBox = false
       --LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Mailbox);
 
@@ -24935,6 +24938,20 @@ System.namespace("Wrapper.Database", function (namespace)
       static = static
     }
     return class
+  end)
+end)
+
+end
+do
+local System = System
+System.namespace("Wrapper.Helpers", function (namespace)
+  namespace.class("FileLogger", function (namespace)
+    local WriteLine
+    WriteLine = function (this)
+    end
+    return {
+      WriteLine = WriteLine
+    }
   end)
 end)
 
@@ -25612,7 +25629,7 @@ System.namespace("Wrapper.WoW", function (namespace)
       System.try(function ()
         this.Player:Update()
 
-        for _, GUID in System.each(__LB__.GetObjects(500)) do
+        for _, GUID in System.each(__LB__.GetObjects(9999999)) do
           if not this.AllObjects:ContainsKey(GUID) and __LB__.ObjectName(GUID) ~= "Unknown" then
             this.AllObjects:set(GUID, CreateWowObject(this, GUID))
             repeat
@@ -26722,6 +26739,7 @@ System.init({
     "Wrapper.Database.VendorLocationInfo",
     "Wrapper.Database.WoWDatabase",
     "Wrapper.DataLoggerBase.DataLoggerBaseUI",
+    "Wrapper.Helpers.FileLogger",
     "Wrapper.Helpers.LuaHelper",
     "Wrapper.Helpers.ScoredWowPlayer",
     "Wrapper.Helpers.SmartMovePVP",
