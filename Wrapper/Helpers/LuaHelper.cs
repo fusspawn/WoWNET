@@ -28,12 +28,12 @@ namespace Wrapper.Helpers
         {
 
             var CurrentObject = LuaHelper.GetGlobalFrom_G<object>(PropertyChain[0]);
-            Console.WriteLine("Aquired Global Object: " + PropertyChain[0]);
+            //Console.WriteLine("Aquired Global Object: " + PropertyChain[0]);
             int Index = 1;
 
             while (Index < PropertyChain.Length)
             {
-                Console.WriteLine("Trying To Access Property: " + PropertyChain[Index]);
+                //Console.WriteLine("Trying To Access Property: " + PropertyChain[Index]);
                 var NameValue = PropertyChain[Index];
                 /*
                  [[

@@ -43,10 +43,15 @@ namespace Wrapper.NativeBehaviors
             StateMachine.States.Push(new NativeGrindBaseState());
         }
 
+        public double LastRun = WoWAPI.GetTime();
         public void Run() {
-            
-            //ObjectManager.Instance.Pulse();
-            StateMachine.Run();
+
+            if (WoWAPI.GetTime() - LastRun > 0.5)
+            {
+                LastRun = WoWAPI.GetTime();
+                //ObjectManager.Instance.Pulse();
+                StateMachine.Run();
+            }
         }
 
         public bool Exit() { return false; }

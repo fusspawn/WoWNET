@@ -186,7 +186,7 @@ namespace Wrapper
 
                 _StdUI.GlueTop(UIData.ScanCurrentArea, UIData.MainUIFrame, -140, -230, "TOP");
 
-            
+
 
                 if (IsHunter)
                 {
@@ -209,10 +209,10 @@ namespace Wrapper
                     _StdUI.AddLabel(UIData.MainUIFrame, UIData.HunterScanGridMaxHorizontalRangeBeforeReset, "Hunter Scan Max Horizontal Range", "TOP", null);
 
 
-                   UIData.NumberOfManualScanNodes = _StdUI.Label(UIData.MainUIFrame, "Manual Scan Nodes Count: " + ManualScanLocations.Count, 12, null, 150, 25);
+                    UIData.NumberOfManualScanNodes = _StdUI.Label(UIData.MainUIFrame, "Manual Scan Nodes Count: " + ManualScanLocations.Count, 12, null, 150, 25);
                     _StdUI.GlueTop(UIData.NumberOfManualScanNodes, UIData.MainUIFrame, -140, -430, "TOP");
 
-                   
+
                     UIData.ResetManualScanNodes = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Reset Manual Scan Nodes");
                     UIData.ResetManualScanNodes.SetScript<Action>("OnClick", () =>
                     {
@@ -245,7 +245,7 @@ namespace Wrapper
                     UIData.ProfileLoadButton = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Load Profile");
                     UIData.ProfileLoadButton.SetScript<Action>("OnClick", () =>
                     {
-                        if(!LuaBox.Instance.FileExists(DataBaseProfileFolder + UIData.ProfileNameBox.GetValue<string>() + ".json"))
+                        if (!LuaBox.Instance.FileExists(DataBaseProfileFolder + UIData.ProfileNameBox.GetValue<string>() + ".json"))
                         {
                             Console.WriteLine("Dont be a retard. file is missing");
                             return;
@@ -258,13 +258,14 @@ namespace Wrapper
 
                         ManualScanLocations.Clear();
 
-                        foreach(var point in TempList)
+                        foreach (var point in TempList)
                         {
                             ManualScanLocations.Add(new Vector3(point.X, point.Y, point.Z));
                         }
 
                         Console.WriteLine("Restored: " + ManualScanLocations.Count + " points");
                     });
+
                     _StdUI.GlueTop(UIData.ProfileLoadButton, UIData.MainUIFrame, -140, -550, "TOP");
                 }
 
@@ -282,6 +283,21 @@ namespace Wrapper
 
                 WoWAPI.NewTicker(() =>
                 {
+                    if (!IsHunter)
+                        return;
+
+                    UIData.NumberOfManualScanNodes.SetText("Manual Scan Nodes Count: " + ManualScanLocations.Count);
+                  
+                    if (UIData.HunterScanMode != null
+                        && UIData.HunterScanMode.GetValue<bool>())
+                    {
+                        HandleHunterLogic();
+                    }
+
+                }, 0.25f);
+
+                WoWAPI.NewTicker(() =>
+                {
                     var colorstring = WoWDatabase.HasDirtyMaps ? "|cFFFF0000" : "|cFF00FF00";
                     UIData.NeedsSaveText.SetText("Needs To Save: " + colorstring + WoWDatabase.HasDirtyMaps);
                     UIData.MapIdText.SetText("MapId: " + LuaBox.Instance.GetMapId());
@@ -292,22 +308,11 @@ namespace Wrapper
                     UIData.NumberOfFlightMasters.SetText("FlightMasters: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).FlightMaster.Count);
                     UIData.NumberOfMailBoxes.SetText("MailBoxes: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).MailBoxes.Count);
                     UIData.NumberOfInnKeepers.SetText("InnKeepers: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).InnKeepers.Count);
+                }, 2f);
 
-                    //Console.WriteLine("New Ticker");
-
-                    if(IsHunter)
-                    {
-                        UIData.NumberOfManualScanNodes.SetText("Manual Scan Nodes Count: " + ManualScanLocations.Count);
-                    }
-
-                    if (UIData.HunterScanMode != null
-                        && UIData.HunterScanMode.GetValue<bool>())
-                    {
-                        HandleHunterLogic();
-                    }
-
+                WoWAPI.NewTicker(() =>
+                {
                     HandleMapClicks();
-
                 }, 0);
 
 

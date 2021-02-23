@@ -6,11 +6,12 @@ using Wrapper.WoW;
 
 namespace Wrapper.NativeBehaviors.NativeGrindTasks
 {
-    public class NativeGrindKillTask 
+    public class NativeGrindLootTask 
         : BehaviorStateMachine.StateMachineState {
         private NativeGrindSmartObjective.SmartObjectiveTask Task;
+        private bool HasLooted;
 
-        public NativeGrindKillTask(NativeGrindSmartObjective.SmartObjectiveTask Task)
+        public NativeGrindLootTask(NativeGrindSmartObjective.SmartObjectiveTask Task)
         {
             this.Task = Task;
             SetMaxStateTime(120);
@@ -18,39 +19,41 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
         public override bool Complete()
         {
+            if (WoWAPI.UnitIsDeadOrGhost("player"))
+                return true;
             return (!LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)
-                || WoWAPI.UnitIsDeadOrGhost(Task.TargetUnitOrObject.GUID)
-                || !WoWAPI.UnitAffectingCombat("player") || IsOutOfTime()); 
+                || HasLooted
+                || WoWAPI.UnitAffectingCombat("player") || IsOutOfTime());
         }
 
         public override void Tick()
         {
-            Console.WriteLine("In Combat Task");
-
             var Distance = Vector3.Distance(Task.TargetUnitOrObject.Position,
                 ObjectManager.Instance.Player.Position);
 
-            var CombatRange = 5f;
-            /*
-            [[
-                print("todo wrapthis")
-                CombatRange = GetPlayersRange()
-            ]]
-            */
+            var TaskUnit = Task.TargetUnitOrObject as WoWUnit;
+            TaskUnit.PlayerHasFought = true;
 
-            if (Distance > CombatRange)
+            if (Distance > 5)
             {
-                BroBotAPI.BroBotDebugMessage("NativeKillTask", $"Getting Closer: {Distance} TaskLocation: {Task.TargetUnitOrObject.Position} Player: {ObjectManager.Instance.Player.Position}");
-                LuaBox.Instance.Navigator.MoveTo(Task.TargetUnitOrObject.Position.X, Task.TargetUnitOrObject.Position.Y, Task.
-                    TargetUnitOrObject.Position.Z);
+                BroBotAPI.BroBotDebugMessage("NativeKillTask",
+                        $"Getting Closer: {Distance} TaskLocation: {Task.TargetUnitOrObject.Position} Player: {ObjectManager.Instance.Player.Position}");
+                LuaBox.Instance.Navigator.MoveTo(
+                    Task.TargetUnitOrObject.Position.X, 
+                    Task.TargetUnitOrObject.Position.Y,
+                    Task.TargetUnitOrObject.Position.Z);
                 return;
             }
 
+     
 
             LuaBox.Instance.Navigator.Stop();
-            LuaBox.Instance.UnitTarget(Task.TargetUnitOrObject.GUID);
-            WoWAPI.StartAttack();
+            LuaBox.Instance.ObjectInteract(Task.TargetUnitOrObject.GUID);
+            HasLooted = true;
 
+            WoWAPI.After(() => {
+                BroBotAPI.RegisterOnBlackList(Task.TargetUnitOrObject.GUID, 120);
+            }, 3f);
             base.Tick();
         }
     }

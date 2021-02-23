@@ -19,7 +19,6 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
                     States.Peek().ResetMaxStateTime();
                 }
 
-
                 States.Peek().Tick();
             }
         }
