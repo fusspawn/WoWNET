@@ -12,7 +12,7 @@ namespace Wrapper.NativeBehaviors
     public class NativeGrindBaseState
         : StateMachineState
     {
-        private NativeGrindSmartObjective SmartObjective
+        public static NativeGrindSmartObjective SmartObjective
             = new NativeGrindSmartObjective();
 
         public override bool Complete()

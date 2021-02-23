@@ -37,6 +37,7 @@ namespace Wrapper.Helpers
 
             if (Role == "HEALER")
             {
+
                 FriendlyScore = 5;
                 HostileScore = 2;
             }

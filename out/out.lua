@@ -18131,9 +18131,10 @@ System.import(function (out)
 end)
 System.namespace("Wrapper", function (namespace)
   namespace.class("Program", function (namespace)
-    local Base, ThrowWowErrors, Main, static
+    local Base, ThrowWowErrors, Main, class, static
     static = function (this)
       Base = Wrapper.DataLoggerBase()
+      this.Tracker = WrapperUI.Tracker()
     end
     ThrowWowErrors = false
     Main = function (args)
@@ -18147,11 +18148,12 @@ System.namespace("Wrapper", function (namespace)
       WrapperWoW.ObjectManager.getInstance():Pulse()
 
       System.Console.WriteLine("Pulsed OM Complete")
-      C_Timer.NewTicker(0.1, function ()
+      C_Timer.NewTicker(0.2, function ()
         if not ThrowWowErrors then
           System.try(function ()
             WrapperWoW.ObjectManager.getInstance():Pulse()
             Base:Pulse()
+            class.Tracker:Pulse()
             --Console.WriteLine("New Ticker");
           end, function (default)
             local E = default
@@ -18161,6 +18163,7 @@ System.namespace("Wrapper", function (namespace)
         else
           WrapperWoW.ObjectManager.getInstance():Pulse()
           Base:Pulse()
+          class.Tracker:Pulse()
         end
       end)
 
@@ -18184,10 +18187,11 @@ System.namespace("Wrapper", function (namespace)
         System.Console.WriteLine("Registered Native Behaviors")
       end)
     end
-    return {
+    class = {
       Main = Main,
       static = static
     }
+    return class
   end)
 end)
 
@@ -25240,8 +25244,8 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.NativeBehaviors", function (namespace)
   namespace.class("NativeGrindBaseState", function (namespace)
-    local Complete, Tick, __ctor__
-    __ctor__ = function (this)
+    local Complete, Tick, class, static
+    static = function (this)
       this.SmartObjective = WrapperNativeBehaviors.NativeGrindSmartObjective()
     end
     Complete = function (this)
@@ -25255,8 +25259,8 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
       end
 
 
-      this.SmartObjective:Update()
-      local NextObjective = this.SmartObjective:GetNextTask()
+      class.SmartObjective:Update()
+      local NextObjective = class.SmartObjective:GetNextTask()
 
       if NextObjective ~= nil then
         repeat
@@ -25273,12 +25277,12 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
           end
         until 1
       else
-        WrapperNativeBehaviors.NativeGrind.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindSearchForNode(this.SmartObjective))
+        WrapperNativeBehaviors.NativeGrind.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindSearchForNode(class.SmartObjective))
       end
 
       System.base(this).Tick(this)
     end
-    return {
+    class = {
       base = function (out)
         return {
           out.Wrapper.NativeBehaviors.BehaviorStateMachine.StateMachineState
@@ -25286,8 +25290,9 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
       end,
       Complete = Complete,
       Tick = Tick,
-      __ctor__ = __ctor__
+      static = static
     }
+    return class
   end)
 
 
@@ -25399,6 +25404,7 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
         end
       end
 
+
       for _, Unit in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
         return x.Value.ObjectType == 5 --[[EObjectType.Unit]] and x.Value.ObjectType ~= 6 --[[EObjectType.Player]]
       end), function (x)
@@ -25487,6 +25493,45 @@ end)
 end
 do
 local System = System
+System.namespace("Wrapper.UI", function (namespace)
+  namespace.class("Tracker", function (namespace)
+    local Pulse, UpdateStack
+    Pulse = function (this)
+      if this.MainUIFrame == nil then
+        this._StdUI = LibStub("StdUi"):NewInstance()
+        this.MainUIFrame = this._StdUI:Window(_G["UIParent"], 500, 600, "BroBot Tracker")
+        this.MainUIFrame:SetPoint("CENTER", 0, 0)
+        this.MainUIFrame:Show()
+
+        this.TaskLabel = this._StdUI:Label(this.MainUIFrame, "", 12, nil, 500, 25)
+        this._StdUI:GlueTop(this.TaskLabel, this.MainUIFrame, 0, - 50, "TOP")
+
+        this.StateStack = this._StdUI:Label(this.MainUIFrame, "", 12, nil, 500, 300)
+        this._StdUI:GlueTop(this.StateStack, this.MainUIFrame, 0, - 100, "TOP")
+      end
+    end
+    UpdateStack = function (this, States)
+      local returnstring = ""
+      for _, state in System.each(States) do
+        returnstring = System.toString(returnstring) .. (System.toString(state:StringRepr()) .. "\n")
+      end
+      this.StateStack:SetText(returnstring)
+    end
+    return {
+      base = function (out)
+        return {
+          out.Wrapper.BotBase
+        }
+      end,
+      Pulse = Pulse,
+      UpdateStack = UpdateStack
+    }
+  end)
+end)
+
+end
+do
+local System = System
 local Linq = System.Linq.Enumerable
 local WrapperAPI
 local WrapperDatabase
@@ -25514,7 +25559,6 @@ System.namespace("Wrapper.WoW", function (namespace)
           return x == this.Name
         end)
       end
-
       return System.Nullable.Value(this.WasHerb)
     end
     getIsOre = function (this)
@@ -26102,13 +26146,13 @@ System.namespace("Wrapper.WoW", function (namespace)
     ToString = function (this)
       local sb = System.StringBuilder()
       sb:Append("{X:")
-      sb:Append(this.X)
+      sb:Append(System.ToInt32(this.X))
       sb:Append(" Y:")
-      sb:Append(this.Y)
+      sb:Append(System.ToInt32(this.Y))
       sb:Append(" Z:")
-      sb:Append(this.Z)
+      sb:Append(System.ToInt32(this.Z))
       sb:Append(" Distance From Player: ")
-      sb:Append(Distance(this, WrapperWoW.ObjectManager.getInstance().Player.Position))
+      sb:Append(System.ToInt32(Distance(this, WrapperWoW.ObjectManager.getInstance().Player.Position)))
       sb:Append("}")
       return sb:ToString()
     end
@@ -26390,9 +26434,11 @@ end)
 end
 do
 local System = System
+local Wrapper
 local BehaviorStateMachine
 local StackStateMachineState
 System.import(function (out)
+  Wrapper = out.Wrapper
   BehaviorStateMachine = Wrapper.NativeBehaviors.BehaviorStateMachine
   StackStateMachineState = System.Stack(BehaviorStateMachine.StateMachineState)
 end)
@@ -26409,6 +26455,8 @@ System.namespace("Wrapper.NativeBehaviors.BehaviorStateMachine", function (names
           this.States:Peek():ResetMaxStateTime()
         end
 
+        Wrapper.Program.Tracker.TaskLabel:SetText(this.States:Peek():StringRepr())
+        Wrapper.Program.Tracker:UpdateStack(this.States)
         this.States:Peek():Tick()
       end
     end
@@ -26424,7 +26472,7 @@ do
 local System = System
 System.namespace("Wrapper.NativeBehaviors.BehaviorStateMachine", function (namespace)
   namespace.class("StateMachineState", function (namespace)
-    local ResetMaxStateTime, IsOutOfTime, SetMaxStateTime, StringRepr, Complete, Tick
+    local ResetMaxStateTime, IsOutOfTime, StringRepr, SetMaxStateTime, Complete, Tick
     ResetMaxStateTime = function (this)
       this.EntryTime = GetTime()
     end
@@ -26440,12 +26488,12 @@ System.namespace("Wrapper.NativeBehaviors.BehaviorStateMachine", function (names
       --Console.WriteLine($"Out Of time Data: Current: {WoWAPI.GetTime()}   Entry: {EntryTime} Max: {MaxStateTime}");
       return GetTime() - this.EntryTime > this.MaxStateTime
     end
+    StringRepr = function (this)
+      return System.toString(System.ObjectGetType(this):getName()) .. ": " .. System.toString(this._StringRepr)
+    end
     SetMaxStateTime = function (this, Seconds)
       this.MaxStateTime = Seconds
       this.HasMaxStateTime = true
-    end
-    StringRepr = function (this)
-      return "StateMachineState"
     end
     Complete = function (this)
       return true
@@ -26459,10 +26507,11 @@ System.namespace("Wrapper.NativeBehaviors.BehaviorStateMachine", function (names
       EntryTime = 0,
       MaxStateTime = 0,
       HasMaxStateTime = false,
+      _StringRepr = "",
       ResetMaxStateTime = ResetMaxStateTime,
       IsOutOfTime = IsOutOfTime,
-      SetMaxStateTime = SetMaxStateTime,
       StringRepr = StringRepr,
+      SetMaxStateTime = SetMaxStateTime,
       Complete = Complete,
       Tick = Tick
     }
@@ -26548,12 +26597,12 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
 
       if Distance > 5 then
-        subtaskframe:SetText("[" .. "NativeGatherTask" .. "]" .. "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString())
+        this._StringRepr = "NativeGatherTask Getting Closer: " .. System.ToInt32(Distance) .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString()
         __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 1)
         return
       end
 
-      subtaskframe:SetText("[" .. "NativeGatherTask" .. "]" .. "Interacting")
+      this._StringRepr = "Interacting"
 
       __LB__.Navigator.Stop()
 
@@ -26586,8 +26635,10 @@ end)
 end
 do
 local System = System
+local WrapperNativeBehaviors
 local WrapperWoW
 System.import(function (out)
+  WrapperNativeBehaviors = Wrapper.NativeBehaviors
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace)
@@ -26601,6 +26652,14 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
         return true
       end
+
+      WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:Update()
+      if WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:GetNextTask() ~= this.Task then
+        return true
+      end
+
+
+
       return (not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) or __LB__.UnitTagHandler(UnitIsDeadOrGhost, this.Task.TargetUnitOrObject.GUID) or this:IsOutOfTime())
     end
     Tick = function (this)
@@ -26621,6 +26680,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
         if IsMounted() then
            Dismount()
                         end
+
         __LB__.Navigator.Stop()
          __LB__.UnitTarget(this.Task.TargetUnitOrObject.GUID)
         StartAttack()
@@ -26668,7 +26728,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       TaskUnit.PlayerHasFought = true
 
       if Distance > 5 then
-        subtaskframe:SetText("[" .. "NativeKillTask" .. "]" .. "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString())
+        this._StringRepr = "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString()
         __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 1)
         return
       end
@@ -26725,7 +26785,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
     end
     Tick = function (this)
       this.ObjectiveScanner:Update()
-
+      this._StringRepr = "Searching for new node"
       if this.TargetNode == nil then
         local AllowGather = WrapperHelpers.LuaHelper.GetGlobalFrom_G_Namespace(ArrayString("BroBot", "UI", "CoreConfig", "PersistentData", "AllowGathering"), System.Boolean)
 
@@ -26739,16 +26799,14 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
         if #AllNodes > 0 then
           this.TargetNode = AllNodes:get(System.Random():Next(0, #AllNodes - 1))
-          System.Console.WriteLine("Found new Destination: " .. this.TargetNode.X .. " / " .. this.TargetNode.Y .. " / " .. this.TargetNode.Z)
+          this._StringRepr = "Moving to new destination: " .. System.ToInt32(this.TargetNode.X) .. " / " .. System.ToInt32(this.TargetNode.Y) .. " / " .. System.ToInt32(this.TargetNode.Z)
         else
           System.Console.WriteLine("Unable to find a valid node in the database? Has the map been scanned?!")
           return
         end
       end
 
-
-
-      subtaskframe:SetText("[" .. "RandomNodePositionFinder" .. "]" .. "Moving To TargetNode")
+      this._StringRepr = "Moving To TargetNode"
       __LB__.Navigator.MoveTo(this.TargetNode.X, this.TargetNode.Y, this.TargetNode.Z, 1, 1)
 
       if WrapperWoW.Vector3.Distance(WrapperWoW.Vector3(this.TargetNode.X, this.TargetNode.Y, this.TargetNode.Z), WrapperWoW.ObjectManager.getInstance().Player.Position) < 10 then
@@ -26847,6 +26905,7 @@ System.init({
     "Wrapper.StdUI.StdUiLabel",
     "Wrapper.StdUI.StdUiNumericInputFrame",
     "Wrapper.UI.NativeErrorLoggerUI.ErrorMessageData",
+    "Wrapper.UI.Tracker",
     "Wrapper.WoW.LocalPlayer",
     "Wrapper.WoW.ObjectManager",
     "Wrapper.WoW.Vector3"
