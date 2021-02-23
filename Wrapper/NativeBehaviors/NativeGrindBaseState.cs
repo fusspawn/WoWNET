@@ -4,6 +4,7 @@ using System.Linq;
 using Wrapper.API;
 using Wrapper.Helpers;
 using Wrapper.NativeBehaviors.BehaviorStateMachine;
+using Wrapper.NativeBehaviors.NativeGrindTasks;
 using Wrapper.WoW;
 
 namespace Wrapper.NativeBehaviors
@@ -21,6 +22,13 @@ namespace Wrapper.NativeBehaviors
 
         public override void Tick()
         {
+            if(WoWAPI.UnitIsDeadOrGhost("player") && (NativeGrind.StateMachine.States.Peek().GetType().Name 
+                != typeof(NativeGrindCorpseRunTask).Name))
+            {
+                NativeGrind.StateMachine.States.Push(new NativeGrindCorpseRunTask());
+                return;
+            }
+            
 
             SmartObjective.Update();
             var NextObjective = SmartObjective.GetNextTask();
@@ -85,7 +93,7 @@ namespace Wrapper.NativeBehaviors
         public void Update()
         {
 
-            ObjectManager.Instance.Pulse();
+            //ObjectManager.Instance.Pulse();
 
             var CurrentTime = WoWAPI.GetTime();
             if (CurrentTime - LastUpdateTime < 1)
@@ -113,7 +121,7 @@ namespace Wrapper.NativeBehaviors
 
                         if (score > 0)
                         {
-                            Console.WriteLine("Found Gathering Objective");
+                            //Console.WriteLine("Found Gathering Objective");
 
                             Tasks.Add(new SmartObjectiveTask()
                             {
@@ -124,7 +132,7 @@ namespace Wrapper.NativeBehaviors
                         }
                         else
                         {
-                            Console.WriteLine("Gathering Objective Was To Low Scored");
+                           // Console.WriteLine("Gathering Objective Was To Low Scored");
                         }
                     }
                 }
@@ -149,7 +157,7 @@ namespace Wrapper.NativeBehaviors
                         if (score > 0)
                         {
 
-                            Console.WriteLine("Found LootOrSkin Objective");
+                            //Console.WriteLine("Found LootOrSkin Objective");
 
                             Tasks.Add(new SmartObjectiveTask()
                             {
@@ -161,7 +169,7 @@ namespace Wrapper.NativeBehaviors
                         else
                         {
 
-                            Console.WriteLine("Potential LootOrSkin Objective was to low scored");
+                           // Console.WriteLine("Potential LootOrSkin Objective was to low scored");
                         }
                     }
                 }
@@ -188,7 +196,8 @@ namespace Wrapper.NativeBehaviors
 
                 if (score > 0)
                 {
-                    Console.WriteLine("Found Combat Objective");
+                    //Console.WriteLine("Found Combat Objective");
+                    
                     Tasks.Add(new SmartObjectiveTask()
                     {
                         Score = score,

@@ -23,6 +23,8 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
         public override bool Complete()
         {
+            if (WoWAPI.UnitIsDeadOrGhost("player"))
+                return true;
             return ObjectiveScanner.GetNextTask() != null
                 || WoWAPI.UnitAffectingCombat("player");
         }

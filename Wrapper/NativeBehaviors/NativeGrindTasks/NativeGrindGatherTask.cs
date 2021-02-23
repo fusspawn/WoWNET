@@ -18,13 +18,15 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
         public override bool Complete()
         {
-
+            if (WoWAPI.UnitIsDeadOrGhost("player"))
+                return true;
+/*
            Console.WriteLine("In Gather Complete");
            Console.WriteLine($"Object Exists: {LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)}");
            Console.WriteLine($"GatherAndNotCasting: {(HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling)}");
            Console.WriteLine($"InCombat: {WoWAPI.UnitAffectingCombat("player")}");
            Console.WriteLine($"Out Of Time: {IsOutOfTime()}");
-
+*/
             return (!LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID) 
                 && Vector3.Distance(Task.TargetUnitOrObject.Position, ObjectManager.Instance.Player.Position) < 300) // Some paths are really long. dont remove it unless you've been dragged really far away
                 || (HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling) 

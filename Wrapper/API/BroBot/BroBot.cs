@@ -33,6 +33,11 @@ namespace Wrapper.API
         ///   @CSharpLua.Template = subtaskframe:SetText("[" .. {0} .. "]" .. {1})"
         /// </summary>
         public static extern void BroBotDebugMessage(string Task, string Message);
+
+        /// <summary>
+        ///   @CSharpLua.Template = GetPlayersRange()"
+        /// </summary>
+        public static extern double GetPlayersRange();
     }
 
 

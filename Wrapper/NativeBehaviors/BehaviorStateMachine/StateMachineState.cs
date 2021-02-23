@@ -15,6 +15,9 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
             EntryTime = WoWAPI.GetTime();
         }
 
+
+
+
         public bool IsOutOfTime()
         {
             if (EntryTime == 0)
@@ -38,6 +41,11 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
         {
             MaxStateTime = Seconds;
             HasMaxStateTime = true;
+        }
+
+        public virtual string StringRepr()
+        {
+            return "StateMachineState";
         }
 
         public virtual bool Complete() { return true; }

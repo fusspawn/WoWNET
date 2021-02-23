@@ -33,6 +33,7 @@ namespace Wrapper.WoW
         public OnNewGameObjectDelegate OnNewGameObject;
 
         public List<WoWGameObject> Pendings = new List<WoWGameObject>();
+        public static int ObjectManagerScanRange = 500;
 
         public void Pulse()
         {
@@ -40,7 +41,7 @@ namespace Wrapper.WoW
             {
                 Player.Update();
 
-                foreach (var GUID in LuaBox.Instance.GetObjects(9999999))
+                foreach (var GUID in LuaBox.Instance.GetObjects(ObjectManagerScanRange))
                 {
                     if (!this.AllObjects.ContainsKey(GUID)
                         && LuaBox.Instance.ObjectName(GUID) != "Unknown")
