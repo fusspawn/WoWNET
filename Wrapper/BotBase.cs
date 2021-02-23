@@ -5,6 +5,7 @@ using System.Text;
 using Wrapper.API;
 using Wrapper.Database;
 using Wrapper.Helpers;
+using Wrapper.NativeBehaviors;
 using Wrapper.WoW;
 using static Wrapper.StdUI;
 using static Wrapper.StdUI.StdUiFrame;
@@ -57,6 +58,9 @@ namespace Wrapper
             public StdUiInputFrame ProfileNameBox;
             public StdUiButton ProfileSaveButton;
             public StdUiButton ProfileLoadButton;
+
+            //NativeGrind 
+            public StdUiCheckBox NativeGrindEnabledCheckBox;
         }
 
         public DataLoggerBase()
@@ -138,7 +142,7 @@ namespace Wrapper
                 #endregion
 
                 UIData = new DataLoggerBaseUI();
-                UIData.MainUIFrame = _StdUI.Window(LuaHelper.GetGlobalFrom_G<WoWFrame>("UIParent"), 500, IsHunter ? 600 : 400, "BroBot Data Logger");
+                UIData.MainUIFrame = _StdUI.Window(LuaHelper.GetGlobalFrom_G<WoWFrame>("UIParent"), 500, 600, "BroBot Data Logger");
                 UIData.MainUIFrame.SetPoint("CENTER", 0, 0);
                 UIData.MainUIFrame.Show();
 
@@ -213,61 +217,63 @@ namespace Wrapper
                     _StdUI.GlueTop(UIData.NumberOfManualScanNodes, UIData.MainUIFrame, -140, -430, "TOP");
 
 
-                    UIData.ResetManualScanNodes = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Reset Manual Scan Nodes");
-                    UIData.ResetManualScanNodes.SetScript<Action>("OnClick", () =>
-                    {
-                        ManualScanLocations.Clear();
-                    });
-
-                    _StdUI.GlueTop(UIData.ResetManualScanNodes, UIData.MainUIFrame, -140, -460, "TOP");
-
-
-
-                    UIData.ProfileNameBox = _StdUI.EditBox(UIData.MainUIFrame, 150, 25, "", null);
-                    _StdUI.AddLabel(UIData.MainUIFrame, UIData.ProfileNameBox, "Profile Name", "TOP", null);
-                    _StdUI.GlueTop(UIData.ProfileNameBox, UIData.MainUIFrame, -140, -490, "TOP");
-
-                    var DataBaseProfileFolder = $"{LuaBox.Instance.GetBaseDirectory()}\\BroBot\\Database\\Profiles\\";
-                    if (!LuaBox.Instance.DirectoryExists(DataBaseProfileFolder))
-                        LuaBox.Instance.CreateDirectory(DataBaseProfileFolder);
-
-
-                    UIData.ProfileSaveButton = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Save Profile");
-                    UIData.ProfileSaveButton.SetScript<Action>("OnClick", () =>
-                    {
-                        LuaBox.Instance.WriteFile(DataBaseProfileFolder + UIData.ProfileNameBox.GetValue<string>() + ".json", LibJson.Serialize(ManualScanLocations), false);
-                    });
-
-                    _StdUI.GlueTop(UIData.ProfileSaveButton, UIData.MainUIFrame, -140, -520, "TOP");
-
-
-
-                    UIData.ProfileLoadButton = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Load Profile");
-                    UIData.ProfileLoadButton.SetScript<Action>("OnClick", () =>
-                    {
-                        if (!LuaBox.Instance.FileExists(DataBaseProfileFolder + UIData.ProfileNameBox.GetValue<string>() + ".json"))
-                        {
-                            Console.WriteLine("Dont be a retard. file is missing");
-                            return;
-                        }
-
-                        var TempList = LibJson.Deserialize<List<Vector3>>(
-                            LuaBox.Instance.ReadFile(DataBaseProfileFolder + UIData.ProfileNameBox.GetValue<string>() + ".json")
-                        );
-
-
-                        ManualScanLocations.Clear();
-
-                        foreach (var point in TempList)
-                        {
-                            ManualScanLocations.Add(new Vector3(point.X, point.Y, point.Z));
-                        }
-
-                        Console.WriteLine("Restored: " + ManualScanLocations.Count + " points");
-                    });
-
-                    _StdUI.GlueTop(UIData.ProfileLoadButton, UIData.MainUIFrame, -140, -550, "TOP");
+                   
                 }
+
+                UIData.ResetManualScanNodes = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Reset Manual Scan Nodes");
+                UIData.ResetManualScanNodes.SetScript<Action>("OnClick", () =>
+                {
+                    ManualScanLocations.Clear();
+                });
+
+                _StdUI.GlueTop(UIData.ResetManualScanNodes, UIData.MainUIFrame, -140, -460, "TOP");
+
+                UIData.ProfileNameBox = _StdUI.EditBox(UIData.MainUIFrame, 150, 25, "", null);
+                _StdUI.AddLabel(UIData.MainUIFrame, UIData.ProfileNameBox, "Profile Name", "TOP", null);
+                _StdUI.GlueTop(UIData.ProfileNameBox, UIData.MainUIFrame, -140, -490, "TOP");
+
+                var DataBaseProfileFolder = $"{LuaBox.Instance.GetBaseDirectory()}\\BroBot\\Database\\Profiles\\";
+                if (!LuaBox.Instance.DirectoryExists(DataBaseProfileFolder))
+                    LuaBox.Instance.CreateDirectory(DataBaseProfileFolder);
+
+
+                UIData.ProfileSaveButton = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Save Profile");
+                UIData.ProfileSaveButton.SetScript<Action>("OnClick", () =>
+                {
+                    LuaBox.Instance.WriteFile(DataBaseProfileFolder + UIData.ProfileNameBox.GetValue<string>() + ".json", LibJson.Serialize(ManualScanLocations), false);
+                });
+
+                _StdUI.GlueTop(UIData.ProfileSaveButton, UIData.MainUIFrame, -140, -520, "TOP");
+
+
+
+                UIData.ProfileLoadButton = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Load Profile");
+                UIData.ProfileLoadButton.SetScript<Action>("OnClick", () =>
+                {
+                    if (!LuaBox.Instance.FileExists(DataBaseProfileFolder + UIData.ProfileNameBox.GetValue<string>() + ".json"))
+                    {
+                        Console.WriteLine("Dont be a retard. file is missing");
+                        return;
+                    }
+
+                    var TempList = LibJson.Deserialize<List<Vector3>>(
+                        LuaBox.Instance.ReadFile(DataBaseProfileFolder + UIData.ProfileNameBox.GetValue<string>() + ".json")
+                    );
+
+
+                    ManualScanLocations.Clear();
+
+                    foreach (var point in TempList)
+                    {
+                        ManualScanLocations.Add(new Vector3(point.X, point.Y, point.Z));
+                    }
+
+                    Console.WriteLine("Restored: " + ManualScanLocations.Count + " points");
+                });
+
+                _StdUI.GlueTop(UIData.ProfileLoadButton, UIData.MainUIFrame, -140, -550, "TOP");
+
+
 
                 _StdUI.GlueTop(UIData.MapIdText, UIData.MainUIFrame, 75, -50, "TOP");
                 _StdUI.GlueTop(UIData.NumberOfHerbsText, UIData.MainUIFrame, 75, -80, "TOP");
@@ -279,19 +285,24 @@ namespace Wrapper
                 _StdUI.GlueTop(UIData.NumberOfInnKeepers, UIData.MainUIFrame, 75, -230, "TOP");
                 _StdUI.GlueTop(UIData.NumberOfMailBoxes, UIData.MainUIFrame, 75, -260, "TOP");
 
-
+                UIData.NativeGrindEnabledCheckBox = _StdUI.Checkbox(UIData.MainUIFrame, "Pulse SmartGrind", 150, 25);
+                _StdUI.GlueTop(UIData.NativeGrindEnabledCheckBox, UIData.MainUIFrame, 75, -290, "TOP");
 
                 WoWAPI.NewTicker(() =>
                 {
-                    if (!IsHunter)
-                        return;
 
                     UIData.NumberOfManualScanNodes.SetText("Manual Scan Nodes Count: " + ManualScanLocations.Count);
                   
                     if (UIData.HunterScanMode != null
-                        && UIData.HunterScanMode.GetValue<bool>())
+                        && UIData.HunterScanMode.GetValue<bool>() 
+                        && IsHunter)
                     {
                         HandleHunterLogic();
+                    }
+
+                    if (UIData.NativeGrindEnabledCheckBox.GetValue<bool>())
+                    {
+                        SmartGrind.Run();
                     }
 
                 }, 0.25f);
@@ -310,8 +321,11 @@ namespace Wrapper
                     UIData.NumberOfInnKeepers.SetText("InnKeepers: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).InnKeepers.Count);
                 }, 2f);
 
+
                 WoWAPI.NewTicker(() =>
                 {
+                    
+
                     HandleMapClicks();
                 }, 0);
 
@@ -339,6 +353,7 @@ namespace Wrapper
             base.Pulse();
         }
 
+        private NativeGrind SmartGrind = new NativeGrind();
         private double LastHandledTime = WoWAPI.GetTime();
 
         private void HandleMapClicks()

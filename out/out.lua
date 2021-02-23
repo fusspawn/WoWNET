@@ -17554,12 +17554,14 @@ local SystemNumerics = System.Numerics
 local WrapperAPI
 local WrapperDatabase
 local WrapperHelpers
+local WrapperNativeBehaviors
 local WrapperWoW
 local ListVector3
 System.import(function (out)
   WrapperAPI = Wrapper.API
   WrapperDatabase = Wrapper.Database
   WrapperHelpers = Wrapper.Helpers
+  WrapperNativeBehaviors = Wrapper.NativeBehaviors
   WrapperWoW = Wrapper.WoW
   ListVector3 = System.List(WrapperWoW.Vector3)
 end)
@@ -17580,6 +17582,7 @@ System.namespace("Wrapper", function (namespace)
       return {}
     end)
     __ctor__ = function (this)
+      this.SmartGrind = WrapperNativeBehaviors.NativeGrind()
       this.LastHandledTime = GetTime()
       this.CastTimeStamp = GetTime()
       this.ManualScanLocations = ListVector3()
@@ -17655,7 +17658,7 @@ System.namespace("Wrapper", function (namespace)
         --#endregion
 
         class.UIData = class.DataLoggerBaseUI()
-        class.UIData.MainUIFrame = _StdUI:Window(_G["UIParent"], 500, IsHunter and 600 or 400, "BroBot Data Logger")
+        class.UIData.MainUIFrame = _StdUI:Window(_G["UIParent"], 500, 600, "BroBot Data Logger")
         class.UIData.MainUIFrame:SetPoint("CENTER", 0, 0)
         class.UIData.MainUIFrame:Show()
 
@@ -17728,57 +17731,56 @@ System.namespace("Wrapper", function (namespace)
 
           class.UIData.NumberOfManualScanNodes = _StdUI:Label(class.UIData.MainUIFrame, "Manual Scan Nodes Count: " .. #this.ManualScanLocations, 12, nil, 150, 25)
           _StdUI:GlueTop(class.UIData.NumberOfManualScanNodes, class.UIData.MainUIFrame, - 140, - 430, "TOP")
+        end
+
+        class.UIData.ResetManualScanNodes = _StdUI:HighlightButton(class.UIData.MainUIFrame, 150, 25, "Reset Manual Scan Nodes")
+        class.UIData.ResetManualScanNodes:SetScript("OnClick", function ()
+          this.ManualScanLocations:Clear()
+        end, System.Delegate)
+
+        _StdUI:GlueTop(class.UIData.ResetManualScanNodes, class.UIData.MainUIFrame, - 140, - 460, "TOP")
+
+        class.UIData.ProfileNameBox = _StdUI:EditBox(class.UIData.MainUIFrame, 150, 25, "")
+        _StdUI:AddLabel(class.UIData.MainUIFrame, class.UIData.ProfileNameBox, "Profile Name", "TOP")
+        _StdUI:GlueTop(class.UIData.ProfileNameBox, class.UIData.MainUIFrame, - 140, - 490, "TOP")
+
+        local DataBaseProfileFolder = System.toString( __LB__.GetBaseDirectory()) .. "\\BroBot\\Database\\Profiles\\"
+        if not  __LB__.DirectoryExists(DataBaseProfileFolder) then
+           __LB__.CreateDirectory(DataBaseProfileFolder)
+        end
 
 
-          class.UIData.ResetManualScanNodes = _StdUI:HighlightButton(class.UIData.MainUIFrame, 150, 25, "Reset Manual Scan Nodes")
-          class.UIData.ResetManualScanNodes:SetScript("OnClick", function ()
-            this.ManualScanLocations:Clear()
-          end, System.Delegate)
+        class.UIData.ProfileSaveButton = _StdUI:HighlightButton(class.UIData.MainUIFrame, 150, 25, "Save Profile")
+        class.UIData.ProfileSaveButton:SetScript("OnClick", function ()
+           __LB__.WriteFile(System.toString(DataBaseProfileFolder) .. System.toString(class.UIData.ProfileNameBox:GetValue(System.String)) .. ".json", LibJSON.Serialize(this.ManualScanLocations), false)
+        end, System.Delegate)
 
-          _StdUI:GlueTop(class.UIData.ResetManualScanNodes, class.UIData.MainUIFrame, - 140, - 460, "TOP")
+        _StdUI:GlueTop(class.UIData.ProfileSaveButton, class.UIData.MainUIFrame, - 140, - 520, "TOP")
 
 
 
-          class.UIData.ProfileNameBox = _StdUI:EditBox(class.UIData.MainUIFrame, 150, 25, "")
-          _StdUI:AddLabel(class.UIData.MainUIFrame, class.UIData.ProfileNameBox, "Profile Name", "TOP")
-          _StdUI:GlueTop(class.UIData.ProfileNameBox, class.UIData.MainUIFrame, - 140, - 490, "TOP")
-
-          local DataBaseProfileFolder = System.toString( __LB__.GetBaseDirectory()) .. "\\BroBot\\Database\\Profiles\\"
-          if not  __LB__.DirectoryExists(DataBaseProfileFolder) then
-             __LB__.CreateDirectory(DataBaseProfileFolder)
+        class.UIData.ProfileLoadButton = _StdUI:HighlightButton(class.UIData.MainUIFrame, 150, 25, "Load Profile")
+        class.UIData.ProfileLoadButton:SetScript("OnClick", function ()
+          if not  __LB__.FileExists(System.toString(DataBaseProfileFolder) .. System.toString(class.UIData.ProfileNameBox:GetValue(System.String)) .. ".json") then
+            System.Console.WriteLine("Dont be a retard. file is missing")
+            return
           end
 
-
-          class.UIData.ProfileSaveButton = _StdUI:HighlightButton(class.UIData.MainUIFrame, 150, 25, "Save Profile")
-          class.UIData.ProfileSaveButton:SetScript("OnClick", function ()
-             __LB__.WriteFile(System.toString(DataBaseProfileFolder) .. System.toString(class.UIData.ProfileNameBox:GetValue(System.String)) .. ".json", LibJSON.Serialize(this.ManualScanLocations), false)
-          end, System.Delegate)
-
-          _StdUI:GlueTop(class.UIData.ProfileSaveButton, class.UIData.MainUIFrame, - 140, - 520, "TOP")
+          local TempList = LibJSON.Deserialize( __LB__.ReadFile(System.toString(DataBaseProfileFolder) .. System.toString(class.UIData.ProfileNameBox:GetValue(System.String)) .. ".json"))
 
 
+          this.ManualScanLocations:Clear()
 
-          class.UIData.ProfileLoadButton = _StdUI:HighlightButton(class.UIData.MainUIFrame, 150, 25, "Load Profile")
-          class.UIData.ProfileLoadButton:SetScript("OnClick", function ()
-            if not  __LB__.FileExists(System.toString(DataBaseProfileFolder) .. System.toString(class.UIData.ProfileNameBox:GetValue(System.String)) .. ".json") then
-              System.Console.WriteLine("Dont be a retard. file is missing")
-              return
-            end
+          for _, point in System.each(TempList) do
+            this.ManualScanLocations:Add(WrapperWoW.Vector3(point.X, point.Y, point.Z))
+          end
 
-            local TempList = LibJSON.Deserialize( __LB__.ReadFile(System.toString(DataBaseProfileFolder) .. System.toString(class.UIData.ProfileNameBox:GetValue(System.String)) .. ".json"))
+          System.Console.WriteLine("Restored: " .. #this.ManualScanLocations .. " points")
+        end, System.Delegate)
+
+        _StdUI:GlueTop(class.UIData.ProfileLoadButton, class.UIData.MainUIFrame, - 140, - 550, "TOP")
 
 
-            this.ManualScanLocations:Clear()
-
-            for _, point in System.each(TempList) do
-              this.ManualScanLocations:Add(WrapperWoW.Vector3(point.X, point.Y, point.Z))
-            end
-
-            System.Console.WriteLine("Restored: " .. #this.ManualScanLocations .. " points")
-          end, System.Delegate)
-
-          _StdUI:GlueTop(class.UIData.ProfileLoadButton, class.UIData.MainUIFrame, - 140, - 550, "TOP")
-        end
 
         _StdUI:GlueTop(class.UIData.MapIdText, class.UIData.MainUIFrame, 75, - 50, "TOP")
         _StdUI:GlueTop(class.UIData.NumberOfHerbsText, class.UIData.MainUIFrame, 75, - 80, "TOP")
@@ -17790,7 +17792,8 @@ System.namespace("Wrapper", function (namespace)
         _StdUI:GlueTop(class.UIData.NumberOfInnKeepers, class.UIData.MainUIFrame, 75, - 230, "TOP")
         _StdUI:GlueTop(class.UIData.NumberOfMailBoxes, class.UIData.MainUIFrame, 75, - 260, "TOP")
 
-
+        class.UIData.NativeGrindEnabledCheckBox = _StdUI:Checkbox(class.UIData.MainUIFrame, "Pulse SmartGrind", 150, 25)
+        _StdUI:GlueTop(class.UIData.NativeGrindEnabledCheckBox, class.UIData.MainUIFrame, 75, - 290, "TOP")
 
         C_Timer.NewTicker(0.25, function ()
           if not IsHunter then
@@ -17801,6 +17804,10 @@ System.namespace("Wrapper", function (namespace)
 
           if class.UIData.HunterScanMode ~= nil and class.UIData.HunterScanMode:GetValue(System.Boolean) then
             HandleHunterLogic(this)
+          end
+
+          if class.UIData.NativeGrindEnabledCheckBox:GetValue(System.Boolean) then
+            this.SmartGrind:Run()
           end
         end)
 
@@ -17816,6 +17823,7 @@ System.namespace("Wrapper", function (namespace)
           class.UIData.NumberOfMailBoxes:SetText("MailBoxes: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).MailBoxes)
           class.UIData.NumberOfInnKeepers:SetText("InnKeepers: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).InnKeepers)
         end)
+
 
         C_Timer.NewTicker(0, function ()
           HandleMapClicks(this)
@@ -25343,7 +25351,11 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
       this.Tasks:Clear()
 
       if not __LB__.UnitTagHandler(UnitAffectingCombat, "player") then
-        if WrapperHelpers.LuaHelper.GetGlobalFrom_G_Namespace(ArrayString("BroBot", "UI", "CoreConfig", "PersistentData", "AllowGathering"), System.Boolean) then
+        local BroBotExists = _G["BroBot"] ~= nil
+        local AllowGather = (BroBotExists and WrapperHelpers.LuaHelper.GetGlobalFrom_G_Namespace(ArrayString("BroBot", "UI", "CoreConfig", "PersistentData", "AllowGathering"), System.Boolean)) or true
+        -- Default to true if BroBot doesnt Exist
+
+        if AllowGather then
           for _, GameObject in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
             return x.Value:getIsHerb() or x.Value:getIsOre()
           end), function (x)
@@ -25380,7 +25392,11 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
               break
             end
 
-            if (System.as(Unit.Value, WrapperWoW.WoWUnit)).PlayerHasFought and ( __LB__.UnitIsLootable(Unit.Value.GUID) or ( __LB__.UnitHasFlag(Unit.Value.GUID, 67108864 --[[EUnitFlags.Skinnable]]) and WrapperHelpers.LuaHelper.GetGlobalFrom_G_Namespace(ArrayString("BroBot", "UI", "CoreConfig", "PersistentData", "AllowSkinning"), System.Boolean))) then
+            BroBotExists = _G["BroBot"] ~= nil
+            local AllowSkinning = (BroBotExists and WrapperHelpers.LuaHelper.GetGlobalFrom_G_Namespace(ArrayString("BroBot", "UI", "CoreConfig", "PersistentData", "AllowSkinning"), System.Boolean)) or true
+            -- Default to true if BroBot doesnt Exist
+
+            if (System.as(Unit.Value, WrapperWoW.WoWUnit)).PlayerHasFought and ( __LB__.UnitIsLootable(Unit.Value.GUID) or ( __LB__.UnitHasFlag(Unit.Value.GUID, 67108864 --[[EUnitFlags.Skinnable]]) and AllowSkinning)) then
               local score = 0
               score = score + (200 - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
 
@@ -26673,7 +26689,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
 
       if Distance > CombatRange then
-        subtaskframe:SetText("[" .. "NativeKillTask" .. "]" .. "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString())
+        this._StringRepr = "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString()
         __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 1)
         return
       else
@@ -26787,7 +26803,11 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       this.ObjectiveScanner:Update()
       this._StringRepr = "Searching for new node"
       if this.TargetNode == nil then
-        local AllowGather = WrapperHelpers.LuaHelper.GetGlobalFrom_G_Namespace(ArrayString("BroBot", "UI", "CoreConfig", "PersistentData", "AllowGathering"), System.Boolean)
+        local BroBotExists = _G["BroBot"] ~= nil
+        local AllowGather = (BroBotExists and WrapperHelpers.LuaHelper.GetGlobalFrom_G_Namespace(ArrayString("BroBot", "UI", "CoreConfig", "PersistentData", "AllowGathering"), System.Boolean)) or true
+        -- Default to true if BroBot doesnt Exist
+
+
 
         local Player = WrapperWoW.ObjectManager.getInstance().Player
         local PlayerPosition = Player.Position:__clone__()
