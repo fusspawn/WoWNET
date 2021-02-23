@@ -65,7 +65,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 }
             }
 
-            BroBotAPI.BroBotDebugMessage("RandomNodePositionFinder", "Moving To TargetNode");
+            _StringRepr = "Moving To TargetNode";
             LuaBox.Instance.Navigator.MoveTo(TargetNode.X, TargetNode.Y, TargetNode.Z);
 
             if (Vector3.Distance(new Vector3(TargetNode.X, TargetNode.Y, TargetNode.Z), ObjectManager.Instance.Player.Position) < 10)
