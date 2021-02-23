@@ -37,8 +37,8 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             var CombatRange = BroBotAPI.GetPlayersRange();
                 /*
                   [[
-                    local xy = AngleTo("Target", "Player")
-                    __LB__.SetPlayerAngles(xy)
+                   -- local xy = AngleTo("Target", "Player")
+                    --__LB__.SetPlayerAngles(xy)
                  ]] 
                  */
 
@@ -51,6 +51,12 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             }
             else
             {
+                /*
+                 [[
+                 if IsMounted() then
+                    Dismount()
+                end
+                ]]*/
                 LuaBox.Instance.Navigator.Stop();
                 LuaBox.Instance.UnitTarget(Task.TargetUnitOrObject.GUID);
                 WoWAPI.StartAttack();

@@ -26609,8 +26609,8 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       local Distance = WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)
 
       local CombatRange = GetPlayersRange()
-      local xy = AngleTo("Target", "Player")
-      __LB__.SetPlayerAngles(xy)
+      -- local xy = AngleTo("Target", "Player")
+       --__LB__.SetPlayerAngles(xy)
 
 
       if Distance > CombatRange then
@@ -26618,6 +26618,9 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
         __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 1)
         return
       else
+        if IsMounted() then
+           Dismount()
+                        end
         __LB__.Navigator.Stop()
          __LB__.UnitTarget(this.Task.TargetUnitOrObject.GUID)
         StartAttack()
