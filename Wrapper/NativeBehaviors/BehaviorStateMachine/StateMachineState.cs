@@ -8,6 +8,7 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
         public double EntryTime = 0;
         public double MaxStateTime = 0;
         public bool HasMaxStateTime = false;
+        protected string _StringRepr = "";
 
         public void ResetMaxStateTime()
         {
@@ -26,6 +27,11 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
 
             //Console.WriteLine($"Out Of time Data: Current: {WoWAPI.GetTime()}   Entry: {EntryTime} Max: {MaxStateTime}");
             return WoWAPI.GetTime() - EntryTime > MaxStateTime;
+        }
+
+        public string StringRepr()
+        {
+            return this.GetType().Name +": "+ _StringRepr;
         }
 
         public void SetMaxStateTime(double Seconds)

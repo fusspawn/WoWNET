@@ -21,18 +21,16 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             this.ObjectiveScanner = SmartObjective;
         }
 
-
         public override bool Complete()
         {
             return ObjectiveScanner.GetNextTask() != null
                 || WoWAPI.UnitAffectingCombat("player");
         }
 
-
         public override void Tick()
         {
             ObjectiveScanner.Update();
-
+            _StringRepr = "Searching for new node";
             if (TargetNode == null)
             {
 
@@ -56,7 +54,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 if (AllNodes.Count > 0)
                 {
                     TargetNode = AllNodes[new Random().Next(0, AllNodes.Count - 1)];
-                    Console.WriteLine("Found new Destination: " + TargetNode.X + " / " + TargetNode.Y + " / " + TargetNode.Z);
+                    _StringRepr = $"Moving to new destination: {(int)TargetNode.X} / {(int)TargetNode.Y} / {(int)TargetNode.Z}";
                 }
                 else
                 {
@@ -64,8 +62,6 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                     return;
                 }
             }
-
-
 
             BroBotAPI.BroBotDebugMessage("RandomNodePositionFinder", "Moving To TargetNode");
             LuaBox.Instance.Navigator.MoveTo(TargetNode.X, TargetNode.Y, TargetNode.Z);

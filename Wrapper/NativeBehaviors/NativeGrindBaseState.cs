@@ -167,7 +167,7 @@ namespace Wrapper.NativeBehaviors
                 }
             }
 
-            /*
+            
             foreach (var Unit in ObjectManager.Instance.AllObjects.Where(x => x.Value.ObjectType == LuaBox.EObjectType.Unit
                      && x.Value.ObjectType != LuaBox.EObjectType.Player).Where(x => !BroBotAPI.UnitIsOnBlackList(x.Value.GUID)))
             {
@@ -197,7 +197,7 @@ namespace Wrapper.NativeBehaviors
                     });
                 }
             }
-            */
+            
         }
 
         public SmartObjectiveTask GetNextTask() => Tasks.Count > 0 ? Tasks[0] : null;
