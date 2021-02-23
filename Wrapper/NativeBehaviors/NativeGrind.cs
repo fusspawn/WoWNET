@@ -19,6 +19,7 @@ namespace Wrapper.NativeBehaviors
         public bool skip_spell_avoidance = true; //not even sure this exists now?!
         public BroBotBehavior[] children = new BroBotBehavior[0];
         public static StateMachine StateMachine;
+        
 
 
         public BehaviorPersistentData PersistentData = new BehaviorPersistentData();

@@ -26,7 +26,6 @@ namespace Wrapper.Helpers
 
         public static T GetGlobalFrom_G_Namespace<T>(string[] PropertyChain) 
         {
-
             var CurrentObject = LuaHelper.GetGlobalFrom_G<object>(PropertyChain[0]);
             //Console.WriteLine("Aquired Global Object: " + PropertyChain[0]);
             int Index = 1;

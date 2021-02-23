@@ -20,7 +20,16 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
         {
             if (WoWAPI.UnitIsDeadOrGhost("player"))
                 return true;
-            return 
+
+            NativeGrindBaseState.SmartObjective.Update();
+            if (NativeGrindBaseState.SmartObjective.GetNextTask() != Task)
+            {
+                return true;
+            }
+
+
+
+            return
                 (!LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)
                 ||  WoWAPI.UnitIsDeadOrGhost(Task.TargetUnitOrObject.GUID)
               /*  || !WoWAPI.UnitAffectingCombat("player") */
@@ -29,6 +38,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
         public override void Tick()
         {
+          
             Console.WriteLine("In Combat Task");
 
             var Distance = Vector3.Distance(Task.TargetUnitOrObject.Position,
@@ -57,7 +67,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                     Dismount()
                 end
                 ]]*/
-                _StringRepr = "Kill unit: " + Task.TargetUnitOrObject.Name + " Has fought: " + (Task.TargetUnitOrObject as WoWUnit).PlayerHasFought;
+
                 LuaBox.Instance.Navigator.Stop();
                 LuaBox.Instance.UnitTarget(Task.TargetUnitOrObject.GUID);
                 WoWAPI.StartAttack();
