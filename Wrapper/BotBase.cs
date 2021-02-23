@@ -292,14 +292,17 @@ namespace Wrapper
                     UIData.NumberOfFlightMasters.SetText("FlightMasters: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).FlightMaster.Count);
                     UIData.NumberOfMailBoxes.SetText("MailBoxes: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).MailBoxes.Count);
                     UIData.NumberOfInnKeepers.SetText("InnKeepers: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).InnKeepers.Count);
-                    UIData.NumberOfManualScanNodes.SetText("Manual Scan Nodes Count: " + ManualScanLocations.Count);
 
                     //Console.WriteLine("New Ticker");
+
+                    if(IsHunter)
+                    {
+                        UIData.NumberOfManualScanNodes.SetText("Manual Scan Nodes Count: " + ManualScanLocations.Count);
+                    }
 
                     if (UIData.HunterScanMode != null
                         && UIData.HunterScanMode.GetValue<bool>())
                     {
-                       
                         HandleHunterLogic();
                     }
 

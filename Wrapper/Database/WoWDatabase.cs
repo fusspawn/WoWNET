@@ -41,8 +41,8 @@ namespace Wrapper.Database
             var MapId = LuaBox.Instance.GetMapId();
             var IsRepair = LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Repair);
             var IsVendor = LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Vendor);
-            var IsInnKeeper = LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Innkeeper);
-            var IsFlightmaster = LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.FlightMaster);
+            var IsInnKeeper = false;
+            var IsFlightmaster = false;
             var IsMailBox = false; //LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Mailbox);
 
             if ((!IsRepair && !IsVendor && !IsInnKeeper && !IsFlightmaster && !IsMailBox)
