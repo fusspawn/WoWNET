@@ -362,13 +362,13 @@ namespace Wrapper.WoW
         {
             StringBuilder sb = new StringBuilder();
             sb.Append("{X:");
-            sb.Append(this.X);
+            sb.Append((int)this.X);
             sb.Append(" Y:");
-            sb.Append(this.Y);
+            sb.Append((int)this.Y);
             sb.Append(" Z:");
-            sb.Append(this.Z);
+            sb.Append((int)this.Z);
             sb.Append(" Distance From Player: ");
-            sb.Append(Vector3.Distance(this, ObjectManager.Instance.Player.Position));
+            sb.Append((int)Vector3.Distance(this, ObjectManager.Instance.Player.Position));
             sb.Append("}");
             return sb.ToString();
         }

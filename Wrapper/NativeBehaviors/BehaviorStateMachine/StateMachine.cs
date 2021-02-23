@@ -19,6 +19,8 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
                     States.Peek().ResetMaxStateTime();
                 }
 
+                Program.Tracker.TaskLabel.SetText(States.Peek().StringRepr());
+                Program.Tracker.UpdateStack(States);
                 States.Peek().Tick();
             }
         }

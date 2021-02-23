@@ -9,6 +9,7 @@ namespace Wrapper
     public class Program
     {
         static BotBase Base = new DataLoggerBase();
+        public static Tracker Tracker = new Tracker();
         static bool ThrowWowErrors = false;
 
 
@@ -32,6 +33,7 @@ namespace Wrapper
                     {
                         ObjectManager.Instance.Pulse();
                         Base.Pulse();
+                        Tracker.Pulse();
                         //Console.WriteLine("New Ticker");
                     }
                     catch (Exception E)
@@ -44,9 +46,10 @@ namespace Wrapper
                 {
                     ObjectManager.Instance.Pulse();
                     Base.Pulse();
+                    Tracker.Pulse();
                 }
 
-            }, 0.1f);
+            }, 0.2f);
 
 
 
