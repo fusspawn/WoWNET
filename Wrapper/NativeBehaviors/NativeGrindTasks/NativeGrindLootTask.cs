@@ -31,9 +31,6 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             var Distance = Vector3.Distance(Task.TargetUnitOrObject.Position,
                 ObjectManager.Instance.Player.Position);
 
-            var TaskUnit = Task.TargetUnitOrObject as WoWUnit;
-            TaskUnit.PlayerHasFought = true;
-
             if (Distance > 5)
             {
                  _StringRepr = $"Getting Closer: {Distance} TaskLocation: {Task.TargetUnitOrObject.Position} Player: {ObjectManager.Instance.Player.Position}";

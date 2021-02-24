@@ -21,14 +21,6 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             if (WoWAPI.UnitIsDeadOrGhost("player"))
                 return true;
 
-            NativeGrindBaseState.SmartObjective.Update();
-            if (NativeGrindBaseState.SmartObjective.GetNextTask() != Task)
-            {
-                return true;
-            }
-
-
-
             return
                 (!LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)
                 ||  WoWAPI.UnitIsDeadOrGhost(Task.TargetUnitOrObject.GUID)
@@ -72,6 +64,8 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 LuaBox.Instance.Navigator.Stop();
                 LuaBox.Instance.UnitTarget(Task.TargetUnitOrObject.GUID);
                 WoWAPI.StartAttack();
+                var TaskUnit = Task.TargetUnitOrObject as WoWUnit;
+                TaskUnit.PlayerHasFought = true;
             }
 
             base.Tick();
