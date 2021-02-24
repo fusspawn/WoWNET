@@ -107,8 +107,14 @@ namespace Wrapper.NativeBehaviors
 
             if (!WoWAPI.UnitAffectingCombat("player"))
             {
+                var BroBotExists = LuaHelper.GetGlobalFrom_G<object>("BroBot") != null;
+                var AllowGather = (BroBotExists && LuaHelper.GetGlobalFrom_G_Namespace<bool>(new string[]
+                {
+                    "BroBot", "UI", "CoreConfig",
+                    "PersistentData", "AllowGathering"
+                })) || true; // Default to true if BroBot doesnt Exist
 
-                if (LuaHelper.GetGlobalFrom_G_Namespace<bool>(new string[] { "BroBot", "UI", "CoreConfig", "PersistentData", "AllowGathering" }))
+                if (AllowGather)
                 {
 
                     foreach (var GameObject in
@@ -144,10 +150,17 @@ namespace Wrapper.NativeBehaviors
                     if (!WoWAPI.UnitIsDeadOrGhost(Unit.Value.GUID))
                         continue;
 
+                    BroBotExists = LuaHelper.GetGlobalFrom_G<object>("BroBot") != null;
+                    var AllowSkinning = (BroBotExists && LuaHelper.GetGlobalFrom_G_Namespace<bool>(new string[]
+                    {
+                        "BroBot", "UI", "CoreConfig",
+                        "PersistentData", "AllowSkinning"
+                    })) || true; // Default to true if BroBot doesnt Exist
+
                     if ((Unit.Value as WoWUnit).PlayerHasFought
                             && (LuaBox.Instance.UnitIsLootable(Unit.Value.GUID)
                             || (LuaBox.Instance.UnitHasFlag(Unit.Value.GUID, LuaBox.EUnitFlags.Skinnable)
-                            && LuaHelper.GetGlobalFrom_G_Namespace<bool>(new string[] { "BroBot", "UI", "CoreConfig", "PersistentData", "AllowSkinning" }))))
+                            && AllowSkinning)))
                     {
 
                         double score = 0;
