@@ -10,6 +10,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
     public class NativeGrindKillTask 
         : BehaviorStateMachine.StateMachineState {
         private NativeGrindSmartObjective.SmartObjectiveTask Task;
+        private double LastCombatCheck = 0;
 
         public NativeGrindKillTask(NativeGrindSmartObjective.SmartObjectiveTask Task)
         {
@@ -19,15 +20,39 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
         public override bool Complete()
         {
-            if (WoWAPI.UnitIsDeadOrGhost("player"))
+            if (IsOutOfTime())
+            {
+                Console.WriteLine("IsOutOfTime");
                 return true;
+            }
 
+            if (WoWAPI.UnitIsDeadOrGhost("player"))
+            {
+
+                Console.WriteLine("IsGhost?!");
+                return true;
+            }
+
+            /*
+            if (!WoWAPI.UnitAffectingCombat("player"))
+                return true;
+            */
+
+            if (!LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID))
+            {
+
+                Console.WriteLine("!ObjectExists");
+                return true;
+            }
+            
+
+            /*
             NativeGrindBaseState.SmartObjective.Update();
             if (NativeGrindBaseState.SmartObjective.GetNextTask() != Task)
             {
                 return true;
             }
-
+            */
 
 
             return
@@ -39,19 +64,36 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
         public override void Tick()
         {
+            if (LastCombatCheck == 0)
+                LastCombatCheck = Program.CurrentTime;
+
           
+            if(WoWAPI.GetTime() - LastCombatCheck > 0.5)
+            {
+                NativeGrindBaseState.SmartObjective.Update();
+                var NextTask = NativeGrindBaseState.SmartObjective.GetNextTask();
+
+                if (NextTask != null && NextTask.TaskType == NativeGrindSmartObjective.SmartObjectiveTaskType.Kill && NextTask.TargetUnitOrObject.GUID != Task.TargetUnitOrObject.GUID)
+                {
+                    Task = NextTask;
+                    Console.WriteLine("Reassigning Kill Task to better target");
+                }
+
+                LastCombatCheck =Program.CurrentTime;
+            }
+
             Console.WriteLine("In Combat Task");
             var Distance = Vector3.Distance(Task.TargetUnitOrObject.Position,
                 ObjectManager.Instance.Player.Position);
-            var BroBotExists = LuaHelper.GetGlobalFrom_G<object>("BroBot") != null;
-            var CombatRange = BroBotExists ? BroBotAPI.GetPlayersRange() : 5;
-                /*
-                  [[
-                    --local xy = AngleTo("Target", "Player")
-                    --__LB__.SetPlayerAngles(xy)
-                 ]] 
-                 */
+            var CombatRange = 5;
+            /*
+              [[
+                --local xy = AngleTo("Target", "Player")
+                --__LB__.SetPlayerAngles(xy)
+             ]] 
+             */
 
+            (Task.TargetUnitOrObject as WoWUnit).PlayerHasFought = true;
 
             if (Distance > CombatRange)
             {
@@ -70,7 +112,10 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
                 _StringRepr = "Killing mob: " + Task.TargetUnitOrObject.Name + " has fought: " + (Task.TargetUnitOrObject as WoWUnit).PlayerHasFought;
                 LuaBox.Instance.Navigator.Stop();
-                LuaBox.Instance.UnitTarget(Task.TargetUnitOrObject.GUID);
+                WoWAPI.TargetUnit(Task.TargetUnitOrObject.GUID);
+                LuaBox.Instance.ObjectInteract(Task.TargetUnitOrObject.GUID);
+
+                WoWAPI.RunMacroText("/startattack");
                 WoWAPI.StartAttack();
             }
 

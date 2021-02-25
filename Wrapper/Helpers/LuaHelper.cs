@@ -17,6 +17,10 @@ namespace Wrapper.Helpers
         /// </summary>
         public static extern T GetGlobalFrom_G<T>(string Name);
 
+        /// <summary>
+        ///   @CSharpLua.Template = "_G[{0}] = {1}"
+        /// </summary>
+        public static extern void SetGlobalIn_G(string Name, object Object);
 
         /// <summary>
         ///   @CSharpLua.Template = "{0}['{1}']"

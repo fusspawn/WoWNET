@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Wrapper.API;
 
 namespace Wrapper.NativeBehaviors.BehaviorStateMachine
@@ -12,7 +13,7 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
 
         public void ResetMaxStateTime()
         {
-            EntryTime = WoWAPI.GetTime();
+            EntryTime =Program.CurrentTime;
         }
 
 
@@ -22,19 +23,24 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
         {
             if (EntryTime == 0)
             {
-                EntryTime = WoWAPI.GetTime();
+                EntryTime = Program.CurrentTime;
             }
 
             if (!HasMaxStateTime)
                 return false;
 
             //Console.WriteLine($"Out Of time Data: Current: {WoWAPI.GetTime()}   Entry: {EntryTime} Max: {MaxStateTime}");
-            return WoWAPI.GetTime() - EntryTime > MaxStateTime;
+            return Program.CurrentTime - EntryTime > MaxStateTime;
         }
 
         public string StringRepr()
         {
             return this.GetType().Name +": "+ _StringRepr;
+        }
+
+        public Dictionary<string, object> DebugDump()
+        {
+            return new Dictionary<string, object>();
         }
 
         public void SetMaxStateTime(double Seconds)
@@ -48,7 +54,7 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
         { 
             if(EntryTime == 0)
             {
-                EntryTime = WoWAPI.GetTime();
+                EntryTime =Program.CurrentTime;
             }
         }
     }

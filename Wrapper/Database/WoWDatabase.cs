@@ -272,7 +272,6 @@ namespace Wrapper.Database
                 var Path = $"{LuaBox.Instance.GetBaseDirectory()}\\BroBot\\Database\\MapData\\{MapId}.db";
                 var Data = GetMapDatabase(MapId);
                 LuaBox.Instance.WriteFile(Path, LibJson.Serialize(Data), false);
-
                 Console.WriteLine("[WoWDatabase] Persisted Changes to MapId: " + MapId);
             }
 

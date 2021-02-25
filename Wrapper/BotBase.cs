@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Wrapper.API;
+using Wrapper.BotBases;
 using Wrapper.Database;
 using Wrapper.Helpers;
 using Wrapper.NativeBehaviors;
@@ -14,9 +15,13 @@ namespace Wrapper
 {
     public class BotBase
     {
+
         public virtual void Pulse()
         {
+        }
 
+        public virtual void BuildConfig(StdUiFrame Container)
+        {
         }
     }
 
@@ -44,7 +49,6 @@ namespace Wrapper
             public StdUiLabel NumberOfFlightMasters;
             public StdUiLabel NumberOfInnKeepers;
             public StdUiLabel NumberOfMailBoxes;
-
             public StdUiButton ScanCurrentArea;
 
             //Hunter Only Scanner
@@ -61,6 +65,7 @@ namespace Wrapper
 
             //NativeGrind 
             public StdUiCheckBox NativeGrindEnabledCheckBox;
+            public StdUiDropdown BotBaseSelector;
         }
 
         public DataLoggerBase()
@@ -288,6 +293,35 @@ namespace Wrapper
                 UIData.NativeGrindEnabledCheckBox = _StdUI.Checkbox(UIData.MainUIFrame, "Pulse SmartGrind", 150, 25);
                 _StdUI.GlueTop(UIData.NativeGrindEnabledCheckBox, UIData.MainUIFrame, 75, -290, "TOP");
 
+                StdUiDropdown.StdUiDropdownItems[] Options = null;
+
+
+                /*[[
+                  local Options = { 
+                        {text="BGBot", value=1}, 
+                        {text="GrindBot", value=2}
+                    }
+                  ]]*/
+
+                UIData.BotBaseSelector = _StdUI.Dropdown(UIData.MainUIFrame, 150, 25, Options, 2, false, false);
+
+                UIData.BotBaseSelector.SetOptions(Options);
+                UIData.BotBaseSelector.SetPlaceholder("~-- Please Select a BotBase --~");
+                UIData.BotBaseSelector.OnValueChanged += (self, values) =>
+                {
+                    var Value = UIData.BotBaseSelector.GetValue<int>();
+                    if (Value == 1) { 
+                        Console.WriteLine("Switching to PVP Bot base");    
+                        Program.Base = new PVPBotBase();
+                    } 
+                    else if(Value == 2)
+                    {
+                        Console.WriteLine("Switching to Grind Bot base");
+                        Program.Base = new NativeGrindBotBase();
+                    }
+                };
+                _StdUI.GlueTop(UIData.BotBaseSelector, UIData.MainUIFrame, 75, -350, "TOP");    
+
                 WoWAPI.NewTicker(() =>
                 {
 
@@ -302,7 +336,7 @@ namespace Wrapper
 
                     if (UIData.NativeGrindEnabledCheckBox.GetValue<bool>())
                     {
-                        SmartGrind.Run();
+                        SmartGrind.Pulse();
                     }
 
                 }, 0.25f);
@@ -353,8 +387,8 @@ namespace Wrapper
             base.Pulse();
         }
 
-        private NativeGrind SmartGrind = new NativeGrind();
-        private double LastHandledTime = WoWAPI.GetTime();
+        private NativeGrindBotBase SmartGrind = new NativeGrindBotBase();
+        private double LastHandledTime = Program.CurrentTime;
 
         private void HandleMapClicks()
         {
@@ -377,7 +411,7 @@ namespace Wrapper
 
             if(WasClicked && WoWAPI.GetTime() - LastHandledTime > 1)
             {
-                LastHandledTime = WoWAPI.GetTime();
+                LastHandledTime = Program.CurrentTime;
                 Vector3? HitPos = LuaBox.Instance.RaycastPosition(X, Y, 10000, X, Y, -10000, (int)LuaBox.ERaycastFlags.Collision);
                 if(!HitPos.HasValue)
                 {
@@ -402,7 +436,7 @@ namespace Wrapper
         private int HunterScanGridRange = 175;
         private int HunterScanGridHeightOffset = 0;
         private int HunterScanGridMaxHorizontalRange = 7500;
-        private double CastTimeStamp = WoWAPI.GetTime();
+        private double CastTimeStamp =Program.CurrentTime;
         private List<Vector3> ManualScanLocations = new List<Vector3>();
 
         private void HandleHunterLogic()
@@ -448,7 +482,7 @@ namespace Wrapper
 
                  LuaBox.Instance.ClickPosition(CastLocation.X, CastLocation.Y, CastLocation.Z, false);
                  Console.WriteLine("Clicking At Cast Location");
-                 CastTimeStamp = WoWAPI.GetTime();
+                 CastTimeStamp =Program.CurrentTime;
               
             }
             else
@@ -500,182 +534,6 @@ namespace Wrapper
             if (n >= m - t) { return new System.Numerics.Vector2(k - (m - n), (float)-k); } else { m = m - t; }
             if (n >= m - t) { return new System.Numerics.Vector2(-k, -k + (m - n)); } else { m = m - t; }
             if (n >= m - t) { return new System.Numerics.Vector2(-k + (m - n), k); } else { return new System.Numerics.Vector2(k, k - (m - n - t)); }
-        }
-    }
-
-
-
-
-    public class PVPBotBase
-        : BotBase
-    {
-        SmartTargetPVP SmartTarget;
-        SmartMovePVP SmartMove;
-        Vector3 LastDestination;
-        bool HasBGStart = false;
-
-        float MinScoreJumpToSwap = 100;
-        float LastMoveScore = 0;
-        string LastMoveGUID = "";
-        
-
-
-        public PVPBotBase()
-        {
-            SmartTarget = new SmartTargetPVP();
-            SmartMove = new SmartMovePVP();
-        }
-
-        public override void Pulse()
-        {
-            if (ObjectManager.Instance.Player == null
-                || !LuaBox.Instance.IsNavLoaded())
-            {
-                Console.WriteLine("Waiting on Player to spawn in ObjectManager");
-                return;
-            }
-
-
-            if (WoWAPI.IsInInstance())
-            {
-                RunBattleGroundLogic();
-            }
-            else
-            {
-                RunQueueLogic();
-            }
-
-            base.Pulse();
-        }
-
-        private void RunQueueLogic()
-        {
-
-            if (WoWAPI.GetBattlefieldStatus(1) != "queued") {
-                WoWAPI.JoinBattlefield(32, true, false);
-            }
-
-            if (WoWAPI.GetBattlefieldStatus(1) == "confirm") {
-                WoWAPI.AcceptBattlefieldPort(1, 1);
-                WoWAPI.StaticPopup_Hide("CONFIRM_BATTLEFIELD_ENTRY");
-            }
-
-            if (WoWAPI.GetItemCount("Crate of Battlefield Goods") > 1) {
-                WoWAPI.UseItemByName("Crate of Battlefield Goods");
-            }
-        }
-
-        private void RunBattleGroundLogic()
-        {
-            // Console.WriteLine("In Battleground");
-
-            SmartMove.Pulse();
-            SmartTarget.Pulse();
-
-            var BestMoveScored = SmartMove.GetBestUnit();
-            var BestTargetScored = SmartTarget.GetBestUnit();
-
-            var BestMove = BestMoveScored.Player;
-            WoWPlayer BestTarget = BestTargetScored;
-
-           
-
-            if( WoWAPI.UnitIsDeadOrGhost("player")) 
-            {
-                if (!WoWAPI.UnitIsGhost("player"))
-                {
-                    WoWAPI.RepopMe();
-                }
-
-                LuaBox.Instance.Navigator.Stop();
-                return; 
-            }
-
-
-            if (BestTarget != null)
-            {
-                //Console.WriteLine("BestTarget: " + BestTarget.Name);
-                if (ObjectManager.Instance.Player.TargetGUID 
-                    != BestTarget.TargetGUID)
-                {
-                    BestTarget.Target();
-                    WoWAPI.RunMacroText("/startattack");
-                }
-
-                if((Vector3.Distance(ObjectManager.Instance.Player.Position, BestTarget.Position) > 25 
-                    || !BestTarget.LineOfSight)
-                    && !(ObjectManager.Instance.Player.IsCasting 
-                    || ObjectManager.Instance.Player.IsChanneling))
-                {
-                    LuaBox.Instance.Navigator.AllowMounting(false);
-                    LuaBox.Instance.Navigator.MoveTo(BestTarget.Position.X, BestTarget.Position.Y, BestTarget.Position.Z, 1, 15);
-                    return;
-                } 
-                else
-                {
-                    LuaBox.Instance.Navigator.Stop();
-                }
-            
-                //--Rotation?!
-            }
-
-
-            if (BestMove != null)
-            {
-                if (LastDestination == null || Vector3.Distance(BestMove.Position, LastDestination) > 25) {
-
-                    if (BestMove.GUID != LastMoveGUID)
-                    {
-                        if(Math.Abs(BestMoveScored.Score - LastMoveScore) < 250) // Big Jump. Probally should giveup the chase.
-                        {
-                           //Dont update task lets not just spam around in the middle.
-                        }
-                    }
-                    else
-                    {
-
-                        // Same Target Keep Going
-                        LastMoveScore = BestMoveScored.Score;
-                        LastMoveGUID = BestMove.GUID;
-                        LastDestination = BestMove.Position;
-
-                    }
-                } 
-                else
-                {
-                    // We need to do something to start.
-                    LastMoveScore = BestMoveScored.Score;
-                    LastMoveGUID = BestMove.GUID;
-                    LastDestination = BestMove.Position;
-                }
-
-                if (Vector3.Distance(ObjectManager.Instance.Player.Position, LastDestination) > 15)
-                {
-                    LuaBox.Instance.Navigator.AllowMounting(Vector3.Distance(ObjectManager.Instance.Player.Position, LastDestination) > 40);
-                    LuaBox.Instance.Navigator.MoveTo(LastDestination.X, LastDestination.Y, LastDestination.Z);
-                }
-                else
-                {
-                    LuaBox.Instance.Navigator.Stop();
-                }
-            }
-        }
-
-        private void Rotation()
-        {
-
-
-        }
-    }
-
-    public class CameraFaceTarget : BotBase
-    {
-        public override void Pulse()
-        {
-            double CurrentFacing, CurrentPitch;
-            LuaBox.Instance.GetCameraAngles(out CurrentFacing, out CurrentPitch);
-           
-            base.Pulse();
         }
     }
 }

@@ -20,7 +20,7 @@ namespace Wrapper.Helpers
             if (WoWAPI.GetTime() - LastUpdateTime < 5)
                 return;
 
-            LastUpdateTime = WoWAPI.GetTime();
+            LastUpdateTime =Program.CurrentTime;
 
             Units.Clear();
 

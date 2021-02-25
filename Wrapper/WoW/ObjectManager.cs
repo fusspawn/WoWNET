@@ -66,7 +66,9 @@ namespace Wrapper.WoW
                     }
                 }
 
+                var CurrentTime =Program.CurrentTime;
                 var RemovalList = new List<string>();
+
                 foreach (var kvp in this.AllObjects)
                 {
                     if (!LuaBox.Instance.ObjectExists(kvp.Key))
@@ -75,13 +77,16 @@ namespace Wrapper.WoW
                     }
                     else
                     {
-                        kvp.Value.Update();
+                        if (CurrentTime - kvp.Value.LastUpdate > 0.25)
+                        {
+                            kvp.Value.Update();
+                        }                        
                     }
                 }
 
                 RemovalList.ForEach((item) =>
                 {
-                        AllObjects.Remove(item);
+                    AllObjects.Remove(item);
                 });
             } 
             catch(Exception E)

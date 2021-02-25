@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Wrapper.API;
+using Wrapper.Helpers;
 using Wrapper.WoW;
 
 namespace Wrapper.NativeBehaviors.NativeGrindTasks
@@ -20,27 +21,28 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
         {
             if (WoWAPI.UnitIsDeadOrGhost("player"))
                 return true;
-/*
+
            Console.WriteLine("In Gather Complete");
            Console.WriteLine($"Object Exists: {LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)}");
            Console.WriteLine($"GatherAndNotCasting: {(HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling)}");
            Console.WriteLine($"InCombat: {WoWAPI.UnitAffectingCombat("player")}");
            Console.WriteLine($"Out Of Time: {IsOutOfTime()}");
-*/
-            return (!LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID) 
+           Console.WriteLine($"BlackList: {Blacklist.IsOnBlackList(Task.TargetUnitOrObject.GUID)}");
+
+            return (!LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)
                 && Vector3.Distance(Task.TargetUnitOrObject.Position, ObjectManager.Instance.Player.Position) < 300) // Some paths are really long. dont remove it unless you've been dragged really far away
-                || (HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling) 
-                || WoWAPI.UnitAffectingCombat("player") 
+                || (HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling)
+                || WoWAPI.UnitAffectingCombat("player")
                 || IsOutOfTime();
         }
 
 
         public override void Tick()
         {
-            //BroBotAPI.BroBotDebugMessage("NativeGatherTask", "In Gather Tick");
-            var Distance = Vector3.Distance(Task.TargetUnitOrObject.Position,
-                ObjectManager.Instance.Player.Position);
+            Task.TargetUnitOrObject.Update();
 
+            var Distance = Vector3.Distance(Task.TargetUnitOrObject.Position,
+                    ObjectManager.Instance.Player.Position);
 
             if (Distance > 5)
             {
@@ -59,14 +61,14 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 || ObjectManager.Instance.Player.IsChanneling)
             {
                 Console.WriteLine($"Blacklisting Gather Node");
-                BroBotAPI.RegisterOnBlackList(Task.TargetUnitOrObject.GUID, 120);
+                Blacklist.AddToBlacklist(Task.TargetUnitOrObject.GUID, 120);
                 HasGathered = true;
             }
             else {
                 LuaBox.Instance.ObjectInteract(Task.TargetUnitOrObject.GUID);
+                HasGathered = true;
             }
 
-            HasGathered = true;
             base.Tick();
         }
     }

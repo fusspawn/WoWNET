@@ -17551,27 +17551,30 @@ do
 local System = System
 local Linq = System.Linq.Enumerable
 local SystemNumerics = System.Numerics
+local Wrapper
 local WrapperAPI
+local WrapperBotBases
 local WrapperDatabase
-local WrapperHelpers
-local WrapperNativeBehaviors
 local WrapperWoW
 local ListVector3
 System.import(function (out)
+  Wrapper = out.Wrapper
   WrapperAPI = Wrapper.API
+  WrapperBotBases = Wrapper.BotBases
   WrapperDatabase = Wrapper.Database
-  WrapperHelpers = Wrapper.Helpers
-  WrapperNativeBehaviors = Wrapper.NativeBehaviors
   WrapperWoW = Wrapper.WoW
   ListVector3 = System.List(WrapperWoW.Vector3)
 end)
 System.namespace("Wrapper", function (namespace)
   namespace.class("BotBase", function (namespace)
-    local Pulse
+    local Pulse, BuildConfig
     Pulse = function (this)
     end
+    BuildConfig = function (this, Container)
+    end
     return {
-      Pulse = Pulse
+      Pulse = Pulse,
+      BuildConfig = BuildConfig
     }
   end)
 
@@ -17582,9 +17585,9 @@ System.namespace("Wrapper", function (namespace)
       return {}
     end)
     __ctor__ = function (this)
-      this.SmartGrind = WrapperNativeBehaviors.NativeGrind()
-      this.LastHandledTime = GetTime()
-      this.CastTimeStamp = GetTime()
+      this.SmartGrind = WrapperBotBases.NativeGrindBotBase()
+      this.LastHandledTime = Wrapper.Program.CurrentTime
+      this.CastTimeStamp = Wrapper.Program.CurrentTime
       this.ManualScanLocations = ListVector3()
     end
     Pulse = function (this)
@@ -17795,6 +17798,30 @@ System.namespace("Wrapper", function (namespace)
         class.UIData.NativeGrindEnabledCheckBox = _StdUI:Checkbox(class.UIData.MainUIFrame, "Pulse SmartGrind", 150, 25)
         _StdUI:GlueTop(class.UIData.NativeGrindEnabledCheckBox, class.UIData.MainUIFrame, 75, - 290, "TOP")
 
+        local Options = nil
+
+
+        local Options = { 
+              {text="BGBot", value=1}, 
+              {text="GrindBot", value=2}
+          }
+
+        class.UIData.BotBaseSelector = _StdUI:Dropdown(class.UIData.MainUIFrame, 150, 25, Options, 2, false, false)
+
+        class.UIData.BotBaseSelector:SetOptions(Options)
+        class.UIData.BotBaseSelector:SetPlaceholder("~-- Please Select a BotBase --~")
+        class.UIData.BotBaseSelector.OnValueChanged = System.DelegateCombine(class.UIData.BotBaseSelector.OnValueChanged, function (self, values)
+          local Value = class.UIData.BotBaseSelector:GetValue(System.Int32)
+          if Value == 1 then
+            System.Console.WriteLine("Switching to PVP Bot base")
+            Wrapper.Program.Base = WrapperBotBases.PVPBotBase()
+          elseif Value == 2 then
+            System.Console.WriteLine("Switching to Grind Bot base")
+            Wrapper.Program.Base = WrapperBotBases.NativeGrindBotBase()
+          end
+        end)
+        _StdUI:GlueTop(class.UIData.BotBaseSelector, class.UIData.MainUIFrame, 75, - 350, "TOP")
+
         C_Timer.NewTicker(0.25, function ()
           class.UIData.NumberOfManualScanNodes:SetText("Manual Scan Nodes Count: " .. #this.ManualScanLocations)
 
@@ -17803,7 +17830,7 @@ System.namespace("Wrapper", function (namespace)
           end
 
           if class.UIData.NativeGrindEnabledCheckBox:GetValue(System.Boolean) then
-            this.SmartGrind:Run()
+            this.SmartGrind:Pulse()
           end
         end)
 
@@ -17857,7 +17884,7 @@ System.namespace("Wrapper", function (namespace)
       end
 
       if WasClicked and GetTime() - this.LastHandledTime > 1 then
-        this.LastHandledTime = GetTime()
+        this.LastHandledTime = Wrapper.Program.CurrentTime
         local HitPos = WrapperAPI.LuaBox.getInstance():RaycastPosition(X, Y, 10000, X, Y, - 10000, 1048849 --[[(int)LuaBox.ERaycastFlags.Collision]])
         if not (HitPos ~= nil) then
           System.Console.WriteLine("Unable to add accurate scan point at: " .. X .. " / " .. Y .. " because Raycast failed to hit anything doing something crazy")
@@ -17908,7 +17935,7 @@ System.namespace("Wrapper", function (namespace)
 
         __LB__.ClickPosition(CastLocation.X, CastLocation.Y, CastLocation.Z, false)
         System.Console.WriteLine("Clicking At Cast Location")
-        this.CastTimeStamp = GetTime()
+        this.CastTimeStamp = Wrapper.Program.CurrentTime
       else
         if GetTime() - this.CastTimeStamp > 10 then
           System.Console.WriteLine("Have been chilling a bit. Recast")
@@ -17972,150 +17999,6 @@ System.namespace("Wrapper", function (namespace)
     }
     return class
   end)
-
-
-
-
-  namespace.class("PVPBotBase", function (namespace)
-    local Pulse, RunQueueLogic, RunBattleGroundLogic, Rotation, __ctor__
-    __ctor__ = function (this)
-      this.LastDestination = System.default(WrapperWoW.Vector3)
-      this.SmartTarget = WrapperHelpers.SmartTargetPVP()
-      this.SmartMove = WrapperHelpers.SmartMovePVP()
-    end
-    Pulse = function (this)
-      if WrapperWoW.ObjectManager.getInstance().Player == nil or not (__LB__.Navigator ~= nil) then
-        System.Console.WriteLine("Waiting on Player to spawn in ObjectManager")
-        return
-      end
-
-
-      if IsInInstance() then
-        RunBattleGroundLogic(this)
-      else
-        RunQueueLogic(this)
-      end
-
-      System.base(this).Pulse(this)
-    end
-    RunQueueLogic = function (this)
-      if GetBattlefieldStatus(1) ~= "queued" then
-        JoinBattlefield(32, true, false)
-      end
-
-      if GetBattlefieldStatus(1) == "confirm" then
-        AcceptBattlefieldPort(1, 1)
-        StaticPopup_Hide("CONFIRM_BATTLEFIELD_ENTRY")
-      end
-
-      if GetItemCount("Crate of Battlefield Goods") > 1 then
-        UseItemByName("Crate of Battlefield Goods")
-      end
-    end
-    RunBattleGroundLogic = function (this)
-      -- Console.WriteLine("In Battleground");
-
-      this.SmartMove:Pulse()
-      this.SmartTarget:Pulse()
-
-      local BestMoveScored = this.SmartMove:GetBestUnit()
-      local BestTargetScored = this.SmartTarget:GetBestUnit()
-
-      local BestMove = BestMoveScored.Player
-      local BestTarget = BestTargetScored
-
-
-
-      if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
-        if not __LB__.UnitTagHandler(UnitIsGhost, "player") then
-          RepopMe()
-        end
-
-        __LB__.Navigator.Stop()
-        return
-      end
-
-
-      if BestTarget ~= nil then
-        --Console.WriteLine("BestTarget: " + BestTarget.Name);
-        if WrapperWoW.ObjectManager.getInstance().Player.TargetGUID ~= BestTarget.TargetGUID then
-          BestTarget:Target()
-          RunMacroText("/startattack")
-        end
-
-        if (WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, BestTarget.Position) > 25 or not BestTarget.LineOfSight) and not (WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() or WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling()) then
-          __LB__.Navigator.AllowMounting(false)
-          __LB__.Navigator.MoveTo(BestTarget.Position.X, BestTarget.Position.Y, BestTarget.Position.Z, 1, 15)
-          return
-        else
-          __LB__.Navigator.Stop()
-        end
-
-        ----Rotation?!
-      end
-
-
-      if BestMove ~= nil then
-        if WrapperWoW.Vector3.op_Equality(this.LastDestination, nil) or WrapperWoW.Vector3.Distance(BestMove.Position, this.LastDestination:__clone__()) > 25 then
-          if BestMove.GUID ~= this.LastMoveGUID then
-            if math.Abs(BestMoveScored.Score - this.LastMoveScore) < 250 then
-              --Dont update task lets not just spam around in the middle.
-            end
-          else
-            -- Same Target Keep Going
-            this.LastMoveScore = BestMoveScored.Score
-            this.LastMoveGUID = BestMove.GUID
-            this.LastDestination = BestMove.Position:__clone__()
-          end
-        else
-          -- We need to do something to start.
-          this.LastMoveScore = BestMoveScored.Score
-          this.LastMoveGUID = BestMove.GUID
-          this.LastDestination = BestMove.Position:__clone__()
-        end
-
-        if WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, this.LastDestination:__clone__()) > 15 then
-          __LB__.Navigator.AllowMounting(WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, this.LastDestination:__clone__()) > 40)
-          __LB__.Navigator.MoveTo(this.LastDestination.X, this.LastDestination.Y, this.LastDestination.Z, 1, 1)
-        else
-          __LB__.Navigator.Stop()
-        end
-      end
-    end
-    Rotation = function (this)
-    end
-    return {
-      base = function (out)
-        return {
-          out.Wrapper.BotBase
-        }
-      end,
-      HasBGStart = false,
-      MinScoreJumpToSwap = 100,
-      LastMoveScore = 0,
-      LastMoveGUID = "",
-      Pulse = Pulse,
-      __ctor__ = __ctor__
-    }
-  end)
-
-  namespace.class("CameraFaceTarget", function (namespace)
-    local Pulse
-    Pulse = function (this)
-      local CurrentFacing, CurrentPitch
-      CurrentFacing, CurrentPitch =  __LB__.GetCameraAngles()
-
-      System.base(this).Pulse(this)
-    end
-    return {
-      base = function (out)
-        return {
-          out.Wrapper.BotBase
-        }
-      end,
-      Pulse = Pulse
-    }
-  end)
 end)
 
 end
@@ -18123,42 +18006,47 @@ do
 local System = System
 local Wrapper
 local WrapperAPI
-local WrapperNativeBehaviors
 local WrapperUI
 local WrapperWoW
 System.import(function (out)
   Wrapper = out.Wrapper
   WrapperAPI = Wrapper.API
-  WrapperNativeBehaviors = Wrapper.NativeBehaviors
   WrapperUI = Wrapper.UI
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper", function (namespace)
   namespace.class("Program", function (namespace)
-    local Base, ThrowWowErrors, Main, class, static
+    local ThrowWowErrors, Main, class, static
     static = function (this)
-      Base = Wrapper.DataLoggerBase()
       this.Tracker = WrapperUI.Tracker()
     end
-    ThrowWowErrors = false
+    ThrowWowErrors = true
     Main = function (args)
+      System.Console.WriteLine("BroBot V2 Loading")
       __LB__.LoadScript("NavigatorNightly")
       __LB__.LoadScript("AntiAFK")
       __LB__.LoadScript("LibDrawNightly")
+
       Wrapper.StdUI.Init()
       WrapperAPI.LibJson.Init()
-
-      System.Console.WriteLine("Pulsed OM")
       WrapperWoW.ObjectManager.getInstance():Pulse()
 
-      System.Console.WriteLine("Pulsed OM Complete")
+      System.Console.WriteLine("BroBot V2 Loaded Libs")
+
+      class.MainUI = WrapperUI.BotMainUI()
+
       C_Timer.NewTicker(0.2, function ()
         if not ThrowWowErrors then
           System.try(function ()
+            class.CurrentTime = GetTime()
             WrapperWoW.ObjectManager.getInstance():Pulse()
-            Base:Pulse()
-            class.Tracker:Pulse()
-            --Console.WriteLine("New Ticker");
+
+            if class.IsRunning then
+              if class.Base ~= nil then
+                class.Base:Pulse()
+              end
+              class.Tracker:Pulse()
+            end
           end, function (default)
             local E = default
             System.Console.WriteLine("Exception in mainBot Thread: " .. System.toString(E:getMessage()) .. " StackTrace: " .. System.toString(debugstack()))
@@ -18166,32 +18054,20 @@ System.namespace("Wrapper", function (namespace)
           end)
         else
           WrapperWoW.ObjectManager.getInstance():Pulse()
-          Base:Pulse()
-          class.Tracker:Pulse()
+
+          if class.IsRunning then
+            if class.Base ~= nil then
+              class.Base:Pulse()
+            end
+
+            class.Tracker:Pulse()
+          end
         end
-      end)
-
-
-
-
-      C_Timer.After(2.5, function ()
-        if _G["BroBot"] == nil then
-          System.Console.WriteLine("Wont load brobot cc's brobot disabled")
-          return
-        end
-
-        --Console.WriteLine("Attempting to Register C# CC");
-        --BroBotAPI.registerFighter("CHunter", new HunterCCTest());
-        --Console.WriteLine("Has Registered Fighter");
-
-
-        System.Console.WriteLine("Attempting to Register Native Behavior")
-        --BroBotAPI.registerBehavior("BroBotBehavior", new BroBotBehavior());
-        registerBehavior(WrapperNativeBehaviors.NativeGrind(), "NativeGrind")
-        System.Console.WriteLine("Registered Native Behaviors")
       end)
     end
     class = {
+      CurrentTime = 0,
+      IsRunning = false,
       Main = Main,
       static = static
     }
@@ -19426,6 +19302,18 @@ System.namespace("Wrapper", function (namespace)
       }
     end)
     namespace.class("StdUiButton", function (namespace)
+      return {
+        base = function (out)
+          return {
+            out.Wrapper.StdUI.StdUiFrame
+          }
+        end
+      }
+    end)
+    namespace.class("StdUiDropdown", function (namespace)
+      namespace.class("StdUiDropdownItems", function (namespace)
+        return {}
+      end)
       return {
         base = function (out)
           return {
@@ -23931,6 +23819,181 @@ end)
 end
 do
 local System = System
+local WrapperHelpers
+local WrapperWoW
+System.import(function (out)
+  WrapperHelpers = Wrapper.Helpers
+  WrapperWoW = Wrapper.WoW
+end)
+System.namespace("Wrapper.BotBases", function (namespace)
+  namespace.class("PVPBotBase", function (namespace)
+    local Pulse, RunQueueLogic, RunBattleGroundLogic, Rotation, __ctor__
+    __ctor__ = function (this)
+      this.SmartTarget = WrapperHelpers.SmartTargetPVP()
+      this.SmartMove = WrapperHelpers.SmartMovePVP()
+    end
+    Pulse = function (this)
+      if WrapperWoW.ObjectManager.getInstance().Player == nil or not (__LB__.Navigator ~= nil) then
+        System.Console.WriteLine("Waiting on Player to spawn in ObjectManager")
+        return
+      end
+
+
+      if IsInInstance() then
+        RunBattleGroundLogic(this)
+      else
+        RunQueueLogic(this)
+      end
+
+      System.base(this).Pulse(this)
+    end
+    RunQueueLogic = function (this)
+      if GetBattlefieldStatus(1) ~= "queued" then
+        JoinBattlefield(32, true, false)
+      end
+
+      if GetBattlefieldStatus(1) == "confirm" then
+        AcceptBattlefieldPort(1, 1)
+        StaticPopup_Hide("CONFIRM_BATTLEFIELD_ENTRY")
+      end
+
+      if GetItemCount("Crate of Battlefield Goods") > 1 then
+        UseItemByName("Crate of Battlefield Goods")
+      end
+    end
+    RunBattleGroundLogic = function (this)
+      -- Console.WriteLine("In Battleground");
+
+      this.SmartMove:Pulse()
+      this.SmartTarget:Pulse()
+
+      local BestMoveScored = this.SmartMove:GetBestUnit()
+      local BestTargetScored = this.SmartTarget:GetBestUnit()
+
+      local BestMove = BestMoveScored.Player
+      local BestTarget = BestTargetScored
+
+
+
+      if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
+        if not __LB__.UnitTagHandler(UnitIsGhost, "player") then
+          RepopMe()
+        end
+
+        __LB__.Navigator.Stop()
+        return
+      end
+
+
+      if BestTarget ~= nil then
+        --Console.WriteLine("BestTarget: " + BestTarget.Name);
+        if WrapperWoW.ObjectManager.getInstance().Player.TargetGUID ~= BestTarget.TargetGUID then
+          BestTarget:Target()
+          RunMacroText("/startattack")
+        end
+
+        if (WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, BestTarget.Position) > 25 or not BestTarget.LineOfSight) and not (WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() or WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling()) then
+          __LB__.Navigator.AllowMounting(false)
+          __LB__.Navigator.MoveTo(BestTarget.Position.X, BestTarget.Position.Y, BestTarget.Position.Z, 1, 15)
+          return
+        else
+          __LB__.Navigator.Stop()
+        end
+
+        ----Rotation?!
+      end
+
+
+      if BestMove ~= nil then
+        if not (this.LastDestination ~= nil) or WrapperWoW.Vector3.Distance(BestMove.Position, System.Nullable.Value(this.LastDestination)) > 25 then
+          if BestMove.GUID ~= this.LastMoveGUID then
+            if math.Abs(BestMoveScored.Score - this.LastMoveScore) < 250 then
+              --Dont update task lets not just spam around in the middle.
+            end
+          else
+            -- Same Target Keep Going
+            this.LastMoveScore = BestMoveScored.Score
+            this.LastMoveGUID = BestMove.GUID
+            this.LastDestination = BestMove.Position:__clone__()
+          end
+        else
+          -- We need to do something to start.
+          this.LastMoveScore = BestMoveScored.Score
+          this.LastMoveGUID = BestMove.GUID
+          this.LastDestination = BestMove.Position:__clone__()
+        end
+
+        if WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, System.Nullable.Value(this.LastDestination)) > 15 then
+          __LB__.Navigator.AllowMounting(WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, System.Nullable.Value(this.LastDestination)) > 20)
+          __LB__.Navigator.MoveTo(System.Nullable.Value(this.LastDestination).X, System.Nullable.Value(this.LastDestination).Y, System.Nullable.Value(this.LastDestination).Z, 1, 1)
+        else
+          __LB__.Navigator.Stop()
+        end
+      end
+    end
+    Rotation = function (this)
+    end
+    return {
+      base = function (out)
+        return {
+          out.Wrapper.BotBase
+        }
+      end,
+      HasBGStart = false,
+      MinScoreJumpToSwap = 100,
+      LastMoveScore = 0,
+      LastMoveGUID = "",
+      Pulse = Pulse,
+      __ctor__ = __ctor__
+    }
+  end)
+end)
+
+end
+do
+local System = System
+local Wrapper
+local WrapperNativeBehaviors
+local BehaviorStateMachine
+System.import(function (out)
+  Wrapper = out.Wrapper
+  WrapperNativeBehaviors = Wrapper.NativeBehaviors
+  BehaviorStateMachine = Wrapper.NativeBehaviors.BehaviorStateMachine
+end)
+System.namespace("Wrapper.BotBases", function (namespace)
+  namespace.class("NativeGrindBotBase", function (namespace)
+    local Pulse, BuildConfig, class, __ctor__
+    __ctor__ = function (this)
+      this.LastRun = Wrapper.Program.CurrentTime
+      this.name = "NativeGrind"
+      class.StateMachine = BehaviorStateMachine.StateMachine()
+      class.StateMachine.States:Push(WrapperNativeBehaviors.NativeGrindBaseState())
+    end
+    Pulse = function (this)
+      class.StateMachine:Run()
+    end
+    BuildConfig = function (this, Container)
+      System.base(this).BuildConfig(this, Container)
+    end
+    class = {
+      base = function (out)
+        return {
+          out.Wrapper.BotBase
+        }
+      end,
+      name = "NativeGrind",
+      author = "Fusspawn",
+      Pulse = Pulse,
+      BuildConfig = BuildConfig,
+      __ctor__ = __ctor__
+    }
+    return class
+  end)
+end)
+
+end
+do
+local System = System
 System.namespace("Wrapper.Database", function (namespace)
   namespace.enum("FactionID", function ()
     return {
@@ -24798,7 +24861,6 @@ System.namespace("Wrapper.Database", function (namespace)
         local Path = System.toString( __LB__.GetBaseDirectory()) .. "\\BroBot\\Database\\MapData\\" .. MapId .. ".db"
         local Data = GetMapDatabase(MapId)
          __LB__.WriteFile(Path, LibJSON.Serialize(Data), false)
-
         System.Console.WriteLine("[WoWDatabase] Persisted Changes to MapId: " .. MapId)
       end
 
@@ -24957,6 +25019,44 @@ end)
 end
 do
 local System = System
+local DictStringDouble = System.Dictionary(System.String, System.Double)
+local Wrapper
+System.import(function (out)
+  Wrapper = out.Wrapper
+end)
+System.namespace("Wrapper.Helpers", function (namespace)
+  namespace.class("Blacklist", function (namespace)
+    local IsOnBlackList, AddToBlacklist, class, static
+    static = function (this)
+      this.BlackListEntrys = DictStringDouble()
+    end
+    IsOnBlackList = function (GUID)
+      if not class.BlackListEntrys:ContainsKey(GUID) then
+        return false
+      end
+
+      if class.BlackListEntrys:get(GUID) < Wrapper.Program.CurrentTime then
+        return true
+      end
+
+      class.BlackListEntrys:RemoveKey(GUID)
+      return false
+    end
+    AddToBlacklist = function (GUID, NumSeconds)
+      class.BlackListEntrys:set(GUID, Wrapper.Program.CurrentTime + NumSeconds)
+    end
+    class = {
+      IsOnBlackList = IsOnBlackList,
+      AddToBlacklist = AddToBlacklist,
+      static = static
+    }
+    return class
+  end)
+end)
+
+end
+do
+local System = System
 System.namespace("Wrapper.Helpers", function (namespace)
   namespace.class("FileLogger", function (namespace)
     local WriteLine
@@ -24998,10 +25098,12 @@ end
 do
 local System = System
 local Linq = System.Linq.Enumerable
+local Wrapper
 local WrapperHelpers
 local WrapperWoW
 local ListScoredWowPlayer
 System.import(function (out)
+  Wrapper = out.Wrapper
   WrapperHelpers = Wrapper.Helpers
   WrapperWoW = Wrapper.WoW
   ListScoredWowPlayer = System.List(WrapperHelpers.ScoredWowPlayer)
@@ -25023,7 +25125,7 @@ System.namespace("Wrapper.Helpers", function (namespace)
         return
       end
 
-      this.LastUpdateTime = GetTime()
+      this.LastUpdateTime = Wrapper.Program.CurrentTime
 
       this.Units:Clear()
 
@@ -25093,10 +25195,12 @@ end
 do
 local System = System
 local Linq = System.Linq.Enumerable
+local Wrapper
 local WrapperHelpers
 local WrapperWoW
 local ListScoredWowPlayer
 System.import(function (out)
+  Wrapper = out.Wrapper
   WrapperHelpers = Wrapper.Helpers
   WrapperWoW = Wrapper.WoW
   ListScoredWowPlayer = System.List(WrapperHelpers.ScoredWowPlayer)
@@ -25112,7 +25216,7 @@ System.namespace("Wrapper.Helpers", function (namespace)
         return
       end
 
-      this.LastUpdateTime = GetTime()
+      this.LastUpdateTime = Wrapper.Program.CurrentTime
 
       this.Units:Clear()
 
@@ -25164,74 +25268,9 @@ end)
 end
 do
 local System = System
-local WrapperAPI
-local WrapperNativeBehaviors
-local BehaviorStateMachine
-local ArrayBroBotBehavior
-System.import(function (out)
-  WrapperAPI = Wrapper.API
-  WrapperNativeBehaviors = Wrapper.NativeBehaviors
-  BehaviorStateMachine = Wrapper.NativeBehaviors.BehaviorStateMachine
-  ArrayBroBotBehavior = System.Array(WrapperAPI.BroBotBehavior)
-end)
-System.namespace("Wrapper.NativeBehaviors", function (namespace)
-  namespace.class("NativeGrind", function (namespace)
-    local Run, Exit, class, __ctor__
-    __ctor__ = function (this)
-      this.children = ArrayBroBotBehavior:new(0)
-      this.PersistentData = WrapperAPI.BehaviorPersistentData()
-      this.LastRun = GetTime()
-      this.name = "NativeGrind"
-      this.author = "Fusspawn"
-      this.showInGUI = true
-      this.canHaveChildren = false
-
-      this.skip_default_logic = true
-      --c# has no default logic
-      this.skip_spell_avoidance = true
-      --not even sure this exists now?!
-      this.children = ArrayBroBotBehavior:new(0)
-      this.PersistentData = WrapperAPI.BehaviorPersistentData()
-      this.PersistentData.enabled = true
-      this.PersistentData.minfood = 0
-      this.PersistentData.minfoodbuy = 0
-      this.PersistentData.minwater = 0
-      this.PersistentData.minwaterbuy = 0
-      class.StateMachine = BehaviorStateMachine.StateMachine()
-      class.StateMachine.States:Push(WrapperNativeBehaviors.NativeGrindBaseState())
-    end
-    Run = function (this)
-      if GetTime() - this.LastRun > 0.5 then
-        this.LastRun = GetTime()
-        --ObjectManager.Instance.Pulse();
-        class.StateMachine:Run()
-      end
-    end
-    Exit = function (this)
-      return false
-    end
-    class = {
-      name = "NativeGrind",
-      author = "Fusspawn",
-      showInGUI = true,
-      canHaveChildren = false,
-      death_count = 0,
-      kill_count = 0,
-      skip_default_logic = true,
-      skip_spell_avoidance = true,
-      Run = Run,
-      Exit = Exit,
-      __ctor__ = __ctor__
-    }
-    return class
-  end)
-end)
-
-end
-do
-local System = System
 local Linq = System.Linq.Enumerable
-local ArrayString = System.Array(System.String)
+local Wrapper
+local WrapperBotBases
 local WrapperHelpers
 local WrapperNativeBehaviors
 local NativeGrindSmartObjective
@@ -25239,6 +25278,8 @@ local WrapperNativeGrindTasks
 local WrapperWoW
 local ListSmartObjectiveTask
 System.import(function (out)
+  Wrapper = out.Wrapper
+  WrapperBotBases = Wrapper.BotBases
   WrapperHelpers = Wrapper.Helpers
   WrapperNativeBehaviors = Wrapper.NativeBehaviors
   NativeGrindSmartObjective = Wrapper.NativeBehaviors.NativeGrindSmartObjective
@@ -25257,31 +25298,36 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
       --Base Grind. Should Never Complete. Stack Should Never Go Empty!
     end
     Tick = function (this)
-      if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") and (System.ObjectGetType(WrapperNativeBehaviors.NativeGrind.StateMachine.States:Peek()):getName() ~= System.typeof(WrapperNativeGrindTasks.NativeGrindCorpseRunTask):getName()) then
-        WrapperNativeBehaviors.NativeGrind.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindCorpseRunTask())
+      if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") and (System.ObjectGetType(WrapperBotBases.NativeGrindBotBase.StateMachine.States:Peek()):getName() ~= System.typeof(WrapperNativeGrindTasks.NativeGrindCorpseRunTask):getName()) then
+        WrapperBotBases.NativeGrindBotBase.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindCorpseRunTask())
         return
       end
 
+      if __LB__.UnitTagHandler(UnitAffectingCombat, "player") then
+        System.Console.WriteLine("Was in combat?")
+      end
 
-      class.SmartObjective:Update()
       local NextObjective = class.SmartObjective:GetNextTask()
 
       if NextObjective ~= nil then
         repeat
           local default = NextObjective.TaskType
           if default == 1 --[[SmartObjectiveTaskType.Gather]] then
-            WrapperNativeBehaviors.NativeGrind.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindGatherTask(NextObjective))
+            WrapperBotBases.NativeGrindBotBase.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindGatherTask(NextObjective))
             break
           elseif default == 2 --[[SmartObjectiveTaskType.Loot]] then
-            WrapperNativeBehaviors.NativeGrind.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindLootTask(NextObjective))
+            WrapperBotBases.NativeGrindBotBase.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindLootTask(NextObjective))
             break
           elseif default == 0 --[[SmartObjectiveTaskType.Kill]] then
-            WrapperNativeBehaviors.NativeGrind.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindKillTask(NextObjective))
+            WrapperBotBases.NativeGrindBotBase.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindKillTask(NextObjective))
             break
           end
         until 1
+
+        System.Console.WriteLine("Pushed a task of Type: " .. System.EnumToString(NextObjective.TaskType, NativeGrindSmartObjective.SmartObjectiveTaskType))
       else
-        WrapperNativeBehaviors.NativeGrind.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindSearchForNode(class.SmartObjective))
+        System.Console.WriteLine("update was null")
+        WrapperBotBases.NativeGrindBotBase.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindSearchForNode(class.SmartObjective))
       end
 
       System.base(this).Tick(this)
@@ -25332,86 +25378,47 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
     end)
     __ctor__ = function (this)
       this.Tasks = ListSmartObjectiveTask()
-      this.LastUpdateTime = GetTime()
+      this.LastUpdateTime = Wrapper.Program.CurrentTime
     end
     Update = function (this)
       --ObjectManager.Instance.Pulse();
 
-      local CurrentTime = GetTime()
-      if CurrentTime - this.LastUpdateTime < 1 then
-        return
-      end
+      local CurrentTime = Wrapper.Program.CurrentTime
 
-      System.Console.WriteLine("Updating Smart Objective")
+      --[[
+             * if (CurrentTime - LastUpdateTime < 1)
+            {
+                return;
+            }
+            ]]
+
       this.LastUpdateTime = CurrentTime
       this.Tasks:Clear()
 
-      if not __LB__.UnitTagHandler(UnitAffectingCombat, "player") then
-        local BroBotExists = _G["BroBot"] ~= nil
-        local AllowGather = (BroBotExists and WrapperHelpers.LuaHelper.GetGlobalFrom_G_Namespace(ArrayString("BroBot", "UI", "CoreConfig", "PersistentData", "AllowGathering"), System.Boolean)) or true
-        -- Default to true if BroBot doesnt Exist
 
-        if AllowGather then
-          for _, GameObject in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
-            return x.Value:getIsHerb() or x.Value:getIsOre()
-          end), function (x)
-            return not (BroBot.Engine.BlackList.BannedGUIDs[x.Value.GUID] ~= nil) and WrapperWoW.ObjectManager.getInstance().Player:HasRequiredSkillToHarvest(x.Value)
-          end)) do
-            local score = 0
-            score = 5
-            score = score + (200 - WrapperWoW.Vector3.Distance(GameObject.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
+      local AllowGather = true
+      -- Default to true if BroBot doesnt Exist
 
-            if score > 0 then
-              --Console.WriteLine("Found Gathering Objective");
-
-              local default = class.SmartObjectiveTask()
-              default.Score = score
-              default.TargetUnitOrObject = GameObject.Value
-              default.TaskType = 1 --[[SmartObjectiveTaskType.Gather]]
-              this.Tasks:Add(default)
-            else
-              -- Console.WriteLine("Gathering Objective Was To Low Scored");
-            end
-          end
-        end
-
-
-        for _, Unit in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
-          return x.Value.ObjectType == 5 --[[EObjectType.Unit]] and x.Value.ObjectType ~= 6 --[[EObjectType.Player]]
+      if AllowGather then
+        for _, GameObject in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
+          return x.Value:getIsHerb() or x.Value:getIsOre()
         end), function (x)
-          return not (BroBot.Engine.BlackList.BannedGUIDs[x.Value.GUID] ~= nil)
+          return not WrapperHelpers.Blacklist.IsOnBlackList(x.Value.GUID) and WrapperWoW.ObjectManager.getInstance().Player:HasRequiredSkillToHarvest(x.Value)
         end)) do
-          local continue
-          repeat
-            if not __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) then
-              continue = true
-              break
-            end
+          local score = 0
+          score = 5
+          score = score + (200 - WrapperWoW.Vector3.Distance(GameObject.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
 
-            BroBotExists = _G["BroBot"] ~= nil
-            local AllowSkinning = (BroBotExists and WrapperHelpers.LuaHelper.GetGlobalFrom_G_Namespace(ArrayString("BroBot", "UI", "CoreConfig", "PersistentData", "AllowSkinning"), System.Boolean)) or true
-            -- Default to true if BroBot doesnt Exist
+          if score > 0 then
+            --  Console.WriteLine("Found Gathering Objective");
 
-            if (System.as(Unit.Value, WrapperWoW.WoWUnit)).PlayerHasFought and ( __LB__.UnitIsLootable(Unit.Value.GUID) or ( __LB__.UnitHasFlag(Unit.Value.GUID, 67108864 --[[EUnitFlags.Skinnable]]) and AllowSkinning)) then
-              local score = 0
-              score = score + (200 - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
-
-              if score > 0 then
-                --Console.WriteLine("Found LootOrSkin Objective");
-
-                local default = class.SmartObjectiveTask()
-                default.Score = score
-                default.TargetUnitOrObject = Unit.Value
-                default.TaskType = 2 --[[SmartObjectiveTaskType.Loot]]
-                this.Tasks:Add(default)
-              else
-                -- Console.WriteLine("Potential LootOrSkin Objective was to low scored");
-              end
-            end
-            continue = true
-          until 1
-          if not continue then
-            break
+            local default = class.SmartObjectiveTask()
+            default.Score = score
+            default.TargetUnitOrObject = GameObject.Value
+            default.TaskType = 1 --[[SmartObjectiveTaskType.Gather]]
+            this.Tasks:Add(default)
+          else
+            -- Console.WriteLine("Gathering Objective Was To Low Scored");
           end
         end
       end
@@ -25420,27 +25427,75 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
       for _, Unit in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
         return x.Value.ObjectType == 5 --[[EObjectType.Unit]] and x.Value.ObjectType ~= 6 --[[EObjectType.Player]]
       end), function (x)
-        return not (BroBot.Engine.BlackList.BannedGUIDs[x.Value.GUID] ~= nil)
+        return not WrapperHelpers.Blacklist.IsOnBlackList(x.Value.GUID)
+      end)) do
+        local continue
+        repeat
+          if not __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) then
+            continue = true
+            break
+          end
+          local AllowSkinning = true
+          -- Default to true if BroBot doesnt Exist
+
+          if (System.as(Unit.Value, WrapperWoW.WoWUnit)).PlayerHasFought and ( __LB__.UnitIsLootable(Unit.Value.GUID) or ( __LB__.UnitHasFlag(Unit.Value.GUID, 67108864 --[[EUnitFlags.Skinnable]]) and AllowSkinning)) then
+            local score = 0
+            score = score + (200 - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
+
+            if score > 0 then
+              -- Console.WriteLine("Found LootOrSkin Objective");
+
+              local default = class.SmartObjectiveTask()
+              default.Score = score
+              default.TargetUnitOrObject = Unit.Value
+              default.TaskType = 2 --[[SmartObjectiveTaskType.Loot]]
+              this.Tasks:Add(default)
+            else
+              -- Console.WriteLine("Potential LootOrSkin Objective was to low scored");
+            end
+          end
+          continue = true
+        until 1
+        if not continue then
+          break
+        end
+      end
+
+
+      for _, Unit in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
+        return x.Value.ObjectType == 5 --[[EObjectType.Unit]] and x.Value.ObjectType ~= 6 --[[EObjectType.Player]]
+      end), function (x)
+        return not WrapperHelpers.Blacklist.IsOnBlackList(x.Value.GUID)
       end)) do
         local continue
         repeat
           local _Unit = System.as(Unit.Value, WrapperWoW.WoWUnit)
-          if __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) or _Unit.Reaction >= 4 then
+          if __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) or _Unit.Reaction > 4 then
+            -- Console.WriteLine($"Skipping {Unit.Value.Name} Its dead or shit reaction");
             continue = true
             break
           end
 
           if __LB__.UnitTagHandler(UnitIsTrivial, Unit.Value.GUID) or __LB__.UnitTagHandler(UnitCreatureType, Unit.Value.GUID) == "Critter" then
+            --  Console.WriteLine($"Skipping {Unit.Value.Name} Its Trivial or a Critter");
             continue = true
             break
           end
 
+          -- Console.WriteLine("Found Valid Combat Target");
+
           local score = 0
           score = score + (200 - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
-          score = score + ((8 - _Unit.Reaction) * 10)
+
+          if __LB__.UnitTagHandler(UnitAffectingCombat, _Unit.GUID) then
+            --   Console.WriteLine("Found Combat Unit");
+            score = score + 500
+          end
+
+          --score = score + ((8 - _Unit.Reaction) * 10);
 
           if score > 0 then
-            --Console.WriteLine("Found Combat Objective");
+            --  Console.WriteLine("Found Combat Objective");
 
             local default = class.SmartObjectiveTask()
             default.Score = score
@@ -25456,6 +25511,8 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
       end
     end
     GetNextTask = function (this)
+      Update(this)
+
       local default
       if #this.Tasks > 0 then
         default = this.Tasks:get(0)
@@ -25467,6 +25524,93 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
     class = {
       Update = Update,
       GetNextTask = GetNextTask,
+      __ctor__ = __ctor__
+    }
+    return class
+  end)
+end)
+
+end
+do
+local System = System
+local Wrapper
+local WrapperBotBases
+System.import(function (out)
+  Wrapper = out.Wrapper
+  WrapperBotBases = Wrapper.BotBases
+end)
+System.namespace("Wrapper.UI", function (namespace)
+  namespace.class("BotMainUI", function (namespace)
+    local CreateMainFrame, class, __ctor__
+    namespace.class("BotUIDataContainer", function (namespace)
+      return {}
+    end)
+    __ctor__ = function (this)
+      CreateMainFrame(this)
+    end
+    CreateMainFrame = function (this)
+      if this.StdUI == nil then
+        this.StdUI = LibStub("StdUi"):NewInstance()
+      end
+
+      this.UIContainer = class.BotUIDataContainer()
+      this.UIContainer.MainBotUIFrame = this.StdUI:Window(_G["UIParent"], 500, 600, "BroBot")
+      this.UIContainer.MainBotUIFrame:SetPoint("CENTER", 0, 0)
+      this.UIContainer.MainBotUIFrame:Show()
+
+
+      this.UIContainer.EnabledCheckbox = this.StdUI:Checkbox(this.UIContainer.MainBotUIFrame, "Enabled", 150, 25)
+      this.UIContainer.EnabledCheckbox.OnValueChanged = System.DelegateCombine(this.UIContainer.EnabledCheckbox.OnValueChanged, function (self, state, value)
+        Wrapper.Program.IsRunning = this.UIContainer.EnabledCheckbox:GetValue(System.Boolean)
+        System.Console.WriteLine("Toggled Bot: Is Running: " .. System.toString(Wrapper.Program.IsRunning))
+
+        __LB__.Navigator.Stop()
+      end)
+      this.StdUI:GlueTop(this.UIContainer.EnabledCheckbox, this.UIContainer.MainBotUIFrame, - 150, - 40, "TOP")
+
+
+      local Options = nil
+      local Options = { 
+            {text="Nothing", value=0},
+            {text="BGBot", value=1}, 
+            {text="GrindBot", value=2},
+            {text="WoWScanner", value=3}
+        }
+
+      this.UIContainer.SelectedBotBase = this.StdUI:Dropdown(this.UIContainer.MainBotUIFrame, 200, 25, Options, nil, false, false)
+
+      this.UIContainer.SelectedBotBase:SetOptions(Options)
+      this.UIContainer.SelectedBotBase:SetPlaceholder("~-- Please Select a BotBase --~")
+      this.UIContainer.SelectedBotBase.OnValueChanged = System.DelegateCombine(this.UIContainer.SelectedBotBase.OnValueChanged, function (self, values)
+        local Value = this.UIContainer.SelectedBotBase:GetValue(System.Int32)
+        if Value == 1 then
+          System.Console.WriteLine("Switching to PVP Bot base")
+          Wrapper.Program.Base = WrapperBotBases.PVPBotBase()
+        elseif Value == 2 then
+          System.Console.WriteLine("Switching to Grind Bot base")
+          Wrapper.Program.Base = WrapperBotBases.NativeGrindBotBase()
+        elseif Value == 3 then
+          System.Console.WriteLine("Switching to Grind Bot base")
+          Wrapper.Program.Base = Wrapper.DataLoggerBase()
+        else
+          System.Console.WriteLine("Selected Empty Bot Base")
+          Wrapper.Program.Base = nil
+        end
+      end)
+      this.StdUI:GlueTop(this.UIContainer.SelectedBotBase, this.UIContainer.MainBotUIFrame, 0, - 40, "TOP")
+
+
+      this.UIContainer.ToggleBotUI = this.StdUI:HighlightButton(_G["UIParent"], 100, 25, "Toggle BroBot UI")
+      this.UIContainer.ToggleBotUI:SetScript("OnClick", function ()
+        if not this.UIContainer.MainBotUIFrame:IsShown() then
+          this.UIContainer.MainBotUIFrame:Show()
+        else
+          this.UIContainer.MainBotUIFrame:Hide()
+        end
+      end, System.Delegate)
+      this.StdUI:GlueTop(this.UIContainer.ToggleBotUI, _G["UIParent"], 20, 5, "TOP")
+    end
+    class = {
       __ctor__ = __ctor__
     }
     return class
@@ -25506,6 +25650,25 @@ end
 do
 local System = System
 System.namespace("Wrapper.UI", function (namespace)
+  namespace.class("SlashCommands", function (namespace)
+    local RegisterSlashCommand
+    RegisterSlashCommand = function (command, Function)
+      _G["SLASH_" .. System.toString(command)] = "/" .. System.toString(command)
+      SlashCmdList[command] = Function;
+
+      System.Console.WriteLine("Registed /" .. System.toString(command) .. " slash command")
+    end
+    return {
+      RegisterSlashCommand = RegisterSlashCommand
+    }
+  end)
+end)
+
+end
+do
+local System = System
+local Linq = System.Linq.Enumerable
+System.namespace("Wrapper.UI", function (namespace)
   namespace.class("Tracker", function (namespace)
     local Pulse, UpdateStack
     Pulse = function (this)
@@ -25524,9 +25687,11 @@ System.namespace("Wrapper.UI", function (namespace)
     end
     UpdateStack = function (this, States)
       local returnstring = ""
-      for _, state in System.each(States) do
+
+      for _, state in System.each(Linq.Skip(States, 1)) do
         returnstring = System.toString(returnstring) .. (System.toString(state:StringRepr()) .. "\n")
       end
+
       this.StateStack:SetText(returnstring)
     end
     return {
@@ -25545,10 +25710,12 @@ end
 do
 local System = System
 local Linq = System.Linq.Enumerable
+local Wrapper
 local WrapperAPI
 local WrapperDatabase
 local WrapperWoW
 System.import(function (out)
+  Wrapper = out.Wrapper
   WrapperAPI = Wrapper.API
   WrapperDatabase = Wrapper.Database
   WrapperWoW = Wrapper.WoW
@@ -25571,6 +25738,7 @@ System.namespace("Wrapper.WoW", function (namespace)
           return x == this.Name
         end)
       end
+
       return System.Nullable.Value(this.WasHerb)
     end
     getIsOre = function (this)
@@ -25583,11 +25751,13 @@ System.namespace("Wrapper.WoW", function (namespace)
       return System.Nullable.Value(this.WasOre)
     end
     Update = function (this)
+      this.LastUpdate = Wrapper.Program.CurrentTime
       this.Position = WrapperAPI.LuaBox.getInstance():ObjectPositionVector3(this.GUID)
     end
     return {
       ObjectType = 0,
       ObjectId = 0,
+      LastUpdate = 0,
       getIsHerb = getIsHerb,
       getIsOre = getIsOre,
       Update = Update,
@@ -25680,10 +25850,12 @@ do
 local System = System
 local Linq = System.Linq.Enumerable
 local ListString = System.List(System.String)
+local Wrapper
 local WrapperWoW
 local ListWoWGameObject
 local DictStringWoWGameObject
 System.import(function (out)
+  Wrapper = out.Wrapper
   WrapperWoW = Wrapper.WoW
   ListWoWGameObject = System.List(WrapperWoW.WoWGameObject)
   DictStringWoWGameObject = System.Dictionary(System.String, WrapperWoW.WoWGameObject)
@@ -25727,12 +25899,16 @@ System.namespace("Wrapper.WoW", function (namespace)
           end
         end
 
+        local CurrentTime = Wrapper.Program.CurrentTime
         local RemovalList = ListString()
+
         for _, kvp in System.each(this.AllObjects) do
           if not  __LB__.ObjectExists(kvp.Key) then
             RemovalList:Add(kvp.Key)
           else
-            kvp.Value:Update()
+            if CurrentTime - kvp.Value.LastUpdate > 0.25 then
+              kvp.Value:Update()
+            end
           end
         end
 
@@ -26304,148 +26480,6 @@ end)
 end
 do
 local System = System
-System.namespace("Wrapper.API", function (namespace)
-  namespace.class("BroBotAPI", function (namespace)
-    return {}
-  end)
-end)
-
-end
-do
-local System = System
-local WrapperAPI
-local ArrayBroBotBehavior
-System.import(function (out)
-  WrapperAPI = Wrapper.API
-  ArrayBroBotBehavior = System.Array(WrapperAPI.BroBotBehavior)
-end)
-System.namespace("Wrapper.API", function (namespace)
-  namespace.interface("stub_class_please_ignore", function ()
-    local Run, Exit
-    Run = function (this)
-    end
-    Exit = function (this)
-      return false
-    end
-    return {
-      extern = {
-        Run = Run,
-        Exit = Exit
-      }
-    }
-  end)
-
-  namespace.class("BroBotBehavior", function (namespace)
-    local Exit, Run, __ctor__
-    __ctor__ = function (this)
-      this.children = ArrayBroBotBehavior:new(0)
-      this.PersistentData = WrapperAPI.BehaviorPersistentData()
-      this.name = "BroBotBehavior"
-      this.author = "Fusspawn"
-      this.showInGUI = true
-      this.canHaveChildren = false
-
-      this.skip_default_logic = true
-      --c# has no default logic
-      this.skip_spell_avoidance = true
-      --not even sure this exists now?!
-      this.children = ArrayBroBotBehavior:new(0)
-      this.PersistentData = WrapperAPI.BehaviorPersistentData()
-      this.PersistentData.enabled = true
-      this.PersistentData.minfood = 0
-      this.PersistentData.minfoodbuy = 0
-
-      this.PersistentData.minwater = 0
-      this.PersistentData.minwaterbuy = 0
-    end
-    Exit = function (this)
-      return false
-    end
-    Run = function (this)
-      System.Console.WriteLine("Fucking Single Line Run Magics")
-    end
-    return {
-      base = function (out)
-        return {
-          out.Wrapper.API.stub_class_please_ignore
-        }
-      end,
-      name = "BroBotBehavior",
-      author = "Fusspawn",
-      showInGUI = true,
-      canHaveChildren = false,
-      death_count = 0,
-      kill_count = 0,
-      skip_default_logic = true,
-      skip_spell_avoidance = true,
-      Exit = Exit,
-      Run = Run,
-      __ctor__ = __ctor__
-    }
-  end)
-
-  namespace.class("BehaviorPersistentData", function (namespace)
-    return {
-      enabled = false,
-      minwater = 0,
-      minfood = 0,
-      minwaterbuy = 0,
-      minfoodbuy = 0
-    }
-  end)
-end)
-
-end
-do
-local System = System
-local WrapperAPI
-System.import(function (out)
-  WrapperAPI = Wrapper.API
-end)
-System.namespace("Wrapper.API", function (namespace)
-  namespace.class("BroBotCC", function (namespace)
-    local Rotation
-    Rotation = function (this)
-    end
-    return {
-      Class = "Unknown",
-      Name = "Unknown",
-      Rotation = Rotation
-    }
-  end)
-
-  namespace.class("PersistentData", function (namespace)
-    return {
-      range = 5,
-      Author = "CBot"
-    }
-  end)
-
-  namespace.class("HunterCCTest", function (namespace)
-    local Rotation, __ctor__
-    __ctor__ = function (this)
-      this.PersistentData = WrapperAPI.PersistentData()
-      this.PersistentData.range = 5
-      this.PersistentData.Author = "CBot"
-
-      this.Class = "HUNTER"
-      this.Name = "CHunter"
-    end
-    Rotation = function (this)
-      System.Console.WriteLine("c#s in your rotation. ")
-    end
-    return {
-      Class = "HUNTER",
-      Name = "CHunter",
-      Rotation = Rotation,
-      __ctor__ = __ctor__
-    }
-  end)
-end)
-
-end
-do
-local System = System
 local Wrapper
 local BehaviorStateMachine
 local StackStateMachineState
@@ -26467,9 +26501,13 @@ System.namespace("Wrapper.NativeBehaviors.BehaviorStateMachine", function (names
           this.States:Peek():ResetMaxStateTime()
         end
 
-        Wrapper.Program.Tracker.TaskLabel:SetText(this.States:Peek():StringRepr())
-        Wrapper.Program.Tracker:UpdateStack(this.States)
+
         this.States:Peek():Tick()
+
+        if Wrapper.Program.Tracker ~= nil and Wrapper.Program.Tracker.TaskLabel ~= nil then
+          Wrapper.Program.Tracker.TaskLabel:SetText(this.States:Peek():StringRepr())
+          Wrapper.Program.Tracker:UpdateStack(this.States)
+        end
       end
     end
     return {
@@ -26482,15 +26520,20 @@ end)
 end
 do
 local System = System
+local DictStringObject = System.Dictionary(System.String, System.Object)
+local Wrapper
+System.import(function (out)
+  Wrapper = out.Wrapper
+end)
 System.namespace("Wrapper.NativeBehaviors.BehaviorStateMachine", function (namespace)
   namespace.class("StateMachineState", function (namespace)
-    local ResetMaxStateTime, IsOutOfTime, StringRepr, SetMaxStateTime, Complete, Tick
+    local ResetMaxStateTime, IsOutOfTime, StringRepr, DebugDump, SetMaxStateTime, Complete, Tick
     ResetMaxStateTime = function (this)
-      this.EntryTime = GetTime()
+      this.EntryTime = Wrapper.Program.CurrentTime
     end
     IsOutOfTime = function (this)
       if this.EntryTime == 0 then
-        this.EntryTime = GetTime()
+        this.EntryTime = Wrapper.Program.CurrentTime
       end
 
       if not this.HasMaxStateTime then
@@ -26498,10 +26541,13 @@ System.namespace("Wrapper.NativeBehaviors.BehaviorStateMachine", function (names
       end
 
       --Console.WriteLine($"Out Of time Data: Current: {WoWAPI.GetTime()}   Entry: {EntryTime} Max: {MaxStateTime}");
-      return GetTime() - this.EntryTime > this.MaxStateTime
+      return Wrapper.Program.CurrentTime - this.EntryTime > this.MaxStateTime
     end
     StringRepr = function (this)
       return System.toString(System.ObjectGetType(this):getName()) .. ": " .. System.toString(this._StringRepr)
+    end
+    DebugDump = function (this)
+      return DictStringObject()
     end
     SetMaxStateTime = function (this, Seconds)
       this.MaxStateTime = Seconds
@@ -26512,7 +26558,7 @@ System.namespace("Wrapper.NativeBehaviors.BehaviorStateMachine", function (names
     end
     Tick = function (this)
       if this.EntryTime == 0 then
-        this.EntryTime = GetTime()
+        this.EntryTime = Wrapper.Program.CurrentTime
       end
     end
     return {
@@ -26523,6 +26569,7 @@ System.namespace("Wrapper.NativeBehaviors.BehaviorStateMachine", function (names
       ResetMaxStateTime = ResetMaxStateTime,
       IsOutOfTime = IsOutOfTime,
       StringRepr = StringRepr,
+      DebugDump = DebugDump,
       SetMaxStateTime = SetMaxStateTime,
       Complete = Complete,
       Tick = Tick
@@ -26579,8 +26626,10 @@ end)
 end
 do
 local System = System
+local WrapperHelpers
 local WrapperWoW
 System.import(function (out)
+  WrapperHelpers = Wrapper.Helpers
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace)
@@ -26594,19 +26643,20 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
         return true
       end
-      --[[
-           Console.WriteLine("In Gather Complete");
-           Console.WriteLine($"Object Exists: {LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)}");
-           Console.WriteLine($"GatherAndNotCasting: {(HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling)}");
-           Console.WriteLine($"InCombat: {WoWAPI.UnitAffectingCombat("player")}");
-           Console.WriteLine($"Out Of Time: {IsOutOfTime()}");
-]]
+
+      System.Console.WriteLine("In Gather Complete")
+      System.Console.WriteLine("Object Exists: " .. System.toString( __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID)))
+      System.Console.WriteLine("GatherAndNotCasting: " .. System.toString((this.HasGathered and not WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() and not WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling())))
+      System.Console.WriteLine("InCombat: " .. System.toString(__LB__.UnitTagHandler(UnitAffectingCombat, "player")))
+      System.Console.WriteLine("Out Of Time: " .. System.toString(this:IsOutOfTime()))
+      System.Console.WriteLine("BlackList: " .. System.toString(WrapperHelpers.Blacklist.IsOnBlackList(this.Task.TargetUnitOrObject.GUID)))
+
       return (not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) and WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position) < 300) or (this.HasGathered and not WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() and not WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling()) or __LB__.UnitTagHandler(UnitAffectingCombat, "player") or this:IsOutOfTime()
     end
     Tick = function (this)
-      --BroBotAPI.BroBotDebugMessage("NativeGatherTask", "In Gather Tick");
-      local Distance = WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)
+      this.Task.TargetUnitOrObject:Update()
 
+      local Distance = WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)
 
       if Distance > 5 then
         this._StringRepr = "NativeGatherTask Getting Closer: " .. System.ToInt32(Distance) .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString()
@@ -26621,13 +26671,13 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
       if WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() or WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling() then
         System.Console.WriteLine("Blacklisting Gather Node" .. "")
-        BroBot.Engine.BlackList:RegisterUnitInstance(this.Task.TargetUnitOrObject.GUID, 120)
+        WrapperHelpers.Blacklist.AddToBlacklist(this.Task.TargetUnitOrObject.GUID, 120)
         this.HasGathered = true
       else
         local func = function (...) return __LB__.Unlock(__LB__.ObjectInteract, ...) end func(this.Task.TargetUnitOrObject.GUID)
+        this.HasGathered = true
       end
 
-      this.HasGathered = true
       System.base(this).Tick(this)
     end
     return {
@@ -26647,9 +26697,11 @@ end)
 end
 do
 local System = System
+local Wrapper
 local WrapperNativeBehaviors
 local WrapperWoW
 System.import(function (out)
+  Wrapper = out.Wrapper
   WrapperNativeBehaviors = Wrapper.NativeBehaviors
   WrapperWoW = Wrapper.WoW
 end)
@@ -26661,27 +26713,63 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       this:SetMaxStateTime(120)
     end
     Complete = function (this)
+      if this:IsOutOfTime() then
+        System.Console.WriteLine("IsOutOfTime")
+        return true
+      end
+
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
+        System.Console.WriteLine("IsGhost?!")
         return true
       end
 
-      WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:Update()
-      if WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:GetNextTask() ~= this.Task then
+      --[[
+            if (!WoWAPI.UnitAffectingCombat("player"))
+                return true;
+            ]]
+
+      if not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) then
+        System.Console.WriteLine("!ObjectExists")
         return true
       end
 
+
+      --[[
+            NativeGrindBaseState.SmartObjective.Update();
+            if (NativeGrindBaseState.SmartObjective.GetNextTask() != Task)
+            {
+                return true;
+            }
+            ]]
 
 
       return (not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) or __LB__.UnitTagHandler(UnitIsDeadOrGhost, this.Task.TargetUnitOrObject.GUID) or this:IsOutOfTime())
     end
     Tick = function (this)
+      if this.LastCombatCheck == 0 then
+        this.LastCombatCheck = Wrapper.Program.CurrentTime
+      end
+
+
+      if GetTime() - this.LastCombatCheck > 0.5 then
+        WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:Update()
+        local NextTask = WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:GetNextTask()
+
+        if NextTask ~= nil and NextTask.TaskType == 0 --[[SmartObjectiveTaskType.Kill]] and NextTask.TargetUnitOrObject.GUID ~= this.Task.TargetUnitOrObject.GUID then
+          this.Task = NextTask
+          System.Console.WriteLine("Reassigning Kill Task to better target")
+        end
+
+        this.LastCombatCheck = Wrapper.Program.CurrentTime
+      end
+
       System.Console.WriteLine("In Combat Task")
       local Distance = WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)
-      local BroBotExists = _G["BroBot"] ~= nil
-      local CombatRange = BroBotExists and GetPlayersRange() or 5
-      -- local xy = AngleTo("Target", "Player")
-       --__LB__.SetPlayerAngles(xy)
+      local CombatRange = 5
+      --local xy = AngleTo("Target", "Player")
+      --__LB__.SetPlayerAngles(xy)
 
+      (System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)).PlayerHasFought = true
 
       if Distance > CombatRange then
         this._StringRepr = "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString()
@@ -26690,11 +26778,14 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       else
         if IsMounted() then
            Dismount()
-                        end
+        end
 
         this._StringRepr = "Killing mob: " .. System.toString(this.Task.TargetUnitOrObject.Name) .. " has fought: " .. System.toString((System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)).PlayerHasFought)
         __LB__.Navigator.Stop()
-         __LB__.UnitTarget(this.Task.TargetUnitOrObject.GUID)
+        __LB__.UnitTagHandler(TargetUnit, this.Task.TargetUnitOrObject.GUID)
+        local func = function (...) return __LB__.Unlock(__LB__.ObjectInteract, ...) end func(this.Task.TargetUnitOrObject.GUID)
+
+        RunMacroText("/startattack")
         StartAttack()
       end
 
@@ -26706,6 +26797,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
           out.Wrapper.NativeBehaviors.BehaviorStateMachine.StateMachineState
         }
       end,
+      LastCombatCheck = 0,
       Complete = Complete,
       Tick = Tick,
       __ctor__ = __ctor__
@@ -26716,8 +26808,10 @@ end)
 end
 do
 local System = System
+local WrapperHelpers
 local WrapperWoW
 System.import(function (out)
+  WrapperHelpers = Wrapper.Helpers
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace)
@@ -26738,6 +26832,8 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
       local TaskUnit = System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)
       TaskUnit.PlayerHasFought = true
+      this.Task.TargetUnitOrObject:Update()
+
 
       if Distance > 5 then
         this._StringRepr = "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString()
@@ -26752,7 +26848,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       this.HasLooted = true
 
       C_Timer.After(3, function ()
-        BroBot.Engine.BlackList:RegisterUnitInstance(this.Task.TargetUnitOrObject.GUID, 120)
+        WrapperHelpers.Blacklist.AddToBlacklist(this.Task.TargetUnitOrObject.GUID, 120)
       end)
       System.base(this).Tick(this)
     end
@@ -26774,13 +26870,10 @@ end
 do
 local System = System
 local Linq = System.Linq.Enumerable
-local ArrayString = System.Array(System.String)
 local WrapperDatabase
-local WrapperHelpers
 local WrapperWoW
 System.import(function (out)
   WrapperDatabase = Wrapper.Database
-  WrapperHelpers = Wrapper.Helpers
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace)
@@ -26799,8 +26892,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       this.ObjectiveScanner:Update()
       this._StringRepr = "Searching for new node"
       if this.TargetNode == nil then
-        local BroBotExists = _G["BroBot"] ~= nil
-        local AllowGather = (BroBotExists and WrapperHelpers.LuaHelper.GetGlobalFrom_G_Namespace(ArrayString("BroBot", "UI", "CoreConfig", "PersistentData", "AllowGathering"), System.Boolean)) or true
+        local AllowGather = true
         -- Default to true if BroBot doesnt Exist
 
 
@@ -26854,7 +26946,6 @@ System.init({
     "Wrapper.BotBase",
     "Wrapper.StdUI.StdUiFrame",
     "Wrapper.WoW.WoWUnit",
-    "Wrapper.API.stub_class_please_ignore",
     "Wrapper.API.LuaBox",
     "Wrapper.API.WoWAPI",
     "Wrapper.Database.LocationInfo",
@@ -26862,14 +26953,11 @@ System.init({
     "Wrapper.NativeBehaviors.BehaviorStateMachine.StateMachineState",
     "Wrapper.NativeBehaviors.NativeGrindSmartObjective",
     "Wrapper.StdUI.StdUiInputFrame",
+    "Wrapper.StdUI.StdUiDropdown",
+    "Wrapper.UI.BotMainUI",
     "Wrapper.UI.NativeErrorLoggerUI",
     "Wrapper.WoW.WoWPlayer",
-    "Wrapper.API.BehaviorPersistentData",
-    "Wrapper.API.BroBotAPI",
-    "Wrapper.API.BroBotBehavior",
-    "Wrapper.API.BroBotCC",
     "Wrapper.API.DataProviderBase",
-    "Wrapper.API.HunterCCTest",
     "Wrapper.API.LibJson",
     "Wrapper.API.LibStub",
     "Wrapper.API.LuaBox.EClientTypes",
@@ -26883,12 +26971,12 @@ System.init({
     "Wrapper.API.LuaBox.EUnitFlags",
     "Wrapper.API.LuaBox.EUnitFlags2",
     "Wrapper.API.Navigator",
-    "Wrapper.API.PersistentData",
     "Wrapper.API.UnitAura",
     "Wrapper.API.WoWAPI.PVPClassification",
     "Wrapper.API.WoWButton",
     "Wrapper.API.WoWTexture",
-    "Wrapper.CameraFaceTarget",
+    "Wrapper.BotBases.NativeGrindBotBase",
+    "Wrapper.BotBases.PVPBotBase",
     "Wrapper.Database.FactionID",
     "Wrapper.Database.GatherableTypes",
     "Wrapper.Database.MapDataEntry",
@@ -26899,13 +26987,13 @@ System.init({
     "Wrapper.Database.VendorLocationInfo",
     "Wrapper.Database.WoWDatabase",
     "Wrapper.DataLoggerBase.DataLoggerBaseUI",
+    "Wrapper.Helpers.Blacklist",
     "Wrapper.Helpers.FileLogger",
     "Wrapper.Helpers.LuaHelper",
     "Wrapper.Helpers.ScoredWowPlayer",
     "Wrapper.Helpers.SmartMovePVP",
     "Wrapper.Helpers.SmartTargetPVP",
     "Wrapper.NativeBehaviors.BehaviorStateMachine.StateMachine",
-    "Wrapper.NativeBehaviors.NativeGrind",
     "Wrapper.NativeBehaviors.NativeGrindBaseState",
     "Wrapper.NativeBehaviors.NativeGrindSmartObjective.SmartObjectiveTask",
     "Wrapper.NativeBehaviors.NativeGrindSmartObjective.SmartObjectiveTaskType",
@@ -26915,12 +27003,14 @@ System.init({
     "Wrapper.NativeBehaviors.NativeGrindTasks.NativeGrindLootTask",
     "Wrapper.NativeBehaviors.NativeGrindTasks.NativeGrindSearchForNode",
     "Wrapper.Program",
-    "Wrapper.PVPBotBase",
     "Wrapper.StdUI.StdUiButton",
     "Wrapper.StdUI.StdUiCheckBox",
+    "Wrapper.StdUI.StdUiDropdown.StdUiDropdownItems",
     "Wrapper.StdUI.StdUiLabel",
     "Wrapper.StdUI.StdUiNumericInputFrame",
+    "Wrapper.UI.BotMainUI.BotUIDataContainer",
     "Wrapper.UI.NativeErrorLoggerUI.ErrorMessageData",
+    "Wrapper.UI.SlashCommands",
     "Wrapper.UI.Tracker",
     "Wrapper.WoW.LocalPlayer",
     "Wrapper.WoW.ObjectManager",

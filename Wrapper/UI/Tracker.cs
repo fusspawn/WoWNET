@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Wrapper.API;
 using Wrapper.Helpers;
@@ -31,16 +32,17 @@ namespace Wrapper.UI
 
                 StateStack = _StdUI.Label(MainUIFrame, "", 12, null, 500, 300);
                 _StdUI.GlueTop(StateStack, MainUIFrame, 0, -100, "TOP");
-
             }
         }
         public void UpdateStack(Stack<StateMachineState> States)
         {
             var returnstring = "";
-            foreach (var state in States)
+           
+            foreach (var state in States.Skip(1))
             {
                 returnstring += state.StringRepr() + "\n";
             }
+
             StateStack.SetText(returnstring);
         }
     }

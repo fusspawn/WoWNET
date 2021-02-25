@@ -15,6 +15,7 @@ namespace Wrapper.WoW
         public LuaBox.EObjectType ObjectType;
         public Vector3 Position;
         public int ObjectId;
+        public double LastUpdate;
 
 
         private bool? WasHerb = null;
@@ -26,6 +27,7 @@ namespace Wrapper.WoW
                 {
                     WasHerb = GatherableTypes.HerbNames.Any(x => x == this.Name);
                 }
+
                 return WasHerb.Value;
             }
 
@@ -57,6 +59,7 @@ namespace Wrapper.WoW
 
         public virtual void Update()
         {
+            LastUpdate =Program.CurrentTime;
             this.Position = LuaBox.Instance.ObjectPositionVector3(this.GUID);
         }
     }

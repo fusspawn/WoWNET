@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Wrapper.API;
+using static Wrapper.StdUI.StdUiDropdown;
 
 namespace Wrapper
 {
@@ -52,6 +53,27 @@ namespace Wrapper
         {
          //   StdUi:HighlightButton(parent, width, height, text)
         }
+
+        public class StdUiDropdown 
+            : StdUiFrame
+        {
+            public class StdUiDropdownItems
+            {
+                public string text;
+                public object value;
+            }
+
+            public extern void SetValue(object value, string Text);
+            public extern T GetValue<T>();
+            public extern void SetPlaceholder(string Text);
+            public extern void SetOptions(StdUiDropdownItems[] options);
+
+            public delegate void _OnValueChanged(StdUiCheckBox self, object value);
+            public _OnValueChanged OnValueChanged;
+        }
+
+
+        public extern StdUiDropdown Dropdown(WoWFrame parent, int width, int height, StdUiDropdownItems[] options, object value, bool multi, bool assoc);
 
 		public extern StdUiFrame Frame(WoWFrame Parent, int Width, int Height, string Inherits);
         public extern StdUiFrame Panel(WoWFrame Parent, int Width, int Height, string Inherits);

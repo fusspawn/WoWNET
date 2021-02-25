@@ -8,33 +8,42 @@ namespace Wrapper
 {
     public class Program
     {
-        static BotBase Base = new DataLoggerBase();
+        public static BotBase Base = null;
         public static Tracker Tracker = new Tracker();
-        static bool ThrowWowErrors = false;
-
+        static bool ThrowWowErrors = true;
+        public static double CurrentTime = 0f;
+        public static bool IsRunning = false;
+        public static BotMainUI MainUI;
 
         public static void Main(string[] args)
         {
+            Console.WriteLine("BroBot V2 Loading");
             LuaBox.Instance.LoadScript("NavigatorNightly");
             LuaBox.Instance.LoadScript("AntiAFK");
             LuaBox.Instance.LoadScript("LibDrawNightly");
+
             StdUI.Init();
             LibJson.Init();
-
-            Console.WriteLine("Pulsed OM");
             ObjectManager.Instance.Pulse();
 
-            Console.WriteLine("Pulsed OM Complete");
+            Console.WriteLine("BroBot V2 Loaded Libs");
+
+            Program.MainUI = new BotMainUI();
+
             WoWAPI.NewTicker(() =>
             {
                 if (!ThrowWowErrors)
                 {
                     try
                     {
+                        CurrentTime = WoWAPI.GetTime();
                         ObjectManager.Instance.Pulse();
-                        Base.Pulse();
-                        Tracker.Pulse();
-                        //Console.WriteLine("New Ticker");
+                        
+                        if (Program.IsRunning)
+                        {
+                            if (Base != null) { Base.Pulse(); }
+                            Tracker.Pulse();
+                        }
                     }
                     catch (Exception E)
                     {
@@ -45,34 +54,16 @@ namespace Wrapper
                 else
                 {
                     ObjectManager.Instance.Pulse();
-                    Base.Pulse();
-                    Tracker.Pulse();
+
+                    if (Program.IsRunning)
+                    {
+                        if (Base != null) { Base.Pulse(); }
+
+                        Tracker.Pulse();
+                    }
                 }
 
             }, 0.2f);
-
-
-
-
-            WoWAPI.After(() =>
-            {
-                if (LuaHelper.GetGlobalFrom_G<dynamic>("BroBot") == null)
-                {
-                    Console.WriteLine("Wont load brobot cc's brobot disabled");
-                    return;
-                }
-
-                //Console.WriteLine("Attempting to Register C# CC");
-                //BroBotAPI.registerFighter("CHunter", new HunterCCTest());
-                //Console.WriteLine("Has Registered Fighter");
-
-
-                Console.WriteLine("Attempting to Register Native Behavior");
-                //BroBotAPI.registerBehavior("BroBotBehavior", new BroBotBehavior());
-                BroBotAPI.registerBehavior("NativeGrind", new NativeBehaviors.NativeGrind());
-                Console.WriteLine("Registered Native Behaviors");
-
-            }, 2.5f);
          }
     }
 }

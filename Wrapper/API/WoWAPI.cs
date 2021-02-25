@@ -258,6 +258,7 @@ namespace Wrapper.API
         public extern void SetScript<T>(string Name, T func);
         public extern void SetParent(WoWFrame Parent);
         public extern void Show();
+        public extern void Hide();
         public extern void SetFrameStrata(string Strata);
         public extern void SetWidth(int Width);
         public extern void SetHeight(int Height);

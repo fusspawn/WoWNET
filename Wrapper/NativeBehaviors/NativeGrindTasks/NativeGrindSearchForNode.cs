@@ -35,13 +35,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             if (TargetNode == null)
             {
 
-
-                var BroBotExists = LuaHelper.GetGlobalFrom_G<object>("BroBot") != null;
-                var AllowGather = (BroBotExists && LuaHelper.GetGlobalFrom_G_Namespace<bool>(new string[]
-                {
-                    "BroBot", "UI", "CoreConfig",
-                    "PersistentData", "AllowGathering"
-                })) || true; // Default to true if BroBot doesnt Exist
+                var AllowGather =  true; // Default to true if BroBot doesnt Exist
 
                 
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Wrapper.API;
+using Wrapper.Helpers;
 using Wrapper.WoW;
 
 namespace Wrapper.NativeBehaviors.NativeGrindTasks
@@ -33,6 +34,8 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
             var TaskUnit = Task.TargetUnitOrObject as WoWUnit;
             TaskUnit.PlayerHasFought = true;
+            Task.TargetUnitOrObject.Update();
+
 
             if (Distance > 5)
             {
@@ -51,7 +54,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             HasLooted = true;
 
             WoWAPI.After(() => {
-                BroBotAPI.RegisterOnBlackList(Task.TargetUnitOrObject.GUID, 120);
+               Blacklist.AddToBlacklist(Task.TargetUnitOrObject.GUID, 120);
             }, 3f);
             base.Tick();
         }
