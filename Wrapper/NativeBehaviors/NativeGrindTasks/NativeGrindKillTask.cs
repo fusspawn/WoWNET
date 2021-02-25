@@ -117,6 +117,8 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
                 WoWAPI.RunMacroText("/startattack");
                 WoWAPI.StartAttack();
+                var TaskUnit = Task.TargetUnitOrObject as WoWUnit;
+                TaskUnit.PlayerHasFought = true;
             }
 
             base.Tick();
