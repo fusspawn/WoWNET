@@ -32,7 +32,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             return (!LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)
                 && Vector3.Distance(Task.TargetUnitOrObject.Position, ObjectManager.Instance.Player.Position) < 300) // Some paths are really long. dont remove it unless you've been dragged really far away
                 || (HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling)
-                || WoWAPI.UnitAffectingCombat("player")
+                || ObjectManager.Instance.Player.IsInCombat
                 || IsOutOfTime();
         }
 
@@ -46,6 +46,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
             if (Distance > 5)
             {
+                SetMaxStateTime(60 * 5); // Can spend at MAX 5 mins trying to get to the target node;
                 _StringRepr = $"NativeGatherTask Getting Closer: {(int)Distance} TaskLocation: {Task.TargetUnitOrObject.Position} Player: {ObjectManager.Instance.Player.Position}";
                 LuaBox.Instance.Navigator.MoveTo(Task.TargetUnitOrObject.Position.X, Task.TargetUnitOrObject.Position.Y, Task.
                     TargetUnitOrObject.Position.Z);
@@ -53,9 +54,8 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             }
 
             _StringRepr = "Interacting";
-
             LuaBox.Instance.Navigator.Stop();
-           
+            SetMaxStateTime(5); // If we spend more than 5 seconds doing this. Just bail. If its still valid the object manager will reassign
 
             if (ObjectManager.Instance.Player.IsCasting
                 || ObjectManager.Instance.Player.IsChanneling)
@@ -66,7 +66,8 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             }
             else {
                 LuaBox.Instance.ObjectInteract(Task.TargetUnitOrObject.GUID);
-                HasGathered = true;
+                Blacklist.AddToBlacklist(Task.TargetUnitOrObject.GUID, 120);
+                //HasGathered = true;
             }
 
             base.Tick();

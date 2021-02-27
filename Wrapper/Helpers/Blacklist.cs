@@ -15,7 +15,7 @@ namespace Wrapper.Helpers
             if (!BlackListEntrys.ContainsKey(GUID))
                 return false;
 
-            if (BlackListEntrys[GUID] < Program.CurrentTime)
+            if (BlackListEntrys[GUID] > Program.CurrentTime)
                 return true;
 
             BlackListEntrys.Remove(GUID);

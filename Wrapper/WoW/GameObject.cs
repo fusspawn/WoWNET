@@ -62,5 +62,10 @@ namespace Wrapper.WoW
             LastUpdate =Program.CurrentTime;
             this.Position = LuaBox.Instance.ObjectPositionVector3(this.GUID);
         }
+
+        public double DistanceToPlayer()
+        {
+            return Vector3.Distance(this.Position, ObjectManager.Instance.Player.Position);
+        }
     }
 }

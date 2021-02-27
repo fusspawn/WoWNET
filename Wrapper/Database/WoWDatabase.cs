@@ -36,6 +36,27 @@ namespace Wrapper.Database
             return Vector3.Floor(Vector3.Divide(new Vector3(Location.X, Location.Y, Location.Z), GRID_SIZE)).GetHashCode();
         }
 
+        public static void InsertDeathSpotIfRequired(Vector3 Position)
+        {
+            var MapId = LuaBox.Instance.GetMapId();
+            var IsDirty = false;
+            var MapDatabase = GetMapDatabase(MapId);
+
+
+            if (!MapDatabase.PlayerDeathSpots.Any(x => 
+                Vector3.Distance(Position, new Vector3(x.X, x.Y, x.Z)) < GRID_SIZE))
+            {
+                MapDatabase.PlayerDeathSpots.Add(Position);
+                IsDirty = true;
+            }
+
+            if (IsDirty && !DirtyMapIds.Contains(MapId))
+            {
+                DirtyMapIds.Add(MapId);
+                EnsureSaveProcessIsRunning();
+            }
+        }
+
         public static void InsertNpcIfRequired(WoWUnit Unit)
         {
             var MapId = LuaBox.Instance.GetMapId();
@@ -55,6 +76,8 @@ namespace Wrapper.Database
 
             var IsDirty = false;
             var MapDatabase = GetMapDatabase(MapId);
+
+
 
             if (IsRepair)
             {
@@ -258,6 +281,16 @@ namespace Wrapper.Database
                 DirtyMapIds.Add(MapId);
                 EnsureSaveProcessIsRunning();
             }
+        }
+
+        public static bool IsConsideredDeathSpot(double x, double y, double z)
+        {
+            var CheckPos = new WoW.Vector3(x, y, z);
+            var MapId = LuaBox.Instance.GetMapId();
+            var Data = GetMapDatabase(MapId);
+
+            return Data.PlayerDeathSpots.Any(x
+                => Vector3.Distance(x, CheckPos) < GRID_SIZE);
         }
 
         public static void HandlePersistance()

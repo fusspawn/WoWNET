@@ -30,6 +30,14 @@ namespace Wrapper.NativeBehaviors
                 return;
             }
 
+
+            if (ObjectManager.Instance.Player.GetDurability() < 30 && (NativeGrindBotBase.StateMachine.States.Peek().GetType().Name
+                != typeof(NativeGrindRepairTask).Name))
+            {
+                NativeGrindBotBase.StateMachine.States.Push(new NativeGrindRepairTask());
+                return;
+            }
+
             if (WoWAPI.UnitAffectingCombat("player"))
             {
                 Console.WriteLine("Was in combat?");
@@ -117,7 +125,7 @@ namespace Wrapper.NativeBehaviors
 
             var AllowGather = true; // Default to true if BroBot doesnt Exist
 
-            if (AllowGather)
+            if (!ObjectManager.Instance.Player.IsInCombat)
             {
 
                 foreach (var GameObject in
@@ -130,7 +138,7 @@ namespace Wrapper.NativeBehaviors
 
                     if (score > 0)
                     {
-                      //  Console.WriteLine("Found Gathering Objective");
+                        //  Console.WriteLine("Found Gathering Objective");
 
                         Tasks.Add(new SmartObjectiveTask()
                         {
@@ -144,51 +152,51 @@ namespace Wrapper.NativeBehaviors
                         // Console.WriteLine("Gathering Objective Was To Low Scored");
                     }
                 }
-            }
 
-
-            foreach (var Unit in ObjectManager.Instance.AllObjects.Where(x => x.Value.ObjectType == LuaBox.EObjectType.Unit
-                 && x.Value.ObjectType != LuaBox.EObjectType.Player).Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)))
-            {
-                if (!WoWAPI.UnitIsDeadOrGhost(Unit.Value.GUID))
-                    continue;
-                var AllowSkinning = true; // Default to true if BroBot doesnt Exist
-
-                if ((Unit.Value as WoWUnit).PlayerHasFought
-                        && (LuaBox.Instance.UnitIsLootable(Unit.Value.GUID)
-                        || (LuaBox.Instance.UnitHasFlag(Unit.Value.GUID, LuaBox.EUnitFlags.Skinnable)
-                        && AllowSkinning)))
+                foreach (var Unit in ObjectManager.Instance.AllObjects.Where(x => x.Value.ObjectType == LuaBox.EObjectType.Unit
+                     && x.Value.ObjectType != LuaBox.EObjectType.Player).Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)))
                 {
+                    if (!WoWAPI.UnitIsDeadOrGhost(Unit.Value.GUID))
+                        continue;
+                    var AllowSkinning = true; // Default to true if BroBot doesnt Exist
 
-                    double score = 0;
-                    score = score + (200 - Vector3.Distance(Unit.Value.Position,
-                        ObjectManager.Instance.Player.Position));
-
-                    if (score > 0)
+                    if ((Unit.Value as WoWUnit).PlayerHasFought
+                            && (LuaBox.Instance.UnitIsLootable(Unit.Value.GUID)
+                            || (LuaBox.Instance.UnitHasFlag(Unit.Value.GUID, LuaBox.EUnitFlags.Skinnable)
+                            && AllowSkinning)))
                     {
 
-                       // Console.WriteLine("Found LootOrSkin Objective");
+                        double score = 0;
+                        score = score + (200 - Vector3.Distance(Unit.Value.Position,
+                            ObjectManager.Instance.Player.Position));
 
-                        Tasks.Add(new SmartObjectiveTask()
+                        if (score > 0)
                         {
-                            Score = score,
-                            TargetUnitOrObject = Unit.Value,
-                            TaskType = SmartObjectiveTaskType.Loot
-                        });
-                    }
-                    else
-                    {
 
-                        // Console.WriteLine("Potential LootOrSkin Objective was to low scored");
+                            // Console.WriteLine("Found LootOrSkin Objective");
+
+                            Tasks.Add(new SmartObjectiveTask()
+                            {
+                                Score = score,
+                                TargetUnitOrObject = Unit.Value,
+                                TaskType = SmartObjectiveTaskType.Loot
+                            });
+                        }
+                        else
+                        {
+
+                            // Console.WriteLine("Potential LootOrSkin Objective was to low scored");
+                        }
                     }
                 }
-            }
 
+            }
 
             foreach (var Unit in ObjectManager.Instance.AllObjects.Where(x => x.Value.ObjectType == LuaBox.EObjectType.Unit
                      && x.Value.ObjectType != LuaBox.EObjectType.Player).Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)))
             {
                 var _Unit = Unit.Value as WoWUnit;
+
                 if (WoWAPI.UnitIsDeadOrGhost(Unit.Value.GUID) || _Unit.Reaction > 4)
                 {
                    // Console.WriteLine($"Skipping {Unit.Value.Name} Its dead or shit reaction");
@@ -213,6 +221,17 @@ namespace Wrapper.NativeBehaviors
                 {
                  //   Console.WriteLine("Found Combat Unit");
                     score = score + 500;
+                }
+
+
+                if (Math.Abs(ObjectManager.Instance.Player.Position.Z - _Unit.Position.Z) > 5)
+                {
+                    score = score - 500; // things higher than us can be fucky
+                }
+
+                if(_Unit.LineOfSight == false)
+                {
+                    score = score - 200;
                 }
 
                 //score = score + ((8 - _Unit.Reaction) * 10);

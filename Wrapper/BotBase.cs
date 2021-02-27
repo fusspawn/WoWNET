@@ -22,6 +22,7 @@ namespace Wrapper
 
         public virtual void BuildConfig(StdUiFrame Container)
         {
+            Program.MainUI.SetConfigPanel(null);
         }
     }
 

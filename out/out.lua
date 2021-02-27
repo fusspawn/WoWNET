@@ -17571,6 +17571,7 @@ System.namespace("Wrapper", function (namespace)
     Pulse = function (this)
     end
     BuildConfig = function (this, Container)
+      Wrapper.Program.MainUI:SetConfigPanel()
     end
     return {
       Pulse = Pulse,
@@ -23962,7 +23963,10 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.BotBases", function (namespace)
   namespace.class("NativeGrindBotBase", function (namespace)
-    local Pulse, BuildConfig, class, __ctor__
+    local UIContainer, Pulse, BuildConfig, class, __ctor__
+    namespace.class("NativeGrindUIContainer", function (namespace)
+      return {}
+    end)
     __ctor__ = function (this)
       this.LastRun = Wrapper.Program.CurrentTime
       this.name = "NativeGrind"
@@ -23973,7 +23977,44 @@ System.namespace("Wrapper.BotBases", function (namespace)
       class.StateMachine:Run()
     end
     BuildConfig = function (this, Container)
-      System.base(this).BuildConfig(this, Container)
+      if UIContainer ~= nil then
+        Wrapper.Program.MainUI:SetConfigPanel(UIContainer.Container)
+        return
+        --Already created. Just set and continue;
+      end
+
+      UIContainer = class.NativeGrindUIContainer()
+      UIContainer.Container = Wrapper.Program.MainUI.StdUI:Frame(Container, Container:GetWidth(), Container:GetHeight() - 150)
+      Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.Container, Container, 0, - 100, "TOP")
+
+      UIContainer.GrindLabel = Wrapper.Program.MainUI.StdUI:Label(UIContainer.Container, "~== Native Grind Config ==~", 18, nil, Container:GetWidth() - 10, 25)
+      Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.GrindLabel, UIContainer.Container, 50, 0, "TOP")
+
+
+      UIContainer.AllowGather = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Gathering", 200, 25)
+      UIContainer.AllowGather:SetValue(true)
+      Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowGather, UIContainer.Container, - 75, - 50, "TOP")
+
+      UIContainer.AllowSkin = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Skinning", 200, 25)
+      UIContainer.AllowSkin:SetValue(true)
+      Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowSkin, UIContainer.Container, - 75, - 80, "TOP")
+
+      UIContainer.AllowLoot = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Looting", 200, 25)
+      UIContainer.AllowLoot:SetValue(true)
+      Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowLoot, UIContainer.Container, - 75, - 110, "TOP")
+
+      UIContainer.AllowPullingMobs = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Pulling Mobs", 200, 25)
+      UIContainer.AllowPullingMobs:SetValue(true)
+      Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowPullingMobs, UIContainer.Container, - 75, - 140, "TOP")
+
+      UIContainer.AllowSelfDefense = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Self Defense", 200, 25)
+      UIContainer.AllowSelfDefense:SetValue(true)
+      Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowSelfDefense, UIContainer.Container, - 75, - 170, "TOP")
+
+
+
+
+      Wrapper.Program.MainUI:SetConfigPanel(UIContainer.Container)
     end
     class = {
       base = function (out)
@@ -24421,10 +24462,14 @@ end
 do
 local System = System
 local WrapperDatabase
+local WrapperWoW
+local ListVector3
 local ListNPCLocationInfo
 local ListNodeLocationInfo
 System.import(function (out)
   WrapperDatabase = Wrapper.Database
+  WrapperWoW = Wrapper.WoW
+  ListVector3 = System.List(WrapperWoW.Vector3)
   ListNPCLocationInfo = System.List(WrapperDatabase.NPCLocationInfo)
   ListNodeLocationInfo = System.List(WrapperDatabase.NodeLocationInfo)
 end)
@@ -24439,6 +24484,7 @@ System.namespace("Wrapper.Database", function (namespace)
       this.Vendors = ListNPCLocationInfo()
       this.Repair = ListNPCLocationInfo()
       this.Nodes = ListNodeLocationInfo()
+      this.PlayerDeathSpots = ListVector3()
     end
     RestoreFromJson = function (this, mapDataEntry)
       for _, node in System.each(mapDataEntry.Nodes) do
@@ -24513,6 +24559,18 @@ System.namespace("Wrapper.Database", function (namespace)
         default.ObjectId = node.ObjectId
         this.MailBoxes:Add(default)
       end
+
+      --[[
+            foreach(var node in mapDataEntry.PlayerDeathSpots)
+            {
+                PlayerDeathSpots.Add(new Vector3()
+                {
+                    X = node.X,
+                    Y = node.Y,
+                    Z = node.Z
+                });
+            }
+            ]]
     end
     return {
       RestoreFromJson = RestoreFromJson,
@@ -24629,8 +24687,9 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.Database", function (namespace)
   namespace.class("WoWDatabase", function (namespace)
-    local DirtyMapIds, IsSaveTaskRunning, getHasDirtyMaps, GetGridHash, InsertNpcIfRequired, HandlePersistance, InsertNodeIfRequired, EnsureSaveProcessIsRunning, 
-    GetMapDatabase, GetClosestRepairNPC, GetClosestVendorNPC, GetAllHerbLocations, GetAllOreLocations, class, static
+    local DirtyMapIds, IsSaveTaskRunning, getHasDirtyMaps, GetGridHash, InsertDeathSpotIfRequired, InsertNpcIfRequired, IsConsideredDeathSpot, HandlePersistance, 
+    InsertNodeIfRequired, EnsureSaveProcessIsRunning, GetMapDatabase, GetClosestRepairNPC, GetClosestVendorNPC, GetAllHerbLocations, GetAllOreLocations, class, 
+    static
     static = function (this)
       this.Maps = DictInt32MapDataEntry()
       local default = HashSetInt32()
@@ -24650,6 +24709,24 @@ System.namespace("Wrapper.Database", function (namespace)
     GetGridHash = function (Location)
       return WrapperWoW.Vector3.Floor(WrapperWoW.Vector3.Divide1(WrapperWoW.Vector3(Location.X, Location.Y, Location.Z), class.GRID_SIZE)):GetHashCode()
     end
+    InsertDeathSpotIfRequired = function (Position)
+      local MapId =  __LB__.GetMapId()
+      local IsDirty = false
+      local MapDatabase = GetMapDatabase(MapId)
+
+
+      if not Linq.Any(MapDatabase.PlayerDeathSpots, function (x)
+        return WrapperWoW.Vector3.Distance(Position:__clone__(), WrapperWoW.Vector3(x.X, x.Y, x.Z)) < class.GRID_SIZE
+      end) then
+        MapDatabase.PlayerDeathSpots:Add(Position:__clone__())
+        IsDirty = true
+      end
+
+      if IsDirty and not DirtyMapIds:Contains(MapId) then
+        DirtyMapIds:Add(MapId)
+        EnsureSaveProcessIsRunning()
+      end
+    end
     InsertNpcIfRequired = function (Unit)
       local MapId =  __LB__.GetMapId()
       local IsRepair =  __LB__.UnitHasNpcFlag(Unit.GUID, 4096 --[[ENpcFlags.Repair]])
@@ -24665,6 +24742,8 @@ System.namespace("Wrapper.Database", function (namespace)
 
       local IsDirty = false
       local MapDatabase = GetMapDatabase(MapId)
+
+
 
       if IsRepair then
         if not Linq.Any(MapDatabase.Repair, function (x)
@@ -24852,6 +24931,15 @@ System.namespace("Wrapper.Database", function (namespace)
         EnsureSaveProcessIsRunning()
       end
     end
+    IsConsideredDeathSpot = function (x, y, z)
+      local CheckPos = WrapperWoW.Vector3(x, y, z)
+      local MapId =  __LB__.GetMapId()
+      local Data = GetMapDatabase(MapId)
+
+      return Linq.Any(Data.PlayerDeathSpots, function (x)
+        return WrapperWoW.Vector3.Distance(x:__clone__(), CheckPos:__clone__()) < class.GRID_SIZE
+      end)
+    end
     HandlePersistance = function ()
       if not  __LB__.DirectoryExists(System.toString( __LB__.GetBaseDirectory()) .. "\\BroBot\\Database\\MapData\\") then
          __LB__.CreateDirectory(System.toString( __LB__.GetBaseDirectory()) .. "\\BroBot\\Database\\MapData\\")
@@ -25002,7 +25090,9 @@ System.namespace("Wrapper.Database", function (namespace)
       GRID_SIZE = 20,
       getHasDirtyMaps = getHasDirtyMaps,
       GetGridHash = GetGridHash,
+      InsertDeathSpotIfRequired = InsertDeathSpotIfRequired,
       InsertNpcIfRequired = InsertNpcIfRequired,
+      IsConsideredDeathSpot = IsConsideredDeathSpot,
       HandlePersistance = HandlePersistance,
       InsertNodeIfRequired = InsertNodeIfRequired,
       GetMapDatabase = GetMapDatabase,
@@ -25035,7 +25125,7 @@ System.namespace("Wrapper.Helpers", function (namespace)
         return false
       end
 
-      if class.BlackListEntrys:get(GUID) < Wrapper.Program.CurrentTime then
+      if class.BlackListEntrys:get(GUID) > Wrapper.Program.CurrentTime then
         return true
       end
 
@@ -25303,6 +25393,12 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
         return
       end
 
+
+      if WrapperWoW.ObjectManager.getInstance().Player:GetDurability() < 30 and (System.ObjectGetType(WrapperBotBases.NativeGrindBotBase.StateMachine.States:Peek()):getName() ~= System.typeof(WrapperNativeGrindTasks.NativeGrindRepairTask):getName()) then
+        WrapperBotBases.NativeGrindBotBase.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindRepairTask())
+        return
+      end
+
       if __LB__.UnitTagHandler(UnitAffectingCombat, "player") then
         System.Console.WriteLine("Was in combat?")
       end
@@ -25399,7 +25495,7 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
       local AllowGather = true
       -- Default to true if BroBot doesnt Exist
 
-      if AllowGather then
+      if not WrapperWoW.ObjectManager.getInstance().Player.IsInCombat then
         for _, GameObject in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
           return x.Value:getIsHerb() or x.Value:getIsOre()
         end), function (x)
@@ -25421,46 +25517,44 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
             -- Console.WriteLine("Gathering Objective Was To Low Scored");
           end
         end
-      end
 
+        for _, Unit in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
+          return x.Value.ObjectType == 5 --[[EObjectType.Unit]] and x.Value.ObjectType ~= 6 --[[EObjectType.Player]]
+        end), function (x)
+          return not WrapperHelpers.Blacklist.IsOnBlackList(x.Value.GUID)
+        end)) do
+          local continue
+          repeat
+            if not __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) then
+              continue = true
+              break
+            end
+            local AllowSkinning = true
+            -- Default to true if BroBot doesnt Exist
 
-      for _, Unit in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
-        return x.Value.ObjectType == 5 --[[EObjectType.Unit]] and x.Value.ObjectType ~= 6 --[[EObjectType.Player]]
-      end), function (x)
-        return not WrapperHelpers.Blacklist.IsOnBlackList(x.Value.GUID)
-      end)) do
-        local continue
-        repeat
-          if not __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) then
+            if (System.as(Unit.Value, WrapperWoW.WoWUnit)).PlayerHasFought and ( __LB__.UnitIsLootable(Unit.Value.GUID) or ( __LB__.UnitHasFlag(Unit.Value.GUID, 67108864 --[[EUnitFlags.Skinnable]]) and AllowSkinning)) then
+              local score = 0
+              score = score + (200 - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
+
+              if score > 0 then
+                -- Console.WriteLine("Found LootOrSkin Objective");
+
+                local default = class.SmartObjectiveTask()
+                default.Score = score
+                default.TargetUnitOrObject = Unit.Value
+                default.TaskType = 2 --[[SmartObjectiveTaskType.Loot]]
+                this.Tasks:Add(default)
+              else
+                -- Console.WriteLine("Potential LootOrSkin Objective was to low scored");
+              end
+            end
             continue = true
+          until 1
+          if not continue then
             break
           end
-          local AllowSkinning = true
-          -- Default to true if BroBot doesnt Exist
-
-          if (System.as(Unit.Value, WrapperWoW.WoWUnit)).PlayerHasFought and ( __LB__.UnitIsLootable(Unit.Value.GUID) or ( __LB__.UnitHasFlag(Unit.Value.GUID, 67108864 --[[EUnitFlags.Skinnable]]) and AllowSkinning)) then
-            local score = 0
-            score = score + (200 - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
-
-            if score > 0 then
-              -- Console.WriteLine("Found LootOrSkin Objective");
-
-              local default = class.SmartObjectiveTask()
-              default.Score = score
-              default.TargetUnitOrObject = Unit.Value
-              default.TaskType = 2 --[[SmartObjectiveTaskType.Loot]]
-              this.Tasks:Add(default)
-            else
-              -- Console.WriteLine("Potential LootOrSkin Objective was to low scored");
-            end
-          end
-          continue = true
-        until 1
-        if not continue then
-          break
         end
       end
-
 
       for _, Unit in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
         return x.Value.ObjectType == 5 --[[EObjectType.Unit]] and x.Value.ObjectType ~= 6 --[[EObjectType.Player]]
@@ -25470,6 +25564,7 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
         local continue
         repeat
           local _Unit = System.as(Unit.Value, WrapperWoW.WoWUnit)
+
           if __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) or _Unit.Reaction > 4 then
             -- Console.WriteLine($"Skipping {Unit.Value.Name} Its dead or shit reaction");
             continue = true
@@ -25490,6 +25585,16 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
           if __LB__.UnitTagHandler(UnitAffectingCombat, _Unit.GUID) then
             --   Console.WriteLine("Found Combat Unit");
             score = score + 500
+          end
+
+
+          if math.Abs(WrapperWoW.ObjectManager.getInstance().Player.Position.Z - _Unit.Position.Z) > 5 then
+            score = score - 500
+            -- things higher than us can be fucky
+          end
+
+          if _Unit.LineOfSight == false then
+            score = score - 200
           end
 
           --score = score + ((8 - _Unit.Reaction) * 10);
@@ -25541,12 +25646,23 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.UI", function (namespace)
   namespace.class("BotMainUI", function (namespace)
-    local CreateMainFrame, class, __ctor__
+    local SetConfigPanel, CreateMainFrame, class, __ctor__
     namespace.class("BotUIDataContainer", function (namespace)
       return {}
     end)
     __ctor__ = function (this)
       CreateMainFrame(this)
+    end
+    SetConfigPanel = function (this, Frame)
+      if this.UIContainer.ConfigFrame ~= nil then
+        this.UIContainer.ConfigFrame:Hide()
+      end
+
+      this.UIContainer.ConfigFrame = Frame
+
+      if Frame ~= nil then
+        Frame:Show()
+      end
     end
     CreateMainFrame = function (this)
       if this.StdUI == nil then
@@ -25596,7 +25712,13 @@ System.namespace("Wrapper.UI", function (namespace)
           System.Console.WriteLine("Selected Empty Bot Base")
           Wrapper.Program.Base = nil
         end
+
+
+        if Wrapper.Program.Base ~= nil then
+          Wrapper.Program.Base:BuildConfig(this.UIContainer.MainBotUIFrame)
+        end
       end)
+
       this.StdUI:GlueTop(this.UIContainer.SelectedBotBase, this.UIContainer.MainBotUIFrame, 0, - 40, "TOP")
 
 
@@ -25608,9 +25730,11 @@ System.namespace("Wrapper.UI", function (namespace)
           this.UIContainer.MainBotUIFrame:Hide()
         end
       end, System.Delegate)
+
       this.StdUI:GlueTop(this.UIContainer.ToggleBotUI, _G["UIParent"], 20, 5, "TOP")
     end
     class = {
+      SetConfigPanel = SetConfigPanel,
       __ctor__ = __ctor__
     }
     return class
@@ -25722,7 +25846,7 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.WoW", function (namespace)
   namespace.class("WoWGameObject", function (namespace)
-    local getIsHerb, getIsOre, Update, __ctor__
+    local getIsHerb, getIsOre, Update, DistanceToPlayer, __ctor__
     __ctor__ = function (this, _GUID)
       this.Position = System.default(WrapperWoW.Vector3)
       this.GUID = _GUID
@@ -25754,6 +25878,9 @@ System.namespace("Wrapper.WoW", function (namespace)
       this.LastUpdate = Wrapper.Program.CurrentTime
       this.Position = WrapperAPI.LuaBox.getInstance():ObjectPositionVector3(this.GUID)
     end
+    DistanceToPlayer = function (this)
+      return WrapperWoW.Vector3.Distance(this.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)
+    end
     return {
       ObjectType = 0,
       ObjectId = 0,
@@ -25761,6 +25888,7 @@ System.namespace("Wrapper.WoW", function (namespace)
       getIsHerb = getIsHerb,
       getIsOre = getIsOre,
       Update = Update,
+      DistanceToPlayer = DistanceToPlayer,
       __ctor__ = __ctor__
     }
   end)
@@ -25769,11 +25897,36 @@ end)
 end
 do
 local System = System
+local WrapperDatabase
+local WrapperWoW
+System.import(function (out)
+  WrapperDatabase = Wrapper.Database
+  WrapperWoW = Wrapper.WoW
+end)
 System.namespace("Wrapper.WoW", function (namespace)
   namespace.class("LocalPlayer", function (namespace)
-    local Update, HasRequiredSkillToHarvest, HasProfession, __ctor__
+    local CreateCombatTrackingFrame, Update, HasRequiredSkillToHarvest, HasProfession, GetDurability, FacePosition, __ctor__
     __ctor__ = function (this)
       System.base(this).__ctor__(this, "player")
+      CreateCombatTrackingFrame(this)
+    end
+    CreateCombatTrackingFrame = function (this)
+      this.CombatTrackingFrame = CreateFrame("Frame", nil, nil, nil)
+      this.CombatTrackingFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+      this.CombatTrackingFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+      this.CombatTrackingFrame:RegisterEvent("PLAYER_DEAD")
+
+      this.CombatTrackingFrame:SetScript("OnEvent", function (self, _event)
+        if _event == "PLAYER_REGEN_ENABLED" then
+          System.Console.WriteLine("[BroBot] Left Combat")
+          this.IsInCombat = false
+        elseif _event == "PLAYER_REGEN_DISABLED" then
+          System.Console.WriteLine("[BroBot] Entered Combat")
+          this.IsInCombat = true
+        elseif _event == "PLAYER_DIED" then
+          WrapperDatabase.WoWDatabase.InsertDeathSpotIfRequired(WrapperWoW.ObjectManager.getInstance().Player.Position)
+        end
+      end, System.Delegate)
     end
     Update = function (this)
       System.base(this).Update(this)
@@ -25831,15 +25984,53 @@ System.namespace("Wrapper.WoW", function (namespace)
 
       return false
     end
+    GetDurability = function (this)
+      if 1==1 then
+          local slots = {
+           "SecondaryHandSlot",
+           "MainHandSlot",
+           "FeetSlot",
+           "LegsSlot",
+           "HandsSlot",
+           "WristSlot",
+           "WaistSlot",
+           "ChestSlot",
+           "ShoulderSlot",
+           "HeadSlot"
+          }
+          local totalDurability = 100
+          for _, value in pairs(slots) do
+              local slot = GetInventorySlotInfo(value)
+              local current, max = GetInventoryItemDurability(slot)
+              if current then
+                  if ((current / max) * 100) < totalDurability then
+                      totalDurability = (current / max) * 100
+                  end
+              end
+          end
+          return totalDurability
+      end
+
+      return - 1
+    end
+    FacePosition = function (this, Pos)
+      local Pitch = __LB__.ObjectPitch("player")
+      local Angle = math.Atan2(Pos.Y - this.Position.Y, Pos.X - this.Position.X)
+      Angle = (0.017453292519943295 --[[Math.PI / 180]]) * Angle
+       __LB__.SetPlayerAngles(Angle, Pitch)
+    end
     return {
       base = function (out)
         return {
           out.Wrapper.WoW.WoWPlayer
         }
       end,
+      IsInCombat = false,
       Update = Update,
       HasRequiredSkillToHarvest = HasRequiredSkillToHarvest,
       HasProfession = HasProfession,
+      GetDurability = GetDurability,
+      FacePosition = FacePosition,
       __ctor__ = __ctor__
     }
   end)
@@ -25862,7 +26053,7 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.WoW", function (namespace)
   namespace.class("ObjectManager", function (namespace)
-    local _instance, getInstance, Pulse, CreateWowObject, GetAllPlayers, class, __ctor__
+    local _instance, getInstance, Pulse, CreateWowObject, GetAllPlayers, FindNPCByObjectID, class, __ctor__
     __ctor__ = function (this)
       this.AllObjects = DictStringWoWGameObject()
       this.Pendings = ListWoWGameObject()
@@ -25939,11 +26130,19 @@ System.namespace("Wrapper.WoW", function (namespace)
         return System.as(x, WrapperWoW.WoWPlayer)
       end, WrapperWoW.WoWPlayer)
     end
+    FindNPCByObjectID = function (ObjectID)
+      return System.as(Linq.FirstOrDefault(Linq.OrderBy(Linq.Where(getInstance().AllObjects:getValues(), function (x)
+        return x.ObjectType == 5 --[[EObjectType.Unit]] and x.ObjectId == ObjectID
+      end), function (x)
+        return x:DistanceToPlayer()
+      end, nil, System.Double)), WrapperWoW.WoWUnit)
+    end
     class = {
       getInstance = getInstance,
       ObjectManagerScanRange = 500,
       Pulse = Pulse,
       GetAllPlayers = GetAllPlayers,
+      FindNPCByObjectID = FindNPCByObjectID,
       __ctor__ = __ctor__
     }
     return class
@@ -25987,7 +26186,8 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.WoW", function (namespace)
   namespace.class("WoWUnit", function (namespace)
-    local getFriend, getHostile, getNeutral, getIsCasting, getIsChanneling, Update, Target, __ctor__
+    local getFriend, getHostile, getNeutral, getIsCasting, getIsChanneling, Interact, Update, Target, 
+    __ctor__
     __ctor__ = function (this, _GUID)
       WrapperWoW.WoWGameObject.__ctor__(this, _GUID)
     end
@@ -26019,6 +26219,9 @@ System.namespace("Wrapper.WoW", function (namespace)
       local _
       _, CastID, TargetGUID, TimeLeft, NotInterruptable =  __LB__.UnitChannelInfo(this.GUID)
       return not System.String.IsNullOrEmpty(CastID)
+    end
+    Interact = function (this)
+      local func = function (...) return __LB__.Unlock(__LB__.ObjectInteract, ...) end func(this.GUID)
     end
     Update = function (this)
       this.Health = __LB__.UnitTagHandler(UnitHealth, this.GUID)
@@ -26062,6 +26265,7 @@ System.namespace("Wrapper.WoW", function (namespace)
       getNeutral = getNeutral,
       getIsCasting = getIsCasting,
       getIsChanneling = getIsChanneling,
+      Interact = Interact,
       Update = Update,
       Target = Target,
       __ctor__ = __ctor__
@@ -26651,7 +26855,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       System.Console.WriteLine("Out Of Time: " .. System.toString(this:IsOutOfTime()))
       System.Console.WriteLine("BlackList: " .. System.toString(WrapperHelpers.Blacklist.IsOnBlackList(this.Task.TargetUnitOrObject.GUID)))
 
-      return (not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) and WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position) < 300) or (this.HasGathered and not WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() and not WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling()) or __LB__.UnitTagHandler(UnitAffectingCombat, "player") or this:IsOutOfTime()
+      return (not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) and WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position) < 300) or (this.HasGathered and not WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() and not WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling()) or WrapperWoW.ObjectManager.getInstance().Player.IsInCombat or this:IsOutOfTime()
     end
     Tick = function (this)
       this.Task.TargetUnitOrObject:Update()
@@ -26659,15 +26863,17 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       local Distance = WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)
 
       if Distance > 5 then
+        this:SetMaxStateTime(300 --[[60 * 5]])
+        -- Can spend at MAX 5 mins trying to get to the target node;
         this._StringRepr = "NativeGatherTask Getting Closer: " .. System.ToInt32(Distance) .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString()
         __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 1)
         return
       end
 
       this._StringRepr = "Interacting"
-
       __LB__.Navigator.Stop()
-
+      this:SetMaxStateTime(5)
+      -- If we spend more than 5 seconds doing this. Just bail. If its still valid the object manager will reassign
 
       if WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() or WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling() then
         System.Console.WriteLine("Blacklisting Gather Node" .. "")
@@ -26675,7 +26881,8 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
         this.HasGathered = true
       else
         local func = function (...) return __LB__.Unlock(__LB__.ObjectInteract, ...) end func(this.Task.TargetUnitOrObject.GUID)
-        this.HasGathered = true
+        WrapperHelpers.Blacklist.AddToBlacklist(this.Task.TargetUnitOrObject.GUID, 120)
+        --HasGathered = true;
       end
 
       System.base(this).Tick(this)
@@ -26765,9 +26972,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
       System.Console.WriteLine("In Combat Task")
       local Distance = WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)
-      local CombatRange = 5
-      --local xy = AngleTo("Target", "Player")
-      --__LB__.SetPlayerAngles(xy)
+      local CombatRange = 5;
 
       (System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)).PlayerHasFought = true
 
@@ -26781,12 +26986,22 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
         end
 
         this._StringRepr = "Killing mob: " .. System.toString(this.Task.TargetUnitOrObject.Name) .. " has fought: " .. System.toString((System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)).PlayerHasFought)
+
         __LB__.Navigator.Stop()
-        __LB__.UnitTagHandler(TargetUnit, this.Task.TargetUnitOrObject.GUID)
-        local func = function (...) return __LB__.Unlock(__LB__.ObjectInteract, ...) end func(this.Task.TargetUnitOrObject.GUID)
+
+        if WrapperWoW.ObjectManager.getInstance().Player.TargetGUID ~= this.Task.TargetUnitOrObject.GUID then
+          __LB__.UnitTagHandler(TargetUnit, this.Task.TargetUnitOrObject.GUID)
+        end
+
+        --LuaBox.Instance.ObjectInteract(Task.TargetUnitOrObject.GUID);
 
         RunMacroText("/startattack")
-        StartAttack()
+        --WoWAPI.StartAttack();
+
+        WrapperWoW.ObjectManager.getInstance().Player:FacePosition(this.Task.TargetUnitOrObject.Position)
+
+        local TaskUnit = System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)
+        TaskUnit.PlayerHasFought = true
       end
 
       System.base(this).Tick(this)
@@ -26825,7 +27040,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
         return true
       end
-      return (not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) or this.HasLooted or __LB__.UnitTagHandler(UnitAffectingCombat, "player") or this:IsOutOfTime())
+      return (not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) or this.HasLooted or WrapperWoW.ObjectManager.getInstance().Player.IsInCombat or this:IsOutOfTime())
     end
     Tick = function (this)
       local Distance = WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)
@@ -26869,6 +27084,67 @@ end)
 end
 do
 local System = System
+local WrapperDatabase
+local WrapperWoW
+System.import(function (out)
+  WrapperDatabase = Wrapper.Database
+  WrapperWoW = Wrapper.WoW
+end)
+System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace)
+  namespace.class("NativeGrindRepairTask", function (namespace)
+    local Complete, Tick
+    Complete = function (this)
+      return this.HasRepaired or __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player")
+    end
+    Tick = function (this)
+      local NPC = WrapperDatabase.WoWDatabase.GetClosestRepairNPC()
+
+      if NPC == nil then
+        System.Console.WriteLine("Database has no repair NPC?!")
+        return
+      end
+
+
+      local NPCPosition = WrapperWoW.Vector3(NPC.X, NPC.Y, NPC.Z)
+
+      if WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, NPCPosition:__clone__()) > 5 then
+        __LB__.Navigator.MoveTo(NPC.X, NPC.Y, NPC.Z, 1, 1)
+        this._StringRepr = "Moving To: " .. NPCPosition:ToString() .. " to repair at npc: " .. System.toString(NPC.Name)
+        return
+      end
+
+
+      local NpcUnit = WrapperWoW.ObjectManager.FindNPCByObjectID(NPC.ObjectId)
+      if NpcUnit == nil then
+        System.Console.WriteLine("Could not find NPC with ID " .. NPC.ObjectId .. " Name: " .. System.toString(NPC.Name) .. " at location: " .. NPCPosition:ToString() .. " ")
+      end
+
+
+      if _G["MerchantRepairAllButton"] ~= nil and _G["MerchantRepairAllButton"]:IsShown() then
+        _G["MerchantRepairAllButton"]:Click()
+        this.HasRepaired = true
+      end
+
+
+      NpcUnit:Interact()
+      System.base(this).Tick(this)
+    end
+    return {
+      base = function (out)
+        return {
+          out.Wrapper.NativeBehaviors.BehaviorStateMachine.StateMachineState
+        }
+      end,
+      HasRepaired = false,
+      Complete = Complete,
+      Tick = Tick
+    }
+  end)
+end)
+
+end
+do
+local System = System
 local Linq = System.Linq.Enumerable
 local WrapperDatabase
 local WrapperWoW
@@ -26886,7 +27162,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
         return true
       end
-      return this.ObjectiveScanner:GetNextTask() ~= nil or __LB__.UnitTagHandler(UnitAffectingCombat, "player")
+      return this.ObjectiveScanner:GetNextTask() ~= nil or WrapperWoW.ObjectManager.getInstance().Player.IsInCombat
     end
     Tick = function (this)
       this.ObjectiveScanner:Update()
@@ -26902,7 +27178,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
         local KnowsHerbalism = Player:HasProfession("Herbalism")
         local KnowsMining = Player:HasProfession("Mining")
         local AllNodes = Linq.ToList((Linq.Where(WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).Nodes, function (p)
-          return ((p.NodeType == 2 --[[NodeType.Herb]] and KnowsHerbalism) or (p.NodeType == 1 --[[NodeType.Ore]] and KnowsMining)) and WrapperWoW.Vector3.Distance(WrapperWoW.Vector3(p.X, p.Y, p.Z), PlayerPosition:__clone__()) > 100
+          return ((p.NodeType == 2 --[[NodeType.Herb]] and KnowsHerbalism) or (p.NodeType == 1 --[[NodeType.Ore]] and KnowsMining)) and WrapperWoW.Vector3.Distance(WrapperWoW.Vector3(p.X, p.Y, p.Z), PlayerPosition:__clone__()) > 100 and not WrapperDatabase.WoWDatabase.IsConsideredDeathSpot(p.X, p.Y, p.Z)
         end)))
 
         if #AllNodes > 0 then
@@ -26948,6 +27224,7 @@ System.init({
     "Wrapper.WoW.WoWUnit",
     "Wrapper.API.LuaBox",
     "Wrapper.API.WoWAPI",
+    "Wrapper.BotBases.NativeGrindBotBase",
     "Wrapper.Database.LocationInfo",
     "Wrapper.DataLoggerBase",
     "Wrapper.NativeBehaviors.BehaviorStateMachine.StateMachineState",
@@ -26975,7 +27252,7 @@ System.init({
     "Wrapper.API.WoWAPI.PVPClassification",
     "Wrapper.API.WoWButton",
     "Wrapper.API.WoWTexture",
-    "Wrapper.BotBases.NativeGrindBotBase",
+    "Wrapper.BotBases.NativeGrindBotBase.NativeGrindUIContainer",
     "Wrapper.BotBases.PVPBotBase",
     "Wrapper.Database.FactionID",
     "Wrapper.Database.GatherableTypes",
@@ -27001,6 +27278,7 @@ System.init({
     "Wrapper.NativeBehaviors.NativeGrindTasks.NativeGrindGatherTask",
     "Wrapper.NativeBehaviors.NativeGrindTasks.NativeGrindKillTask",
     "Wrapper.NativeBehaviors.NativeGrindTasks.NativeGrindLootTask",
+    "Wrapper.NativeBehaviors.NativeGrindTasks.NativeGrindRepairTask",
     "Wrapper.NativeBehaviors.NativeGrindTasks.NativeGrindSearchForNode",
     "Wrapper.Program",
     "Wrapper.StdUI.StdUiButton",

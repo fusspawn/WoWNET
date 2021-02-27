@@ -116,5 +116,12 @@ namespace Wrapper.WoW
                 && Vector3.Distance(x.Position, Instance.Player.Position) <= Yards)
                     .Select(x => x as WoWPlayer);
         }
+
+
+        public static WoWUnit? FindNPCByObjectID(int ObjectID)
+        {
+            return ObjectManager.Instance.AllObjects.Values.Where(x => x.ObjectType == LuaBox.EObjectType.Unit
+                    && x.ObjectId == ObjectID).OrderBy(x => x.DistanceToPlayer()).FirstOrDefault() as WoWUnit;
+        }
     }
 }

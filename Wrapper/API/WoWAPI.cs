@@ -262,6 +262,9 @@ namespace Wrapper.API
         public extern void SetFrameStrata(string Strata);
         public extern void SetWidth(int Width);
         public extern void SetHeight(int Height);
+        public extern int GetWidth();
+        public extern int GetHeight();
+
         public extern void SetAllPoints(WoWFrame Parent);
         public extern void SetPoint(string Relation, int x, int y);
 
@@ -269,6 +272,8 @@ namespace Wrapper.API
         public extern bool IsShown();
 
         public extern WoWTexture CreateTexture(string name = null, string layer = null, string inheritsFrom = null);
+
+        public extern void RegisterEvent(string Event);
     }
 
     public class WoWTexture 

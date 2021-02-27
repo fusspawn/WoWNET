@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Wrapper.WoW;
 
 namespace Wrapper.Database
 {
@@ -12,6 +13,7 @@ namespace Wrapper.Database
         public List<NPCLocationInfo> Vendors = new List<NPCLocationInfo>();
         public List<NPCLocationInfo> Repair = new List<NPCLocationInfo>();
         public List<NodeLocationInfo> Nodes = new List<NodeLocationInfo>();
+        public List<Vector3> PlayerDeathSpots = new List<Vector3>();
 
         public void RestoreFromJson(MapDataEntry mapDataEntry)
         {
@@ -98,6 +100,18 @@ namespace Wrapper.Database
                     ObjectId = node.ObjectId
                 });
             }
+
+            /*
+            foreach(var node in mapDataEntry.PlayerDeathSpots)
+            {
+                PlayerDeathSpots.Add(new Vector3()
+                {
+                    X = node.X,
+                    Y = node.Y,
+                    Z = node.Z
+                });
+            }
+            */
 
         }
     }

@@ -24,7 +24,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 return true;
             return (!LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)
                 || HasLooted
-                || WoWAPI.UnitAffectingCombat("player") || IsOutOfTime());
+                || ObjectManager.Instance.Player.IsInCombat || IsOutOfTime());
         }
 
         public override void Tick()

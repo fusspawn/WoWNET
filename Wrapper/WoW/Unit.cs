@@ -57,6 +57,11 @@ namespace Wrapper.WoW
         {
         }
 
+        public void Interact()
+        {
+            LuaBox.Instance.ObjectInteract(this.GUID);
+        }
+
         public override void Update()
         {
             

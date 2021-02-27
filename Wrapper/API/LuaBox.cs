@@ -556,6 +556,11 @@ namespace Wrapper.API
         public extern void SetCameraAngles(double facing, double pitch);
 
         /// <summary>
+        /// @CSharpLua.Template = " __LB__.SetPlayerAngles({0}, {1})"
+        /// </summary>
+        public extern void SetPlayerAngles(double facing, double? pitch);
+
+        /// <summary>
         /// @CSharpLua.Template = " __LB__.UnitAuras({0})"
         /// </summary>
         public extern Dictionary<int, string> UnitAuras(string UnitGuidOrUnitID);

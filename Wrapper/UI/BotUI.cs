@@ -16,17 +16,31 @@ namespace Wrapper.UI
             public StdUiCheckBox EnabledCheckbox;
             public StdUiDropdown SelectedBotBase;
             public StdUiButton ToggleBotUI;
+
+            public StdUiFrame ConfigFrame;
         }
 
 
-        private StdUI StdUI;
-
+        public StdUI StdUI;
        
         public BotUIDataContainer UIContainer;
 
         public BotMainUI()
         {
             CreateMainFrame();
+        }
+
+        public void SetConfigPanel(StdUI.StdUiFrame Frame)
+        {
+            if (UIContainer.ConfigFrame != null)
+                UIContainer.ConfigFrame.Hide();
+
+            UIContainer.ConfigFrame = Frame;
+
+            if (Frame != null)
+            {
+                Frame.Show();
+            }
         }
 
         private void CreateMainFrame()
@@ -89,20 +103,24 @@ namespace Wrapper.UI
                     Console.WriteLine("Selected Empty Bot Base");
                     Program.Base = null;
                 }
+
+
+                if (Program.Base != null)
+                    Program.Base.BuildConfig(UIContainer.MainBotUIFrame);
             };
+
             StdUI.GlueTop(UIContainer.SelectedBotBase, UIContainer.MainBotUIFrame, 0, -40, "TOP");
 
 
             UIContainer.ToggleBotUI = StdUI.HighlightButton(LuaHelper.GetGlobalFrom_G<WoWFrame>("UIParent"), 100, 25, "Toggle BroBot UI");
             UIContainer.ToggleBotUI.SetScript<Action>("OnClick", () =>
             {
-
-
                 if (!UIContainer.MainBotUIFrame.IsShown())
                     UIContainer.MainBotUIFrame.Show();
                 else
                     UIContainer.MainBotUIFrame.Hide();
-            });     
+            });    
+            
             StdUI.GlueTop(UIContainer.ToggleBotUI, LuaHelper.GetGlobalFrom_G<WoWFrame>("UIParent"), 20, 5, "TOP");
 
             

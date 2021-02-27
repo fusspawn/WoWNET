@@ -25,7 +25,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             if (WoWAPI.UnitIsDeadOrGhost("player"))
                 return true;
             return ObjectiveScanner.GetNextTask() != null
-                || WoWAPI.UnitAffectingCombat("player");
+                || ObjectManager.Instance.Player.IsInCombat;
         }
 
         public override void Tick()
@@ -48,6 +48,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                                     ((p.NodeType == NodeType.Herb && KnowsHerbalism)
                                     || (p.NodeType == NodeType.Ore && KnowsMining))
                                     && Vector3.Distance(new Vector3(p.X, p.Y, p.Z), PlayerPosition) > 100
+                                    && !WoWDatabase.IsConsideredDeathSpot(p.X, p.Y, p.Z)
                                 select p).ToList();
 
                 if (AllNodes.Count > 0)

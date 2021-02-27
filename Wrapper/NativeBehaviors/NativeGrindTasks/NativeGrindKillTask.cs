@@ -86,12 +86,6 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             var Distance = Vector3.Distance(Task.TargetUnitOrObject.Position,
                 ObjectManager.Instance.Player.Position);
             var CombatRange = 5;
-            /*
-              [[
-                --local xy = AngleTo("Target", "Player")
-                --__LB__.SetPlayerAngles(xy)
-             ]] 
-             */
 
             (Task.TargetUnitOrObject as WoWUnit).PlayerHasFought = true;
 
@@ -111,12 +105,21 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 ]]*/
 
                 _StringRepr = "Killing mob: " + Task.TargetUnitOrObject.Name + " has fought: " + (Task.TargetUnitOrObject as WoWUnit).PlayerHasFought;
+                
                 LuaBox.Instance.Navigator.Stop();
-                WoWAPI.TargetUnit(Task.TargetUnitOrObject.GUID);
-                LuaBox.Instance.ObjectInteract(Task.TargetUnitOrObject.GUID);
+
+                if (ObjectManager.Instance.Player.TargetGUID != Task.TargetUnitOrObject.GUID)
+                {
+                    WoWAPI.TargetUnit(Task.TargetUnitOrObject.GUID);
+                }
+
+                //LuaBox.Instance.ObjectInteract(Task.TargetUnitOrObject.GUID);
 
                 WoWAPI.RunMacroText("/startattack");
-                WoWAPI.StartAttack();
+                //WoWAPI.StartAttack();
+
+                ObjectManager.Instance.Player.FacePosition(Task.TargetUnitOrObject.Position);
+
                 var TaskUnit = Task.TargetUnitOrObject as WoWUnit;
                 TaskUnit.PlayerHasFought = true;
             }
