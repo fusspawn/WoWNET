@@ -23828,7 +23828,7 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.BotBases", function (namespace)
   namespace.class("PVPBotBase", function (namespace)
-    local Pulse, RunQueueLogic, RunBattleGroundLogic, Rotation, __ctor__
+    local Pulse, RunQueueLogic, RunBattleGroundLogic, __ctor__
     __ctor__ = function (this)
       this.SmartTarget = WrapperHelpers.SmartTargetPVP()
       this.SmartMove = WrapperHelpers.SmartMovePVP()
@@ -23932,8 +23932,6 @@ System.namespace("Wrapper.BotBases", function (namespace)
         end
       end
     end
-    Rotation = function (this)
-    end
     return {
       base = function (out)
         return {
@@ -23956,22 +23954,66 @@ local System = System
 local Wrapper
 local WrapperNativeBehaviors
 local BehaviorStateMachine
+local WrapperWoW
 System.import(function (out)
   Wrapper = out.Wrapper
   WrapperNativeBehaviors = Wrapper.NativeBehaviors
   BehaviorStateMachine = Wrapper.NativeBehaviors.BehaviorStateMachine
+  WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.BotBases", function (namespace)
   namespace.class("NativeGrindBotBase", function (namespace)
-    local UIContainer, Pulse, BuildConfig, class, __ctor__
+    local UIContainer, LoadConfig, SaveConfig, Pulse, BuildConfig, class, __ctor__
     namespace.class("NativeGrindUIContainer", function (namespace)
       return {}
+    end)
+    namespace.class("NativeGrindConfigOptions", function (namespace)
+      return {
+        AllowGather = false,
+        AllowSkin = false,
+        AllowLoot = false,
+        AllowPullingMobs = false,
+        AllowSelfDefense = false,
+        UseMaxRange = false,
+        MaxRange = 0
+      }
     end)
     __ctor__ = function (this)
       this.LastRun = Wrapper.Program.CurrentTime
       this.name = "NativeGrind"
+
+      LoadConfig(this)
+
       class.StateMachine = BehaviorStateMachine.StateMachine()
       class.StateMachine.States:Push(WrapperNativeBehaviors.NativeGrindBaseState())
+    end
+    LoadConfig = function (this)
+      local DirectoryPath = System.toString( __LB__.GetBaseDirectory()) .. "\\BroBot\\Config\\NativeGrind\\"
+
+      if not  __LB__.DirectoryExists(DirectoryPath) then
+         __LB__.CreateDirectory(DirectoryPath)
+      end
+
+
+      if not  __LB__.FileExists(System.toString(DirectoryPath) .. System.toString(System.toString(WrapperWoW.ObjectManager.getInstance().Player.Name) .. "-" .. System.toString(GetRealmName()) .. ".NativeGrind.json")) then
+        local default = class.NativeGrindConfigOptions()
+        default.AllowGather = WrapperWoW.ObjectManager.getInstance().Player:HasProfession("Herbalism") or WrapperWoW.ObjectManager.getInstance().Player:HasProfession("Mining")
+        default.AllowSkin = WrapperWoW.ObjectManager.getInstance().Player:HasProfession("Skinning")
+        default.AllowLoot = true
+        default.AllowPullingMobs = true
+        default.AllowSelfDefense = true
+        class.ConfigOptions = default
+
+        SaveConfig(this)
+      else
+        class.ConfigOptions = LibJSON.Deserialize( __LB__.ReadFile(System.toString(DirectoryPath) .. System.toString(System.toString(WrapperWoW.ObjectManager.getInstance().Player.Name) .. "-" .. System.toString(GetRealmName()) .. ".NativeGrind.json")))
+      end
+    end
+    SaveConfig = function (this)
+      local DirectoryPath = System.toString( __LB__.GetBaseDirectory()) .. "\\BroBot\\Config\\NativeGrind\\"
+      local ConfigString = LibJSON.Serialize(class.ConfigOptions)
+
+       __LB__.WriteFile(System.toString(DirectoryPath) .. System.toString(System.toString(WrapperWoW.ObjectManager.getInstance().Player.Name) .. "-" .. System.toString(GetRealmName()) .. ".NativeGrind.json"), ConfigString, false)
     end
     Pulse = function (this)
       class.StateMachine:Run()
@@ -23993,22 +24035,46 @@ System.namespace("Wrapper.BotBases", function (namespace)
 
       UIContainer.AllowGather = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Gathering", 200, 25)
       UIContainer.AllowGather:SetValue(true)
+      UIContainer.AllowGather.OnValueChanged = System.DelegateCombine(UIContainer.AllowGather.OnValueChanged, function (self, state, value)
+        class.ConfigOptions.AllowGather = value
+        SaveConfig(this)
+      end)
+
       Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowGather, UIContainer.Container, - 75, - 50, "TOP")
 
       UIContainer.AllowSkin = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Skinning", 200, 25)
-      UIContainer.AllowSkin:SetValue(true)
+      UIContainer.AllowSkin:SetValue(class.ConfigOptions.AllowSkin)
+      UIContainer.AllowSkin.OnValueChanged = System.DelegateCombine(UIContainer.AllowSkin.OnValueChanged, function (self, state, value)
+        class.ConfigOptions.AllowSkin = value
+        SaveConfig(this)
+      end)
+
       Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowSkin, UIContainer.Container, - 75, - 80, "TOP")
 
       UIContainer.AllowLoot = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Looting", 200, 25)
-      UIContainer.AllowLoot:SetValue(true)
+      UIContainer.AllowLoot:SetValue(class.ConfigOptions.AllowLoot)
+      UIContainer.AllowLoot.OnValueChanged = System.DelegateCombine(UIContainer.AllowLoot.OnValueChanged, function (self, state, value)
+        class.ConfigOptions.AllowLoot = value
+        SaveConfig(this)
+      end)
+
       Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowLoot, UIContainer.Container, - 75, - 110, "TOP")
 
       UIContainer.AllowPullingMobs = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Pulling Mobs", 200, 25)
-      UIContainer.AllowPullingMobs:SetValue(true)
+      UIContainer.AllowPullingMobs:SetValue(class.ConfigOptions.AllowPullingMobs)
+      UIContainer.AllowPullingMobs.OnValueChanged = System.DelegateCombine(UIContainer.AllowPullingMobs.OnValueChanged, function (self, state, value)
+        class.ConfigOptions.AllowPullingMobs = value
+        SaveConfig(this)
+      end)
+
       Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowPullingMobs, UIContainer.Container, - 75, - 140, "TOP")
 
       UIContainer.AllowSelfDefense = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Self Defense", 200, 25)
-      UIContainer.AllowSelfDefense:SetValue(true)
+      UIContainer.AllowSelfDefense:SetValue(class.ConfigOptions.AllowSelfDefense)
+      UIContainer.AllowSelfDefense.OnValueChanged = System.DelegateCombine(UIContainer.AllowSelfDefense.OnValueChanged, function (self, state, value)
+        class.ConfigOptions.AllowSelfDefense = value
+        SaveConfig(this)
+      end)
       Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowSelfDefense, UIContainer.Container, - 75, - 170, "TOP")
 
 
@@ -27252,6 +27318,7 @@ System.init({
     "Wrapper.API.WoWAPI.PVPClassification",
     "Wrapper.API.WoWButton",
     "Wrapper.API.WoWTexture",
+    "Wrapper.BotBases.NativeGrindBotBase.NativeGrindConfigOptions",
     "Wrapper.BotBases.NativeGrindBotBase.NativeGrindUIContainer",
     "Wrapper.BotBases.PVPBotBase",
     "Wrapper.Database.FactionID",

@@ -128,28 +128,31 @@ namespace Wrapper.NativeBehaviors
             if (!ObjectManager.Instance.Player.IsInCombat)
             {
 
-                foreach (var GameObject in
-                    ObjectManager.Instance.AllObjects.Where(x => x.Value.IsHerb || x.Value.IsOre).Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)
-                            && ObjectManager.Instance.Player.HasRequiredSkillToHarvest(x.Value)))
+                if (NativeGrindBotBase.ConfigOptions.AllowGather)
                 {
-                    double score = 0;
-                    score = 5;
-                    score = score + (200 - Vector3.Distance(GameObject.Value.Position, ObjectManager.Instance.Player.Position));
-
-                    if (score > 0)
+                    foreach (var GameObject in
+                        ObjectManager.Instance.AllObjects.Where(x => x.Value.IsHerb || x.Value.IsOre).Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)
+                                && ObjectManager.Instance.Player.HasRequiredSkillToHarvest(x.Value)))
                     {
-                        //  Console.WriteLine("Found Gathering Objective");
+                        double score = 0;
+                        score = 5;
+                        score = score + (200 - Vector3.Distance(GameObject.Value.Position, ObjectManager.Instance.Player.Position));
 
-                        Tasks.Add(new SmartObjectiveTask()
+                        if (score > 0)
                         {
-                            Score = score,
-                            TargetUnitOrObject = GameObject.Value,
-                            TaskType = SmartObjectiveTaskType.Gather
-                        });
-                    }
-                    else
-                    {
-                        // Console.WriteLine("Gathering Objective Was To Low Scored");
+                            //  Console.WriteLine("Found Gathering Objective");
+
+                            Tasks.Add(new SmartObjectiveTask()
+                            {
+                                Score = score,
+                                TargetUnitOrObject = GameObject.Value,
+                                TaskType = SmartObjectiveTaskType.Gather
+                            });
+                        }
+                        else
+                        {
+                            // Console.WriteLine("Gathering Objective Was To Low Scored");
+                        }
                     }
                 }
 
@@ -158,7 +161,8 @@ namespace Wrapper.NativeBehaviors
                 {
                     if (!WoWAPI.UnitIsDeadOrGhost(Unit.Value.GUID))
                         continue;
-                    var AllowSkinning = true; // Default to true if BroBot doesnt Exist
+
+                    var AllowSkinning = NativeGrindBotBase.ConfigOptions.AllowSkin; // Default to true if BroBot doesnt Exist
 
                     if ((Unit.Value as WoWUnit).PlayerHasFought
                             && (LuaBox.Instance.UnitIsLootable(Unit.Value.GUID)
@@ -217,10 +221,24 @@ namespace Wrapper.NativeBehaviors
                 score = score + (200 - Vector3.Distance(Unit.Value.Position,
                     ObjectManager.Instance.Player.Position));
 
+
+                
+
+
+
                 if (WoWAPI.UnitAffectingCombat(_Unit.GUID))
                 {
+                    
                  //   Console.WriteLine("Found Combat Unit");
                     score = score + 500;
+                } 
+                else
+                {
+                    if(!NativeGrindBotBase.ConfigOptions.AllowPullingMobs)
+                    {
+                        //dont pull this one if allow pulling is off.
+                        continue;
+                    }
                 }
 
 

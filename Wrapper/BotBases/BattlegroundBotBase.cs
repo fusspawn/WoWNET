@@ -165,11 +165,5 @@ namespace Wrapper.BotBases
                 }
             }
         }
-
-        private void Rotation()
-        {
-
-
-        }
     }
 }
