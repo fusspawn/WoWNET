@@ -59,11 +59,22 @@ namespace Wrapper
                     {
                         if (Base != null) { Base.Pulse(); }
 
-                        Tracker.Pulse();
+                       Tracker.Pulse();
                     }
                 }
 
             }, 0.2f);
+
+            WoWAPI.NewTicker(() =>
+            {
+                Program.CurrentTime = WoWAPI.GetTime();
+
+                if(Program.Base != null && Program.IsRunning)
+                {
+                    Program.Base.DrawDebug();
+                }
+
+            }, 0);
          }
     }
 }

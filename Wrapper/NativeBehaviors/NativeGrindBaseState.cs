@@ -38,10 +38,6 @@ namespace Wrapper.NativeBehaviors
                 return;
             }
 
-            if (WoWAPI.UnitAffectingCombat("player"))
-            {
-                Console.WriteLine("Was in combat?");
-            }
 
             var NextObjective = SmartObjective.GetNextTask();
 
@@ -60,11 +56,10 @@ namespace Wrapper.NativeBehaviors
                         break;
                 }
 
-                Console.WriteLine("Pushed a task of Type: " + NextObjective.TaskType);
+             //   Console.WriteLine("Pushed a task of Type: " + NextObjective.TaskType);
             }
             else
             {
-                Console.WriteLine("update was null");
                 NativeGrindBotBase.StateMachine.States.Push(new NativeGrindTasks.NativeGrindSearchForNode(SmartObjective));
             }
 
@@ -100,6 +95,7 @@ namespace Wrapper.NativeBehaviors
 
         public List<SmartObjectiveTask> Tasks = new List<SmartObjectiveTask>();
         public double LastUpdateTime = Program.CurrentTime;
+        public float BASE_SCORE = 200;
 
         public NativeGrindSmartObjective()
         {
@@ -107,25 +103,19 @@ namespace Wrapper.NativeBehaviors
 
         public void Update()
         {
-
-            //ObjectManager.Instance.Pulse();
-
-            var CurrentTime = Program.CurrentTime;
-
-            /*
-             * if (CurrentTime - LastUpdateTime < 1)
+            if(Program.CurrentTime - LastUpdateTime < 1)
             {
                 return;
             }
-            */
 
-            LastUpdateTime = CurrentTime;
+            LastUpdateTime = Program.CurrentTime;
+
+
+            ObjectManager.Instance.Pulse();
             Tasks.Clear();
 
 
-            var AllowGather = true; // Default to true if BroBot doesnt Exist
-
-            if (!ObjectManager.Instance.Player.IsInCombat)
+            if (!ObjectManager.Instance.Player.IsInCombat || !NativeGrindBotBase.ConfigOptions.AllowSelfDefense)
             {
 
                 if (NativeGrindBotBase.ConfigOptions.AllowGather)
@@ -135,26 +125,18 @@ namespace Wrapper.NativeBehaviors
                                 && ObjectManager.Instance.Player.HasRequiredSkillToHarvest(x.Value)))
                     {
                         double score = 0;
-                        score = 5;
-                        score = score + (200 - Vector3.Distance(GameObject.Value.Position, ObjectManager.Instance.Player.Position));
+                        score = score + (BASE_SCORE - Vector3.Distance(GameObject.Value.Position, ObjectManager.Instance.Player.Position));
 
-                        if (score > 0)
-                        {
-                            //  Console.WriteLine("Found Gathering Objective");
 
-                            Tasks.Add(new SmartObjectiveTask()
-                            {
-                                Score = score,
-                                TargetUnitOrObject = GameObject.Value,
-                                TaskType = SmartObjectiveTaskType.Gather
-                            });
-                        }
-                        else
+                        Tasks.Add(new SmartObjectiveTask()
                         {
-                            // Console.WriteLine("Gathering Objective Was To Low Scored");
-                        }
+                            Score = score,
+                            TargetUnitOrObject = GameObject.Value,
+                            TaskType = SmartObjectiveTaskType.Gather
+                        });
                     }
                 }
+
 
                 foreach (var Unit in ObjectManager.Instance.AllObjects.Where(x => x.Value.ObjectType == LuaBox.EObjectType.Unit
                      && x.Value.ObjectType != LuaBox.EObjectType.Player).Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)))
@@ -171,29 +153,20 @@ namespace Wrapper.NativeBehaviors
                     {
 
                         double score = 0;
-                        score = score + (200 - Vector3.Distance(Unit.Value.Position,
+                        score = score + (BASE_SCORE - Vector3.Distance(Unit.Value.Position,
                             ObjectManager.Instance.Player.Position));
 
-                        if (score > 0)
+
+
+                        Tasks.Add(new SmartObjectiveTask()
                         {
+                            Score = score,
+                            TargetUnitOrObject = Unit.Value,
+                            TaskType = SmartObjectiveTaskType.Loot
+                        });
 
-                            // Console.WriteLine("Found LootOrSkin Objective");
-
-                            Tasks.Add(new SmartObjectiveTask()
-                            {
-                                Score = score,
-                                TargetUnitOrObject = Unit.Value,
-                                TaskType = SmartObjectiveTaskType.Loot
-                            });
-                        }
-                        else
-                        {
-
-                            // Console.WriteLine("Potential LootOrSkin Objective was to low scored");
-                        }
                     }
                 }
-
             }
 
             foreach (var Unit in ObjectManager.Instance.AllObjects.Where(x => x.Value.ObjectType == LuaBox.EObjectType.Unit
@@ -201,9 +174,11 @@ namespace Wrapper.NativeBehaviors
             {
                 var _Unit = Unit.Value as WoWUnit;
 
-                if (WoWAPI.UnitIsDeadOrGhost(Unit.Value.GUID) || _Unit.Reaction > 4)
+                if (WoWAPI.UnitIsDeadOrGhost(Unit.Value.GUID) 
+                    || _Unit.Reaction > (NativeGrindBotBase.ConfigOptions.AllowPullingYellows ? 4 : 3) 
+                    || !_Unit.Attackable)
                 {
-                   // Console.WriteLine($"Skipping {Unit.Value.Name} Its dead or shit reaction");
+                    //Console.WriteLine($"Skipping {Unit.Value.Name} Its dead or shit reaction");
                     continue;
                 }
 
@@ -211,68 +186,75 @@ namespace Wrapper.NativeBehaviors
                     || WoWAPI.UnitCreatureType(Unit.Value.GUID) == "Critter")
                 {
 
-                  //  Console.WriteLine($"Skipping {Unit.Value.Name} Its Trivial or a Critter");
+                    // Console.WriteLine($"Skipping {Unit.Value.Name} Its Trivial or a Critter");
                     continue;
                 }
 
-               // Console.WriteLine("Found Valid Combat Target");
+                // Console.WriteLine("Found Valid Combat Target");
 
                 double score = 0;
-                score = score + (200 - Vector3.Distance(Unit.Value.Position,
-                    ObjectManager.Instance.Player.Position));
+                score = score + (BASE_SCORE - Vector3.Distance(Unit.Value.Position,
+                    ObjectManager.Instance.Player.Position)) + 0.25;
 
-
-                
-
-
-
-                if (WoWAPI.UnitAffectingCombat(_Unit.GUID))
+                if (WoWAPI.UnitAffectingCombat(_Unit.GUID)
+                    && _Unit.TargetGUID == ObjectManager.Instance.Player.GUID)
                 {
-                    
-                 //   Console.WriteLine("Found Combat Unit");
+                    Console.WriteLine("Found In Combat Unit");
                     score = score + 500;
-                } 
+                }
                 else
                 {
-                    if(!NativeGrindBotBase.ConfigOptions.AllowPullingMobs)
+                    
+                    if (!NativeGrindBotBase.ConfigOptions.AllowPullingMobs)
                     {
+                        //Console.WriteLine($"Skipping {Unit.Value.Name} AllowPull Is off");
                         //dont pull this one if allow pulling is off.
                         continue;
                     }
+                    
                 }
 
 
-                if (Math.Abs(ObjectManager.Instance.Player.Position.Z - _Unit.Position.Z) > 5)
+                if (_Unit.IsBossOrElite && NativeGrindBotBase.ConfigOptions.IgnoreElitesAndBosses && !WoWAPI.UnitAffectingCombat(_Unit.GUID))
                 {
-                    score = score - 500; // things higher than us can be fucky
+                    continue;
                 }
 
-                if(_Unit.LineOfSight == false)
+                
+                if(Math.Abs(Unit.Value.Position.Z -  ObjectManager.Instance.Player.Position.Z) > 20)
                 {
-                    score = score - 200;
+                    score = score - 500;
                 }
+                
 
-                //score = score + ((8 - _Unit.Reaction) * 10);
-
-                if (score > 0)
+                Tasks.Add(new SmartObjectiveTask()
                 {
-                  //  Console.WriteLine("Found Combat Objective");
-
-                    Tasks.Add(new SmartObjectiveTask()
-                    {
-                        Score = score,
-                        TargetUnitOrObject = Unit.Value,
-                        TaskType = SmartObjectiveTaskType.Kill
-                    });
-                }
+                    Score = score,
+                    TargetUnitOrObject = Unit.Value,
+                    TaskType = SmartObjectiveTaskType.Kill
+                });
             }
 
         }
 
-        public SmartObjectiveTask GetNextTask() { 
-            this.Update();
+        public SmartObjectiveTask PreviousTask;
+        public SmartObjectiveTask GetNextTask(bool _Update =true)
+        {
+            if(_Update)
+                this.Update();
 
-            return Tasks.Count > 0 ? Tasks[0] : null;
-         }
+            if (Tasks.Count == 0)
+            {
+                return null;
+            }
+
+            var NextTask = Tasks.OrderByDescending(x => x.Score).First();
+
+            if (NextTask.Score < 0)
+                return null;
+
+
+            return NextTask;
+        }
     }
 }

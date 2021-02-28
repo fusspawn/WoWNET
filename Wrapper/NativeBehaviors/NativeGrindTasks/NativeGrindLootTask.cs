@@ -15,7 +15,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
         public NativeGrindLootTask(NativeGrindSmartObjective.SmartObjectiveTask Task)
         {
             this.Task = Task;
-            SetMaxStateTime(120);
+            SetMaxStateTime(5);
         }
 
         public override bool Complete()
@@ -43,7 +43,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 LuaBox.Instance.Navigator.MoveTo(
                     Task.TargetUnitOrObject.Position.X, 
                     Task.TargetUnitOrObject.Position.Y,
-                    Task.TargetUnitOrObject.Position.Z);
+                    Task.TargetUnitOrObject.Position.Z, 1, 4);
                 return;
             }
 

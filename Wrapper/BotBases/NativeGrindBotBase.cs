@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using Wrapper.API;
+using Wrapper.Helpers;
 using Wrapper.NativeBehaviors;
 using Wrapper.NativeBehaviors.BehaviorStateMachine;
 using Wrapper.WoW;
+using static Wrapper.StdUI;
 
 namespace Wrapper.BotBases
 {
@@ -30,6 +32,11 @@ namespace Wrapper.BotBases
             public StdUI.StdUiCheckBox AllowLoot;
             public StdUI.StdUiCheckBox AllowPullingMobs;
             public StdUI.StdUiCheckBox AllowSelfDefense;
+            public StdUI.StdUiCheckBox AllowPullingYellows;
+            public StdUI.StdUiCheckBox IgnoreElitesAndBosses;
+
+
+            public StdUI.StdUiNumericInputFrame CombatRange;
         }
 
         public class NativeGrindConfigOptions
@@ -40,8 +47,9 @@ namespace Wrapper.BotBases
             public bool AllowPullingMobs;
             public bool AllowSelfDefense;
 
-            public bool UseMaxRange;
-            public double MaxRange;
+            public float CombatRange;
+            internal bool AllowPullingYellows;
+            internal bool IgnoreElitesAndBosses;
         }
 
         public NativeGrindBotBase()
@@ -72,7 +80,10 @@ namespace Wrapper.BotBases
                     AllowSkin = ObjectManager.Instance.Player.HasProfession("Skinning"),
                     AllowLoot = true,
                     AllowPullingMobs = true,
-                    AllowSelfDefense = true
+                    AllowSelfDefense = true,
+                    AllowPullingYellows = true,
+                    CombatRange = 5,
+                    IgnoreElitesAndBosses = true
                 };
 
                 SaveConfig();
@@ -87,6 +98,7 @@ namespace Wrapper.BotBases
         {
             var DirectoryPath = $"{LuaBox.Instance.GetBaseDirectory()}\\BroBot\\Config\\NativeGrind\\";
             var ConfigString = LibJson.Serialize(ConfigOptions);
+            Console.WriteLine("Saving ConfigString: " + ConfigString);
 
             LuaBox.Instance.WriteFile(DirectoryPath + $"{ObjectManager.Instance.Player.Name}-{WoWAPI.GetRealmName()}.NativeGrind.json", ConfigString, false);
         }
@@ -114,58 +126,157 @@ namespace Wrapper.BotBases
 
 
             UIContainer.AllowGather = Program.MainUI.StdUI.Checkbox(UIContainer.Container, "Allow Gathering", 200, 25);
-            UIContainer.AllowGather.SetValue(true);
+            UIContainer.AllowGather.SetChecked(true);
             UIContainer.AllowGather.OnValueChanged += (self, state, value) =>
             {
-                ConfigOptions.AllowGather = value;
+                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                ConfigOptions.AllowGather = state;
                 SaveConfig();
             };
 
             Program.MainUI.StdUI.GlueTop(UIContainer.AllowGather, UIContainer.Container, -75, -50, "TOP");
 
             UIContainer.AllowSkin = Program.MainUI.StdUI.Checkbox(UIContainer.Container, "Allow Skinning", 200, 25);
-            UIContainer.AllowSkin.SetValue(ConfigOptions.AllowSkin);
+            UIContainer.AllowSkin.SetChecked(ConfigOptions.AllowSkin);
             UIContainer.AllowSkin.OnValueChanged += (self, state, value) =>
-             {
-                 ConfigOptions.AllowSkin = value;
+            {
+                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                ConfigOptions.AllowSkin = state;
                  SaveConfig();
              };
 
             Program.MainUI.StdUI.GlueTop(UIContainer.AllowSkin, UIContainer.Container, -75, -80, "TOP");
 
             UIContainer.AllowLoot = Program.MainUI.StdUI.Checkbox(UIContainer.Container, "Allow Looting", 200, 25);
-            UIContainer.AllowLoot.SetValue(ConfigOptions.AllowLoot);
+            UIContainer.AllowLoot.SetChecked(ConfigOptions.AllowLoot);
             UIContainer.AllowLoot.OnValueChanged += (self, state, value) =>
-             {
-                 ConfigOptions.AllowLoot = value;
+            {
+                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                ConfigOptions.AllowLoot = state;
                  SaveConfig();
              };
 
             Program.MainUI.StdUI.GlueTop(UIContainer.AllowLoot, UIContainer.Container, -75, -110, "TOP");
 
             UIContainer.AllowPullingMobs = Program.MainUI.StdUI.Checkbox(UIContainer.Container, "Allow Pulling Mobs", 200, 25);
-            UIContainer.AllowPullingMobs.SetValue(ConfigOptions.AllowPullingMobs);
+            
+            UIContainer.AllowPullingMobs.SetChecked(ConfigOptions.AllowPullingMobs);
             UIContainer.AllowPullingMobs.OnValueChanged += (self, state, value) =>
             {
-                ConfigOptions.AllowPullingMobs = value;
+                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                ConfigOptions.AllowPullingMobs = state;
                 SaveConfig();
             };
 
             Program.MainUI.StdUI.GlueTop(UIContainer.AllowPullingMobs, UIContainer.Container, -75, -140, "TOP");
 
             UIContainer.AllowSelfDefense = Program.MainUI.StdUI.Checkbox(UIContainer.Container, "Allow Self Defense", 200, 25);
-            UIContainer.AllowSelfDefense.SetValue(ConfigOptions.AllowSelfDefense);
+            UIContainer.AllowSelfDefense.SetChecked(ConfigOptions.AllowSelfDefense);
             UIContainer.AllowSelfDefense.OnValueChanged += (self, state, value) =>
             {
-                ConfigOptions.AllowSelfDefense = value;
+                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                ConfigOptions.AllowSelfDefense = state;
                 SaveConfig();
             };
+
             Program.MainUI.StdUI.GlueTop(UIContainer.AllowSelfDefense, UIContainer.Container, -75, -170, "TOP");
 
 
+            UIContainer.AllowPullingYellows = Program.MainUI.StdUI.Checkbox(UIContainer.Container, "Allow Pulling Yellows", 200, 25);
+            UIContainer.AllowPullingYellows.SetChecked(ConfigOptions.AllowPullingYellows);
+            UIContainer.AllowPullingYellows.OnValueChanged += (self, state, value) =>
+            {
+                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                ConfigOptions.AllowPullingYellows = state;
+                SaveConfig();
+            };
+
+            Program.MainUI.StdUI.GlueTop(UIContainer.AllowPullingYellows, UIContainer.Container, -75, -200, "TOP");
+
+            UIContainer.IgnoreElitesAndBosses = Program.MainUI.StdUI.Checkbox(UIContainer.Container, "Ignore Elites And Bosses", 200, 25);
+            UIContainer.IgnoreElitesAndBosses.SetChecked(ConfigOptions.IgnoreElitesAndBosses);
+            UIContainer.IgnoreElitesAndBosses.OnValueChanged += (self, state, value) =>
+            {
+                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                ConfigOptions.IgnoreElitesAndBosses = state;
+                SaveConfig();
+            };
+
+            Program.MainUI.StdUI.GlueTop(UIContainer.IgnoreElitesAndBosses, UIContainer.Container, -75, -230, "TOP");
 
 
+
+            UIContainer.CombatRange = Program.MainUI.StdUI.NumericBox(UIContainer.Container, 150, 25, $"{ConfigOptions.CombatRange}", null);
+            UIContainer.CombatRange.SetValue(ConfigOptions.CombatRange);
+            UIContainer.CombatRange.OnValueChanged += (self, value) =>
+            {
+                Console.WriteLine($"OnValueChanged: {self} {value}");
+                ConfigOptions.CombatRange = value;
+                SaveConfig();
+            };
+
+            Program.MainUI.StdUI.AddLabel(UIContainer.Container, UIContainer.CombatRange, "Pull Range", "TOP", null);
+            Program.MainUI.StdUI.GlueTop(UIContainer.CombatRange, UIContainer.Container, -85, -280, "TOP");
             Program.MainUI.SetConfigPanel(UIContainer.Container);
+        }
+
+        public override void DrawDebug()
+        {
+
+            var Green = new LibDraw.LibDrawColor()
+            {
+                R = 0,
+                G = 1,
+                B = 0,
+                A = 1,
+            };
+
+            var Red = new LibDraw.LibDrawColor()
+            {
+                R = 1,
+                G = 0,
+                B = 0,
+                A = 1,
+            };
+
+            var Purple = new LibDraw.LibDrawColor()
+            {
+                R = 1,
+                G = 0,
+                B = 1,
+                A = 1,
+            };
+
+
+
+            foreach (var Task 
+                in NativeGrindBaseState.SmartObjective.Tasks) {
+
+
+
+                LibDraw.Circle(Task.TargetUnitOrObject.Position, 1, 1, Task.Score > 0 ? Green : Red);
+                LibDraw.Text($"{Task.TaskType}: {Task.Score}", Task.TargetUnitOrObject.Position, 12, Task.Score > 0 ? Green : Red, null);
+            }
+
+            var CurrentTask = NativeGrindBaseState.SmartObjective.GetNextTask(false);
+            if (CurrentTask != null)
+            {
+                var Task = NativeGrindBaseState.SmartObjective.Tasks[0];
+                var OffSetPosition = Task.TargetUnitOrObject.Position - new WoW.Vector3(0, 0, .45);
+                LibDraw.Text($"{Task.TaskType}: CURRENT TASK", OffSetPosition, 16,  Purple, null);
+            }
+
+
+            foreach (var Entry in Blacklist.BlackListEntrys)
+            {
+                if(LuaBox.Instance.ObjectExists(Entry.Key) 
+                    && ObjectManager.Instance.AllObjects.ContainsKey(Entry.Key))
+                {
+                    LibDraw.Text($"Blacklisted - Remaining: {Program.CurrentTime - Entry.Value}", ObjectManager.Instance.AllObjects[Entry.Key].Position, 12, Red, null);
+                }
+            }
+
+            base.DrawDebug();
         }
     }
 }

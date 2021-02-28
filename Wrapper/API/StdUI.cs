@@ -25,6 +25,10 @@ namespace Wrapper
         public class StdUiNumericInputFrame :
             StdUiInputFrame
         {
+
+            public delegate void _OnValueChanged(StdUiNumericInputFrame self, float value);
+            public _OnValueChanged OnValueChanged;
+
             public extern void SetMinMaxValue(float min, float max);
         }
 
@@ -40,7 +44,11 @@ namespace Wrapper
 		{
 			public delegate void _OnValueChanged(StdUiCheckBox self, bool State, bool value);
 			public _OnValueChanged OnValueChanged;
-		}
+
+            public extern void SetChecked(bool Checked);
+
+            public extern bool GetChecked();
+        }
 
         public class StdUiLabel 
             : StdUiFrame
@@ -86,7 +94,7 @@ namespace Wrapper
 		public extern StdUiInputFrame SimpleEditBox(WoWFrame UIParent, int Width, int Height, string Text);
 		public extern StdUiInputFrame SearchEditBox(WoWFrame UIParent, int Width, int Height, string Text);
 		public extern StdUiInputFrame EditBox(WoWFrame UIParent, int Width, int Height, string Text, Func<bool> Validator);
-		public extern StdUiInputFrame NumericBox(WoWFrame UIParent, int Width, int Height, string Text, Func<bool> Validator);
+		public extern StdUiNumericInputFrame NumericBox(WoWFrame UIParent, int Width, int Height, string Text, Func<bool> Validator);
 		public extern StdUiInputFrame MoneyBox(WoWFrame UIParent, int Width, int Height, string Text, Func<bool> Validator, bool ignoreCopper);
         public extern StdUiButton HighlightButton(WoWFrame ParentFrame, int width, int height, string Text);
 #pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.

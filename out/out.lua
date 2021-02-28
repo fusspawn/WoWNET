@@ -17567,15 +17567,18 @@ System.import(function (out)
 end)
 System.namespace("Wrapper", function (namespace)
   namespace.class("BotBase", function (namespace)
-    local Pulse, BuildConfig
+    local Pulse, BuildConfig, DrawDebug
     Pulse = function (this)
     end
     BuildConfig = function (this, Container)
       Wrapper.Program.MainUI:SetConfigPanel()
     end
+    DrawDebug = function (this)
+    end
     return {
       Pulse = Pulse,
-      BuildConfig = BuildConfig
+      BuildConfig = BuildConfig,
+      DrawDebug = DrawDebug
     }
   end)
 
@@ -18065,6 +18068,14 @@ System.namespace("Wrapper", function (namespace)
           end
         end
       end)
+
+      C_Timer.NewTicker(0, function ()
+        class.CurrentTime = GetTime()
+
+        if class.Base ~= nil and class.IsRunning then
+          class.Base:DrawDebug()
+        end
+      end)
     end
     class = {
       CurrentTime = 0,
@@ -18073,6 +18084,37 @@ System.namespace("Wrapper", function (namespace)
       static = static
     }
     return class
+  end)
+end)
+
+end
+do
+local System = System
+System.namespace("Wrapper.API", function (namespace)
+  namespace.class("LibDraw", function (namespace)
+    local Line, Circle, Text
+    namespace.class("LibDrawColor", function (namespace)
+      return {
+        R = 0,
+        G = 0,
+        B = 0,
+        A = 0
+      }
+    end)
+    Line = function (Start, Destination, Size, Color)
+      lb.LibDraw.Line({Start.X, Start.Y, Start.Z}, {Destination.X, Destination.Y, Destination.Z}, Size, Color);
+    end
+    Circle = function (Position, Size, Thickness, Color)
+      lb.LibDraw.Circle({Position.X, Position.Y, Position.Z}, Size, Thickness, Color);
+    end
+    Text = function (Text, Position, Size, Color, font)
+      lb.LibDraw.Text(Text, {Position.X, Position.Y, Position.Z}, Size, Color, font);
+    end
+    return {
+      Line = Line,
+      Circle = Circle,
+      Text = Text
+    }
   end)
 end)
 
@@ -23952,18 +23994,26 @@ end
 do
 local System = System
 local Wrapper
+local WrapperAPI
+local WrapperAPILibDraw
+local WrapperHelpers
 local WrapperNativeBehaviors
 local BehaviorStateMachine
+local NativeGrindSmartObjective
 local WrapperWoW
 System.import(function (out)
   Wrapper = out.Wrapper
+  WrapperAPI = Wrapper.API
+  WrapperAPILibDraw = Wrapper.API.LibDraw
+  WrapperHelpers = Wrapper.Helpers
   WrapperNativeBehaviors = Wrapper.NativeBehaviors
   BehaviorStateMachine = Wrapper.NativeBehaviors.BehaviorStateMachine
+  NativeGrindSmartObjective = Wrapper.NativeBehaviors.NativeGrindSmartObjective
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.BotBases", function (namespace)
   namespace.class("NativeGrindBotBase", function (namespace)
-    local UIContainer, LoadConfig, SaveConfig, Pulse, BuildConfig, class, __ctor__
+    local UIContainer, LoadConfig, SaveConfig, Pulse, BuildConfig, DrawDebug, class, __ctor__
     namespace.class("NativeGrindUIContainer", function (namespace)
       return {}
     end)
@@ -23974,8 +24024,9 @@ System.namespace("Wrapper.BotBases", function (namespace)
         AllowLoot = false,
         AllowPullingMobs = false,
         AllowSelfDefense = false,
-        UseMaxRange = false,
-        MaxRange = 0
+        CombatRange = 0,
+        AllowPullingYellows = false,
+        IgnoreElitesAndBosses = false
       }
     end)
     __ctor__ = function (this)
@@ -24002,6 +24053,9 @@ System.namespace("Wrapper.BotBases", function (namespace)
         default.AllowLoot = true
         default.AllowPullingMobs = true
         default.AllowSelfDefense = true
+        default.AllowPullingYellows = true
+        default.CombatRange = 5
+        default.IgnoreElitesAndBosses = true
         class.ConfigOptions = default
 
         SaveConfig(this)
@@ -24012,6 +24066,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
     SaveConfig = function (this)
       local DirectoryPath = System.toString( __LB__.GetBaseDirectory()) .. "\\BroBot\\Config\\NativeGrind\\"
       local ConfigString = LibJSON.Serialize(class.ConfigOptions)
+      System.Console.WriteLine("Saving ConfigString: " .. System.toString(ConfigString))
 
        __LB__.WriteFile(System.toString(DirectoryPath) .. System.toString(System.toString(WrapperWoW.ObjectManager.getInstance().Player.Name) .. "-" .. System.toString(GetRealmName()) .. ".NativeGrind.json"), ConfigString, false)
     end
@@ -24034,53 +24089,147 @@ System.namespace("Wrapper.BotBases", function (namespace)
 
 
       UIContainer.AllowGather = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Gathering", 200, 25)
-      UIContainer.AllowGather:SetValue(true)
+      UIContainer.AllowGather:SetChecked(true)
       UIContainer.AllowGather.OnValueChanged = System.DelegateCombine(UIContainer.AllowGather.OnValueChanged, function (self, state, value)
-        class.ConfigOptions.AllowGather = value
+        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        class.ConfigOptions.AllowGather = state
         SaveConfig(this)
       end)
 
       Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowGather, UIContainer.Container, - 75, - 50, "TOP")
 
       UIContainer.AllowSkin = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Skinning", 200, 25)
-      UIContainer.AllowSkin:SetValue(class.ConfigOptions.AllowSkin)
+      UIContainer.AllowSkin:SetChecked(class.ConfigOptions.AllowSkin)
       UIContainer.AllowSkin.OnValueChanged = System.DelegateCombine(UIContainer.AllowSkin.OnValueChanged, function (self, state, value)
-        class.ConfigOptions.AllowSkin = value
+        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        class.ConfigOptions.AllowSkin = state
         SaveConfig(this)
       end)
 
       Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowSkin, UIContainer.Container, - 75, - 80, "TOP")
 
       UIContainer.AllowLoot = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Looting", 200, 25)
-      UIContainer.AllowLoot:SetValue(class.ConfigOptions.AllowLoot)
+      UIContainer.AllowLoot:SetChecked(class.ConfigOptions.AllowLoot)
       UIContainer.AllowLoot.OnValueChanged = System.DelegateCombine(UIContainer.AllowLoot.OnValueChanged, function (self, state, value)
-        class.ConfigOptions.AllowLoot = value
+        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        class.ConfigOptions.AllowLoot = state
         SaveConfig(this)
       end)
 
       Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowLoot, UIContainer.Container, - 75, - 110, "TOP")
 
       UIContainer.AllowPullingMobs = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Pulling Mobs", 200, 25)
-      UIContainer.AllowPullingMobs:SetValue(class.ConfigOptions.AllowPullingMobs)
+
+      UIContainer.AllowPullingMobs:SetChecked(class.ConfigOptions.AllowPullingMobs)
       UIContainer.AllowPullingMobs.OnValueChanged = System.DelegateCombine(UIContainer.AllowPullingMobs.OnValueChanged, function (self, state, value)
-        class.ConfigOptions.AllowPullingMobs = value
+        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        class.ConfigOptions.AllowPullingMobs = state
         SaveConfig(this)
       end)
 
       Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowPullingMobs, UIContainer.Container, - 75, - 140, "TOP")
 
       UIContainer.AllowSelfDefense = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Self Defense", 200, 25)
-      UIContainer.AllowSelfDefense:SetValue(class.ConfigOptions.AllowSelfDefense)
+      UIContainer.AllowSelfDefense:SetChecked(class.ConfigOptions.AllowSelfDefense)
       UIContainer.AllowSelfDefense.OnValueChanged = System.DelegateCombine(UIContainer.AllowSelfDefense.OnValueChanged, function (self, state, value)
-        class.ConfigOptions.AllowSelfDefense = value
+        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        class.ConfigOptions.AllowSelfDefense = state
         SaveConfig(this)
       end)
+
       Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowSelfDefense, UIContainer.Container, - 75, - 170, "TOP")
 
 
+      UIContainer.AllowPullingYellows = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Pulling Yellows", 200, 25)
+      UIContainer.AllowPullingYellows:SetChecked(class.ConfigOptions.AllowPullingYellows)
+      UIContainer.AllowPullingYellows.OnValueChanged = System.DelegateCombine(UIContainer.AllowPullingYellows.OnValueChanged, function (self, state, value)
+        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        class.ConfigOptions.AllowPullingYellows = state
+        SaveConfig(this)
+      end)
+
+      Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.AllowPullingYellows, UIContainer.Container, - 75, - 200, "TOP")
+
+      UIContainer.IgnoreElitesAndBosses = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Ignore Elites And Bosses", 200, 25)
+      UIContainer.IgnoreElitesAndBosses:SetChecked(class.ConfigOptions.IgnoreElitesAndBosses)
+      UIContainer.IgnoreElitesAndBosses.OnValueChanged = System.DelegateCombine(UIContainer.IgnoreElitesAndBosses.OnValueChanged, function (self, state, value)
+        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        class.ConfigOptions.IgnoreElitesAndBosses = state
+        SaveConfig(this)
+      end)
+
+      Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.IgnoreElitesAndBosses, UIContainer.Container, - 75, - 230, "TOP")
 
 
+
+      UIContainer.CombatRange = Wrapper.Program.MainUI.StdUI:NumericBox(UIContainer.Container, 150, 25, class.ConfigOptions.CombatRange .. "")
+      UIContainer.CombatRange:SetValue(class.ConfigOptions.CombatRange)
+      UIContainer.CombatRange.OnValueChanged = System.DelegateCombine(UIContainer.CombatRange.OnValueChanged, function (self, value)
+        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. value)
+        class.ConfigOptions.CombatRange = value
+        SaveConfig(this)
+      end)
+
+      Wrapper.Program.MainUI.StdUI:AddLabel(UIContainer.Container, UIContainer.CombatRange, "Pull Range", "TOP")
+      Wrapper.Program.MainUI.StdUI:GlueTop(UIContainer.CombatRange, UIContainer.Container, - 85, - 280, "TOP")
       Wrapper.Program.MainUI:SetConfigPanel(UIContainer.Container)
+    end
+    DrawDebug = function (this)
+      local default = WrapperAPILibDraw.LibDrawColor()
+      default.R = 0
+      default.G = 1
+      default.B = 0
+      default.A = 1
+      local Green = default
+
+      local default = WrapperAPILibDraw.LibDrawColor()
+      default.R = 1
+      default.G = 0
+      default.B = 0
+      default.A = 1
+      local Red = default
+
+      local default = WrapperAPILibDraw.LibDrawColor()
+      default.R = 1
+      default.G = 0
+      default.B = 1
+      default.A = 1
+      local Purple = default
+
+
+
+      for _, Task in System.each(WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective.Tasks) do
+        local default
+        if Task.Score > 0 then
+          default = Green
+        else
+          default = Red
+        end
+        WrapperAPI.LibDraw.Circle(Task.TargetUnitOrObject.Position, 1, 1, default)
+        local extern
+        if Task.Score > 0 then
+          extern = Green
+        else
+          extern = Red
+        end
+        WrapperAPI.LibDraw.Text(System.EnumToString(Task.TaskType, NativeGrindSmartObjective.SmartObjectiveTaskType) .. ": " .. Task.Score, Task.TargetUnitOrObject.Position, 12, extern)
+      end
+
+      local CurrentTask = WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:GetNextTask(false)
+      if CurrentTask ~= nil then
+        local Task = WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective.Tasks:get(0)
+        local OffSetPosition = WrapperWoW.Vector3.op_Subtraction(Task.TargetUnitOrObject.Position, WrapperWoW.Vector3(0, 0, .45))
+        WrapperAPI.LibDraw.Text(System.EnumToString(Task.TaskType, NativeGrindSmartObjective.SmartObjectiveTaskType) .. ": CURRENT TASK", OffSetPosition:__clone__(), 16, Purple)
+      end
+
+
+      for _, Entry in System.each(WrapperHelpers.Blacklist.BlackListEntrys) do
+        if  __LB__.ObjectExists(Entry.Key) and WrapperWoW.ObjectManager.getInstance().AllObjects:ContainsKey(Entry.Key) then
+          WrapperAPI.LibDraw.Text("Blacklisted - Remaining: " .. Wrapper.Program.CurrentTime - Entry.Value, WrapperWoW.ObjectManager.getInstance().AllObjects:get(Entry.Key).Position, 12, Red)
+        end
+      end
+
+      System.base(this).DrawDebug(this)
     end
     class = {
       base = function (out)
@@ -24092,6 +24241,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
       author = "Fusspawn",
       Pulse = Pulse,
       BuildConfig = BuildConfig,
+      DrawDebug = DrawDebug,
       __ctor__ = __ctor__
     }
     return class
@@ -24566,27 +24716,53 @@ System.namespace("Wrapper.Database", function (namespace)
       end
 
       for _, node in System.each(mapDataEntry.Repair) do
-        local default = WrapperDatabase.NPCLocationInfo()
-        default.X = node.X
-        default.Y = node.Y
-        default.Z = node.Z
-        default.Name = node.Name
-        default.NodeType = node.NodeType
-        default.MapID = node.MapID
-        default.ObjectId = node.ObjectId
-        this.Repair:Add(default)
+        local continue
+        repeat
+          if WrapperDatabase.WoWDatabase.BannedObjectIDs:Contains(node.ObjectId) then
+            System.Console.WriteLine("Removing Banned Repair Vendor From DataBase")
+            continue = true
+            break
+          end
+
+          local default = WrapperDatabase.NPCLocationInfo()
+          default.X = node.X
+          default.Y = node.Y
+          default.Z = node.Z
+          default.Name = node.Name
+          default.NodeType = node.NodeType
+          default.MapID = node.MapID
+          default.ObjectId = node.ObjectId
+          this.Repair:Add(default)
+          continue = true
+        until 1
+        if not continue then
+          break
+        end
       end
 
       for _, node in System.each(mapDataEntry.Vendors) do
-        local default = WrapperDatabase.NPCLocationInfo()
-        default.X = node.X
-        default.Y = node.Y
-        default.Z = node.Z
-        default.Name = node.Name
-        default.NodeType = node.NodeType
-        default.MapID = node.MapID
-        default.ObjectId = node.ObjectId
-        this.Vendors:Add(default)
+        local continue
+        repeat
+          if WrapperDatabase.WoWDatabase.BannedObjectIDs:Contains(node.ObjectId) then
+            System.Console.WriteLine("Removing Banned Vendor From DataBase")
+            continue = true
+            break
+          end
+
+          local default = WrapperDatabase.NPCLocationInfo()
+          default.X = node.X
+          default.Y = node.Y
+          default.Z = node.Z
+          default.Name = node.Name
+          default.NodeType = node.NodeType
+          default.MapID = node.MapID
+          default.ObjectId = node.ObjectId
+          this.Vendors:Add(default)
+          continue = true
+        until 1
+        if not continue then
+          break
+        end
       end
 
       for _, node in System.each(mapDataEntry.InnKeepers) do
@@ -24765,6 +24941,7 @@ System.namespace("Wrapper.Database", function (namespace)
       default:Add(32641)
       default:Add(142668)
       default:Add(142666)
+      default:Add(32639)
       this.BannedObjectIDs = default
       DirtyMapIds = ListInt32()
     end
@@ -25465,11 +25642,8 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
         return
       end
 
-      if __LB__.UnitTagHandler(UnitAffectingCombat, "player") then
-        System.Console.WriteLine("Was in combat?")
-      end
 
-      local NextObjective = class.SmartObjective:GetNextTask()
+      local NextObjective = class.SmartObjective:GetNextTask(true)
 
       if NextObjective ~= nil then
         repeat
@@ -25486,9 +25660,8 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
           end
         until 1
 
-        System.Console.WriteLine("Pushed a task of Type: " .. System.EnumToString(NextObjective.TaskType, NativeGrindSmartObjective.SmartObjectiveTaskType))
+        --   Console.WriteLine("Pushed a task of Type: " + NextObjective.TaskType);
       else
-        System.Console.WriteLine("update was null")
         WrapperBotBases.NativeGrindBotBase.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindSearchForNode(class.SmartObjective))
       end
 
@@ -25543,46 +25716,36 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
       this.LastUpdateTime = Wrapper.Program.CurrentTime
     end
     Update = function (this)
-      --ObjectManager.Instance.Pulse();
+      if Wrapper.Program.CurrentTime - this.LastUpdateTime < 1 then
+        return
+      end
 
-      local CurrentTime = Wrapper.Program.CurrentTime
+      this.LastUpdateTime = Wrapper.Program.CurrentTime
 
-      --[[
-             * if (CurrentTime - LastUpdateTime < 1)
-            {
-                return;
-            }
-            ]]
 
-      this.LastUpdateTime = CurrentTime
+      WrapperWoW.ObjectManager.getInstance():Pulse()
       this.Tasks:Clear()
 
 
-      local AllowGather = true
-      -- Default to true if BroBot doesnt Exist
+      if not WrapperWoW.ObjectManager.getInstance().Player.IsInCombat or not WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowSelfDefense then
+        if WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowGather then
+          for _, GameObject in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
+            return x.Value:getIsHerb() or x.Value:getIsOre()
+          end), function (x)
+            return not WrapperHelpers.Blacklist.IsOnBlackList(x.Value.GUID) and WrapperWoW.ObjectManager.getInstance().Player:HasRequiredSkillToHarvest(x.Value)
+          end)) do
+            local score = 0
+            score = score + (this.BASE_SCORE - WrapperWoW.Vector3.Distance(GameObject.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
 
-      if not WrapperWoW.ObjectManager.getInstance().Player.IsInCombat then
-        for _, GameObject in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
-          return x.Value:getIsHerb() or x.Value:getIsOre()
-        end), function (x)
-          return not WrapperHelpers.Blacklist.IsOnBlackList(x.Value.GUID) and WrapperWoW.ObjectManager.getInstance().Player:HasRequiredSkillToHarvest(x.Value)
-        end)) do
-          local score = 0
-          score = 5
-          score = score + (200 - WrapperWoW.Vector3.Distance(GameObject.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
-
-          if score > 0 then
-            --  Console.WriteLine("Found Gathering Objective");
 
             local default = class.SmartObjectiveTask()
             default.Score = score
             default.TargetUnitOrObject = GameObject.Value
             default.TaskType = 1 --[[SmartObjectiveTaskType.Gather]]
             this.Tasks:Add(default)
-          else
-            -- Console.WriteLine("Gathering Objective Was To Low Scored");
           end
         end
+
 
         for _, Unit in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
           return x.Value.ObjectType == 5 --[[EObjectType.Unit]] and x.Value.ObjectType ~= 6 --[[EObjectType.Player]]
@@ -25595,24 +25758,21 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
               continue = true
               break
             end
-            local AllowSkinning = true
+
+            local AllowSkinning = WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowSkin
             -- Default to true if BroBot doesnt Exist
 
             if (System.as(Unit.Value, WrapperWoW.WoWUnit)).PlayerHasFought and ( __LB__.UnitIsLootable(Unit.Value.GUID) or ( __LB__.UnitHasFlag(Unit.Value.GUID, 67108864 --[[EUnitFlags.Skinnable]]) and AllowSkinning)) then
               local score = 0
-              score = score + (200 - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
+              score = score + (this.BASE_SCORE - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
 
-              if score > 0 then
-                -- Console.WriteLine("Found LootOrSkin Objective");
 
-                local default = class.SmartObjectiveTask()
-                default.Score = score
-                default.TargetUnitOrObject = Unit.Value
-                default.TaskType = 2 --[[SmartObjectiveTaskType.Loot]]
-                this.Tasks:Add(default)
-              else
-                -- Console.WriteLine("Potential LootOrSkin Objective was to low scored");
-              end
+
+              local default = class.SmartObjectiveTask()
+              default.Score = score
+              default.TargetUnitOrObject = Unit.Value
+              default.TaskType = 2 --[[SmartObjectiveTaskType.Loot]]
+              this.Tasks:Add(default)
             end
             continue = true
           until 1
@@ -25631,14 +25791,14 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
         repeat
           local _Unit = System.as(Unit.Value, WrapperWoW.WoWUnit)
 
-          if __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) or _Unit.Reaction > 4 then
-            -- Console.WriteLine($"Skipping {Unit.Value.Name} Its dead or shit reaction");
+          if __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) or _Unit.Reaction > (WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowPullingYellows and 4 or 3) or not _Unit:getAttackable() then
+            --Console.WriteLine($"Skipping {Unit.Value.Name} Its dead or shit reaction");
             continue = true
             break
           end
 
           if __LB__.UnitTagHandler(UnitIsTrivial, Unit.Value.GUID) or __LB__.UnitTagHandler(UnitCreatureType, Unit.Value.GUID) == "Critter" then
-            --  Console.WriteLine($"Skipping {Unit.Value.Name} Its Trivial or a Critter");
+            -- Console.WriteLine($"Skipping {Unit.Value.Name} Its Trivial or a Critter");
             continue = true
             break
           end
@@ -25646,34 +25806,37 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
           -- Console.WriteLine("Found Valid Combat Target");
 
           local score = 0
-          score = score + (200 - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
+          score = score + (this.BASE_SCORE - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)) + 0.25
 
-          if __LB__.UnitTagHandler(UnitAffectingCombat, _Unit.GUID) then
-            --   Console.WriteLine("Found Combat Unit");
+          if __LB__.UnitTagHandler(UnitAffectingCombat, _Unit.GUID) and _Unit.TargetGUID == WrapperWoW.ObjectManager.getInstance().Player.GUID then
+            System.Console.WriteLine("Found In Combat Unit")
             score = score + 500
+          else
+            if not WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowPullingMobs then
+              --Console.WriteLine($"Skipping {Unit.Value.Name} AllowPull Is off");
+              --dont pull this one if allow pulling is off.
+              continue = true
+              break
+            end
           end
 
 
-          if math.Abs(WrapperWoW.ObjectManager.getInstance().Player.Position.Z - _Unit.Position.Z) > 5 then
+          if _Unit.IsBossOrElite and WrapperBotBases.NativeGrindBotBase.ConfigOptions.IgnoreElitesAndBosses and not __LB__.UnitTagHandler(UnitAffectingCombat, _Unit.GUID) then
+            continue = true
+            break
+          end
+
+
+          if math.Abs(Unit.Value.Position.Z - WrapperWoW.ObjectManager.getInstance().Player.Position.Z) > 20 then
             score = score - 500
-            -- things higher than us can be fucky
           end
 
-          if _Unit.LineOfSight == false then
-            score = score - 200
-          end
 
-          --score = score + ((8 - _Unit.Reaction) * 10);
-
-          if score > 0 then
-            --  Console.WriteLine("Found Combat Objective");
-
-            local default = class.SmartObjectiveTask()
-            default.Score = score
-            default.TargetUnitOrObject = Unit.Value
-            default.TaskType = 0 --[[SmartObjectiveTaskType.Kill]]
-            this.Tasks:Add(default)
-          end
+          local default = class.SmartObjectiveTask()
+          default.Score = score
+          default.TargetUnitOrObject = Unit.Value
+          default.TaskType = 0 --[[SmartObjectiveTaskType.Kill]]
+          this.Tasks:Add(default)
           continue = true
         until 1
         if not continue then
@@ -25681,18 +25844,28 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
         end
       end
     end
-    GetNextTask = function (this)
-      Update(this)
-
-      local default
-      if #this.Tasks > 0 then
-        default = this.Tasks:get(0)
-      else
-        default = nil
+    GetNextTask = function (this, _Update)
+      if _Update then
+        Update(this)
       end
-      return default
+
+      if #this.Tasks == 0 then
+        return nil
+      end
+
+      local NextTask = Linq.First(Linq.OrderByDescending(this.Tasks, function (x)
+        return x.Score
+      end, nil, System.Double))
+
+      if NextTask.Score < 0 then
+        return nil
+      end
+
+
+      return NextTask
     end
     class = {
+      BASE_SCORE = 200,
       Update = Update,
       GetNextTask = GetNextTask,
       __ctor__ = __ctor__
@@ -25912,7 +26085,7 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.WoW", function (namespace)
   namespace.class("WoWGameObject", function (namespace)
-    local getIsHerb, getIsOre, Update, DistanceToPlayer, __ctor__
+    local getIsHerb, getIsOre, Update, GetUpdateRate, DistanceToPlayer, __ctor__
     __ctor__ = function (this, _GUID)
       this.Position = System.default(WrapperWoW.Vector3)
       this.GUID = _GUID
@@ -25941,19 +26114,42 @@ System.namespace("Wrapper.WoW", function (namespace)
       return System.Nullable.Value(this.WasOre)
     end
     Update = function (this)
-      this.LastUpdate = Wrapper.Program.CurrentTime
       this.Position = WrapperAPI.LuaBox.getInstance():ObjectPositionVector3(this.GUID)
+
+      this.NextUpdate = Wrapper.Program.CurrentTime + GetUpdateRate(this)
+    end
+    GetUpdateRate = function (this)
+      local Distance = DistanceToPlayer(this)
+
+      if Distance > 200 then
+        return 3
+      end
+
+      if Distance > 150 then
+        return 2
+      end
+
+      if Distance > 100 then
+        return 1
+      end
+
+      return 0.5
     end
     DistanceToPlayer = function (this)
+      if WrapperWoW.ObjectManager.getInstance().Player == nil then
+        return 0
+      end
+
       return WrapperWoW.Vector3.Distance(this.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)
     end
     return {
       ObjectType = 0,
       ObjectId = 0,
-      LastUpdate = 0,
+      NextUpdate = 0,
       getIsHerb = getIsHerb,
       getIsOre = getIsOre,
       Update = Update,
+      GetUpdateRate = GetUpdateRate,
       DistanceToPlayer = DistanceToPlayer,
       __ctor__ = __ctor__
     }
@@ -26080,10 +26276,19 @@ System.namespace("Wrapper.WoW", function (namespace)
       return - 1
     end
     FacePosition = function (this, Pos)
+      local CurrentAngle =  __LB__.ObjectFacing("player")
       local Pitch = __LB__.ObjectPitch("player")
       local Angle = math.Atan2(Pos.Y - this.Position.Y, Pos.X - this.Position.X)
-      Angle = (0.017453292519943295 --[[Math.PI / 180]]) * Angle
-       __LB__.SetPlayerAngles(Angle, Pitch)
+
+      --Angle = (Math.PI / 180) * Angle;
+
+      --Console.WriteLine($"Setting Player Angle/Pitch: {Angle} / {Pitch}");
+
+      if math.Abs(Angle - CurrentAngle) > 0.01 then
+        if Angle > 0 then
+           __LB__.SetPlayerAngles(Angle, Pitch)
+        end
+      end
     end
     return {
       base = function (out)
@@ -26163,7 +26368,7 @@ System.namespace("Wrapper.WoW", function (namespace)
           if not  __LB__.ObjectExists(kvp.Key) then
             RemovalList:Add(kvp.Key)
           else
-            if CurrentTime - kvp.Value.LastUpdate > 0.25 then
+            if CurrentTime - kvp.Value.NextUpdate > 0 then
               kvp.Value:Update()
             end
           end
@@ -26205,7 +26410,7 @@ System.namespace("Wrapper.WoW", function (namespace)
     end
     class = {
       getInstance = getInstance,
-      ObjectManagerScanRange = 500,
+      ObjectManagerScanRange = 999999999,
       Pulse = Pulse,
       GetAllPlayers = GetAllPlayers,
       FindNPCByObjectID = FindNPCByObjectID,
@@ -26246,16 +26451,21 @@ end)
 end
 do
 local System = System
+local WrapperAPI
 local WrapperWoW
 System.import(function (out)
+  WrapperAPI = Wrapper.API
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.WoW", function (namespace)
   namespace.class("WoWUnit", function (namespace)
-    local getFriend, getHostile, getNeutral, getIsCasting, getIsChanneling, Interact, Update, Target, 
-    __ctor__
+    local getFriend, getHostile, getNeutral, getAttackable, getIsCasting, getIsChanneling, Interact, Update, 
+    UnitIsFlying, Target, __ctor__
     __ctor__ = function (this, _GUID)
       WrapperWoW.WoWGameObject.__ctor__(this, _GUID)
+      this.IsBossOrElite = (__LB__.UnitTagHandler(UnitClassification, this.GUID) == "worldboss"
+          or __LB__.UnitTagHandler(UnitClassification, this.GUID) == "elite"
+          or __LB__.UnitTagHandler(UnitClassification, this.GUID) == "rareelite")
     end
     getFriend = function (this)
       return this.Reaction > 4
@@ -26265,6 +26475,9 @@ System.namespace("Wrapper.WoW", function (namespace)
     end
     getNeutral = function (this)
       return this.Reaction == 4
+    end
+    getAttackable = function (this)
+      return __LB__.UnitTagHandler(UnitCanAttack, "player", this.GUID)
     end
     getIsCasting = function (this)
       local CastID
@@ -26310,6 +26523,18 @@ System.namespace("Wrapper.WoW", function (namespace)
 
       WrapperWoW.WoWGameObject.Update(this)
     end
+    UnitIsFlying = function (this)
+      this.Position = WrapperAPI.LuaBox.getInstance():ObjectPositionVector3(this.GUID)
+
+
+      local HitPos = WrapperAPI.LuaBox.getInstance():RaycastPosition(this.Position.X, this.Position.Y, this.Position.Z + 1, this.Position.X, this.Position.Y, this.Position.Z - 100, 0x100010)
+
+      if (HitPos ~= nil) then
+        return WrapperWoW.Vector3.Distance(System.Nullable.Value(HitPos), this.Position:__clone__()) > 5
+      end
+
+      return true
+    end
     Target = function (this)
       __LB__.UnitTagHandler(TargetUnit, this.GUID)
     end
@@ -26329,10 +26554,13 @@ System.namespace("Wrapper.WoW", function (namespace)
       getFriend = getFriend,
       getHostile = getHostile,
       getNeutral = getNeutral,
+      getAttackable = getAttackable,
       getIsCasting = getIsCasting,
       getIsChanneling = getIsChanneling,
+      IsBossOrElite = false,
       Interact = Interact,
       Update = Update,
+      UnitIsFlying = UnitIsFlying,
       Target = Target,
       __ctor__ = __ctor__
     }
@@ -26637,10 +26865,11 @@ System.namespace("Wrapper.WoW", function (namespace)
       return value:__clone__()
     end
     op_Subtraction = function (value1, value2)
-      value1.X = value1.X - value2.X
-      value1.Y = value1.Y - value2.Y
-      value1.Z = value1.Z - value2.Z
-      return value1:__clone__()
+      local value = class(value1.X, value1.Y, value1.Z)
+      value.X = value.X - value2.X
+      value.Y = value.Y - value2.Y
+      value.Z = value.Z - value2.Z
+      return value:__clone__()
     end
     op_Multiply = function (value1, value2)
       value1.X = value1.X * value2.X
@@ -26897,9 +27126,11 @@ end
 do
 local System = System
 local WrapperHelpers
+local WrapperNativeBehaviors
 local WrapperWoW
 System.import(function (out)
   WrapperHelpers = Wrapper.Helpers
+  WrapperNativeBehaviors = Wrapper.NativeBehaviors
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace)
@@ -26907,21 +27138,31 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
     local Complete, Tick, __ctor__
     __ctor__ = function (this, Task)
       this.Task = Task
-      this:SetMaxStateTime(120)
+      this:SetMaxStateTime(5)
     end
     Complete = function (this)
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
         return true
       end
 
-      System.Console.WriteLine("In Gather Complete")
-      System.Console.WriteLine("Object Exists: " .. System.toString( __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID)))
-      System.Console.WriteLine("GatherAndNotCasting: " .. System.toString((this.HasGathered and not WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() and not WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling())))
-      System.Console.WriteLine("InCombat: " .. System.toString(__LB__.UnitTagHandler(UnitAffectingCombat, "player")))
-      System.Console.WriteLine("Out Of Time: " .. System.toString(this:IsOutOfTime()))
-      System.Console.WriteLine("BlackList: " .. System.toString(WrapperHelpers.Blacklist.IsOnBlackList(this.Task.TargetUnitOrObject.GUID)))
 
-      return (not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) and WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position) < 300) or (this.HasGathered and not WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() and not WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling()) or WrapperWoW.ObjectManager.getInstance().Player.IsInCombat or this:IsOutOfTime()
+      --NativeGrindBaseState.SmartObjective.Update();
+      local NextTask = WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:GetNextTask(true)
+
+      if NextTask ~= nil and NextTask.TaskType == 0 --[[SmartObjectiveTaskType.Kill]] then
+        System.Console.WriteLine("combat wants to take over")
+        return true
+      end
+
+      --[[
+            Console.WriteLine("In Gather Complete");
+           Console.WriteLine($"Object Exists: {LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)}");
+           Console.WriteLine($"GatherAndNotCasting: {(HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling)}");
+           Console.WriteLine($"InCombat: {ObjectManager.Instance.Player.IsInCombat}");
+           Console.WriteLine($"Out Of Time: {IsOutOfTime()}");
+           Console.WriteLine($"BlackList: {Blacklist.IsOnBlackList(Task.TargetUnitOrObject.GUID)}");
+            ]]
+      return (not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) or (this.HasGathered and not WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() and not WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling()) or WrapperWoW.ObjectManager.getInstance().Player.IsInCombat or this:IsOutOfTime() or WrapperHelpers.Blacklist.IsOnBlackList(this.Task.TargetUnitOrObject.GUID))
     end
     Tick = function (this)
       this.Task.TargetUnitOrObject:Update()
@@ -26929,17 +27170,15 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       local Distance = WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)
 
       if Distance > 5 then
-        this:SetMaxStateTime(300 --[[60 * 5]])
-        -- Can spend at MAX 5 mins trying to get to the target node;
+        --SetMaxStateTime(5); // Can spend at MAX 5 mins trying to get to the target node;
         this._StringRepr = "NativeGatherTask Getting Closer: " .. System.ToInt32(Distance) .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString()
-        __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 1)
+        __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 4)
         return
       end
 
       this._StringRepr = "Interacting"
       __LB__.Navigator.Stop()
-      this:SetMaxStateTime(5)
-      -- If we spend more than 5 seconds doing this. Just bail. If its still valid the object manager will reassign
+      --SetMaxStateTime(5); // If we spend more than 5 seconds doing this. Just bail. If its still valid the object manager will reassign
 
       if WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() or WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling() then
         System.Console.WriteLine("Blacklisting Gather Node" .. "")
@@ -26947,7 +27186,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
         this.HasGathered = true
       else
         local func = function (...) return __LB__.Unlock(__LB__.ObjectInteract, ...) end func(this.Task.TargetUnitOrObject.GUID)
-        WrapperHelpers.Blacklist.AddToBlacklist(this.Task.TargetUnitOrObject.GUID, 120)
+        --Blacklist.AddToBlacklist(Task.TargetUnitOrObject.GUID, 120);
         --HasGathered = true;
       end
 
@@ -26971,28 +27210,29 @@ end
 do
 local System = System
 local Wrapper
-local WrapperNativeBehaviors
+local WrapperBotBases
+local WrapperHelpers
 local WrapperWoW
 System.import(function (out)
   Wrapper = out.Wrapper
-  WrapperNativeBehaviors = Wrapper.NativeBehaviors
+  WrapperBotBases = Wrapper.BotBases
+  WrapperHelpers = Wrapper.Helpers
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace)
   namespace.class("NativeGrindKillTask", function (namespace)
     local Complete, Tick, __ctor__
     __ctor__ = function (this, Task)
+      this.LastFaceDirection = Wrapper.Program.CurrentTime
       this.Task = Task
-      this:SetMaxStateTime(120)
+      this:SetMaxStateTime(5)
     end
     Complete = function (this)
       if this:IsOutOfTime() then
-        System.Console.WriteLine("IsOutOfTime")
         return true
       end
 
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
-        System.Console.WriteLine("IsGhost?!")
         return true
       end
 
@@ -27002,21 +27242,18 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
             ]]
 
       if not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) then
-        System.Console.WriteLine("!ObjectExists")
         return true
       end
 
+      if __LB__.UnitTagHandler(UnitIsDead, this.Task.TargetUnitOrObject.GUID) then
+        return true
+      end
 
-      --[[
-            NativeGrindBaseState.SmartObjective.Update();
-            if (NativeGrindBaseState.SmartObjective.GetNextTask() != Task)
-            {
-                return true;
-            }
-            ]]
+      if WrapperHelpers.Blacklist.IsOnBlackList(this.Task.TargetUnitOrObject.GUID) then
+        return true
+      end
 
-
-      return (not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) or __LB__.UnitTagHandler(UnitIsDeadOrGhost, this.Task.TargetUnitOrObject.GUID) or this:IsOutOfTime())
+      return false
     end
     Tick = function (this)
       if this.LastCombatCheck == 0 then
@@ -27024,50 +27261,90 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       end
 
 
-      if GetTime() - this.LastCombatCheck > 0.5 then
-        WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:Update()
-        local NextTask = WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:GetNextTask()
+      --[[
+            if(WoWAPI.GetTime() - LastCombatCheck > 2.5)
+            {
+                NativeGrindBaseState.SmartObjective.Update();
 
-        if NextTask ~= nil and NextTask.TaskType == 0 --[[SmartObjectiveTaskType.Kill]] and NextTask.TargetUnitOrObject.GUID ~= this.Task.TargetUnitOrObject.GUID then
-          this.Task = NextTask
-          System.Console.WriteLine("Reassigning Kill Task to better target")
-        end
+                var NextTask = NativeGrindBaseState.SmartObjective.GetNextTask();
 
-        this.LastCombatCheck = Wrapper.Program.CurrentTime
+                if (NextTask != null && NextTask.TaskType == NativeGrindSmartObjective.SmartObjectiveTaskType.Kill 
+                        && NextTask.TargetUnitOrObject.GUID != Task.TargetUnitOrObject.GUID)
+                {
+                    Task = NextTask;
+                    Console.WriteLine("Reassigning Kill Task to better target");
+                }
+
+                LastCombatCheck = Program.CurrentTime;
+            }
+            ]]
+
+      --Console.WriteLine("In Combat Task");
+      this.Task.TargetUnitOrObject:Update()
+      local TaskUnit = System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)
+
+      --[[
+            if(TaskUnit.UnitIsFlying() 
+                && (TaskUnit.TargetGUID != ObjectManager.Instance.Player.GUID))
+            {
+                Blacklist.AddToBlacklist(TaskUnit.GUID, 5);
+                return;
+            }
+            ]]
+
+      local IsReachable = true
+
+      if not __LB__.NavMgr_IsReachable(TaskUnit.Position.X, TaskUnit.Position.Y, TaskUnit.Position.Z) then
+          IsReachable = false;
+      end                    
+
+      if not IsReachable then
+        WrapperHelpers.Blacklist.AddToBlacklist(TaskUnit.GUID, 20)
       end
 
-      System.Console.WriteLine("In Combat Task")
       local Distance = WrapperWoW.Vector3.Distance(this.Task.TargetUnitOrObject.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)
-      local CombatRange = 5;
+      local CombatRange = WrapperBotBases.NativeGrindBotBase.ConfigOptions.CombatRange
 
-      (System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)).PlayerHasFought = true
 
-      if Distance > CombatRange then
-        this._StringRepr = "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString()
-        __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 1)
+
+      if Distance > CombatRange or not (System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)).LineOfSight then
+        --Console.WriteLine("Getting Closer");
+        this._StringRepr = "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString()
+        __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, CombatRange - 1)
+
+
         return
       else
+        (System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)).PlayerHasFought = true
+
         if IsMounted() then
            Dismount()
         end
 
-        this._StringRepr = "Killing mob: " .. System.toString(this.Task.TargetUnitOrObject.Name) .. " has fought: " .. System.toString((System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)).PlayerHasFought)
-
+        this._StringRepr = "Killing mob: " .. System.toString(this.Task.TargetUnitOrObject.Name)
         __LB__.Navigator.Stop()
 
+
+
         if WrapperWoW.ObjectManager.getInstance().Player.TargetGUID ~= this.Task.TargetUnitOrObject.GUID then
+          System.Console.WriteLine("Target")
           __LB__.UnitTagHandler(TargetUnit, this.Task.TargetUnitOrObject.GUID)
         end
 
         --LuaBox.Instance.ObjectInteract(Task.TargetUnitOrObject.GUID);
 
-        RunMacroText("/startattack")
+        if not __LB__.UnitTagHandler(UnitAffectingCombat, "player") then
+          System.Console.WriteLine("StartAttack")
+          select(2,__LB__.UnitTagHandler(InteractUnit, this.Task.TargetUnitOrObject.GUID))
+          StartAttack()
+        end
+
         --WoWAPI.StartAttack();
-
-        WrapperWoW.ObjectManager.getInstance().Player:FacePosition(this.Task.TargetUnitOrObject.Position)
-
-        local TaskUnit = System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)
-        TaskUnit.PlayerHasFought = true
+        if Wrapper.Program.CurrentTime - this.LastFaceDirection > 1 then
+          this.LastFaceDirection = Wrapper.Program.CurrentTime
+          --WoWAPI.InteractUnit(Task.TargetUnitOrObject.GUID);
+          WrapperWoW.ObjectManager.getInstance().Player:FacePosition(this.Task.TargetUnitOrObject.Position)
+        end
       end
 
       System.base(this).Tick(this)
@@ -27100,7 +27377,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
     local Complete, Tick, __ctor__
     __ctor__ = function (this, Task)
       this.Task = Task
-      this:SetMaxStateTime(120)
+      this:SetMaxStateTime(5)
     end
     Complete = function (this)
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
@@ -27118,7 +27395,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
       if Distance > 5 then
         this._StringRepr = "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString()
-        __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 1)
+        __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 4)
         return
       end
 
@@ -27174,7 +27451,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       local NPCPosition = WrapperWoW.Vector3(NPC.X, NPC.Y, NPC.Z)
 
       if WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, NPCPosition:__clone__()) > 5 then
-        __LB__.Navigator.MoveTo(NPC.X, NPC.Y, NPC.Z, 1, 1)
+        __LB__.Navigator.MoveTo(NPC.X, NPC.Y, NPC.Z, 1, 4)
         this._StringRepr = "Moving To: " .. NPCPosition:ToString() .. " to repair at npc: " .. System.toString(NPC.Name)
         return
       end
@@ -27228,11 +27505,14 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
         return true
       end
-      return this.ObjectiveScanner:GetNextTask() ~= nil or WrapperWoW.ObjectManager.getInstance().Player.IsInCombat
+
+      return this.ObjectiveScanner:GetNextTask(true) ~= nil or WrapperWoW.ObjectManager.getInstance().Player.IsInCombat
     end
     Tick = function (this)
       this.ObjectiveScanner:Update()
+
       this._StringRepr = "Searching for new node"
+
       if this.TargetNode == nil then
         local AllowGather = true
         -- Default to true if BroBot doesnt Exist
@@ -27288,6 +27568,7 @@ System.init({
     "Wrapper.BotBase",
     "Wrapper.StdUI.StdUiFrame",
     "Wrapper.WoW.WoWUnit",
+    "Wrapper.API.LibDraw",
     "Wrapper.API.LuaBox",
     "Wrapper.API.WoWAPI",
     "Wrapper.BotBases.NativeGrindBotBase",
@@ -27301,6 +27582,7 @@ System.init({
     "Wrapper.UI.NativeErrorLoggerUI",
     "Wrapper.WoW.WoWPlayer",
     "Wrapper.API.DataProviderBase",
+    "Wrapper.API.LibDraw.LibDrawColor",
     "Wrapper.API.LibJson",
     "Wrapper.API.LibStub",
     "Wrapper.API.LuaBox.EClientTypes",

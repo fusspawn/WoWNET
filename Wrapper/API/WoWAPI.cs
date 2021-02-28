@@ -241,16 +241,30 @@ namespace Wrapper.API
         /// @CSharpLua.Template = "select(2,__LB__.UnitTagHandler(UnitClass, {0}))" 
         /// </summary>
         public static extern string UnitClass(string GUID);
+
+         /// <summary>
+         /// @CSharpLua.Template = "select(2,__LB__.UnitTagHandler(InteractUnit, {0}))" 
+         /// </summary>
+        public static extern string InteractUnit(string GUID);
+
         /// <summary>
         /// @CSharpLua.Template = "debugstack()" 
         /// </summary>
         public static extern string DebugStack();
 
 
+
+
         /// <summary>
         /// @CSharpLua.Template = "CreateFromMixin({0})" 
         /// </summary>
         public static extern T CreateFromMixin<T>(object Mixin);
+
+
+        /// <summary>
+        /// @CSharpLua.Template = "__LB__.UnitTagHandler(UnitCanAttack, {0}, {1})" 
+        /// </summary>
+        public static extern bool UnitCanAttack(string from, string to);
 
     }
 

@@ -418,10 +418,11 @@ namespace Wrapper.WoW
 
         public static Vector3 operator -(Vector3 value1, Vector3 value2)
         {
-            value1.X -= value2.X;
-            value1.Y -= value2.Y;
-            value1.Z -= value2.Z;
-            return value1;
+            var value = new Vector3(value1.X, value1.Y, value1.Z); 
+            value.X -= value2.X;
+            value.Y -= value2.Y;
+            value.Z -= value2.Z;
+            return value;
         }
 
         public static Vector3 operator *(Vector3 value1, Vector3 value2)

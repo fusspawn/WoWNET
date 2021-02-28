@@ -40,7 +40,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             
             if(Vector3.Distance(ObjectManager.Instance.Player.Position, NPCPosition) > 5)
             {
-                LuaBox.Instance.Navigator.MoveTo(NPC.X, NPC.Y, NPC.Z);
+                LuaBox.Instance.Navigator.MoveTo(NPC.X, NPC.Y, NPC.Z, 1, 4);
                 _StringRepr = $"Moving To: {NPCPosition} to repair at npc: {NPC.Name}";
                 return;
             }

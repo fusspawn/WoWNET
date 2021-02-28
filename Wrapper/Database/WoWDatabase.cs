@@ -20,7 +20,8 @@ namespace Wrapper.Database
             32642, //mojodishu
             32641, //drix-blackwrench
             142668, //merchant-maku
-            142666, //collector-unta
+            142666, //collector-unta,
+            32639, //gnimo
         };
 
         private static List<int> DirtyMapIds = new List<int>();

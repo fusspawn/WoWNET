@@ -24,6 +24,8 @@ namespace Wrapper
         {
             Program.MainUI.SetConfigPanel(null);
         }
+
+        public virtual void DrawDebug() { }
     }
 
 

@@ -24,6 +24,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
         {
             if (WoWAPI.UnitIsDeadOrGhost("player"))
                 return true;
+
             return ObjectiveScanner.GetNextTask() != null
                 || ObjectManager.Instance.Player.IsInCombat;
         }
@@ -31,7 +32,9 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
         public override void Tick()
         {
             ObjectiveScanner.Update();
+
             _StringRepr = "Searching for new node";
+
             if (TargetNode == null)
             {
 

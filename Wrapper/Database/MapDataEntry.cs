@@ -32,6 +32,12 @@ namespace Wrapper.Database
 
             foreach (var node in mapDataEntry.Repair)
             {
+                if(WoWDatabase.BannedObjectIDs.Contains(node.ObjectId))
+                {
+                    Console.WriteLine("Removing Banned Repair Vendor From DataBase");
+                    continue;
+                }
+
                 Repair.Add(new NPCLocationInfo()
                 {
                     X = node.X,
@@ -46,6 +52,12 @@ namespace Wrapper.Database
 
             foreach (var node in mapDataEntry.Vendors)
             {
+                if (WoWDatabase.BannedObjectIDs.Contains(node.ObjectId))
+                {
+                    Console.WriteLine("Removing Banned Vendor From DataBase");
+                    continue;
+                }
+
                 Vendors.Add(new NPCLocationInfo()
                 {
                     X = node.X,

@@ -15,7 +15,7 @@ namespace Wrapper.WoW
         public LuaBox.EObjectType ObjectType;
         public Vector3 Position;
         public int ObjectId;
-        public double LastUpdate;
+        public double NextUpdate;
 
 
         private bool? WasHerb = null;
@@ -59,12 +59,38 @@ namespace Wrapper.WoW
 
         public virtual void Update()
         {
-            LastUpdate =Program.CurrentTime;
             this.Position = LuaBox.Instance.ObjectPositionVector3(this.GUID);
+         
+            NextUpdate = Program.CurrentTime + GetUpdateRate();
+        }
+
+        public double GetUpdateRate()
+        {
+            var Distance = this.DistanceToPlayer();
+
+            if(Distance > 200)
+            {
+                return 3;
+            }
+
+            if (Distance > 150)
+            {
+                return 2;
+            }
+
+            if (Distance > 100)
+            {
+                return 1;
+            }
+
+            return 0.5;
         }
 
         public double DistanceToPlayer()
         {
+            if (ObjectManager.Instance.Player == null)
+                return 0f;
+
             return Vector3.Distance(this.Position, ObjectManager.Instance.Player.Position);
         }
     }

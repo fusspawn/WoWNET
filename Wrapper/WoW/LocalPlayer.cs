@@ -198,10 +198,21 @@ end
 
         public void FacePosition(Vector3 Pos)
         {
+            var CurrentAngle = LuaBox.Instance.ObjectFacing("player");
             var Pitch = LuaBox.Instance.ObjectPitch("player");
             var Angle =  Math.Atan2(Pos.Y - this.Position.Y, Pos.X - this.Position.X);
-            Angle =(Math.PI / 180) * Angle;        
-            LuaBox.Instance.SetPlayerAngles(Angle, Pitch);
+            
+            //Angle = (Math.PI / 180) * Angle;
+
+            //Console.WriteLine($"Setting Player Angle/Pitch: {Angle} / {Pitch}");
+
+            if (Math.Abs(Angle - CurrentAngle) > 0.01)
+            {
+                if (Angle > 0)
+                {
+                    LuaBox.Instance.SetPlayerAngles(Angle, Pitch);
+                }
+            }
         }
     }
 }

@@ -33,7 +33,7 @@ namespace Wrapper.WoW
         public OnNewGameObjectDelegate OnNewGameObject;
 
         public List<WoWGameObject> Pendings = new List<WoWGameObject>();
-        public static int ObjectManagerScanRange = 500;
+        public static int ObjectManagerScanRange = 999999999;
 
         public void Pulse()
         {
@@ -77,7 +77,7 @@ namespace Wrapper.WoW
                     }
                     else
                     {
-                        if (CurrentTime - kvp.Value.LastUpdate > 0.25)
+                        if (CurrentTime - kvp.Value.NextUpdate > 0)
                         {
                             kvp.Value.Update();
                         }                        

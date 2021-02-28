@@ -22,6 +22,8 @@ namespace Wrapper.WoW
         public bool Friend { get { return Reaction > 4; } }
         public bool Hostile { get { return Reaction < 4; } }
         public bool Neutral { get { return Reaction == 4; } }
+
+        public bool Attackable { get { return WoWAPI.UnitCanAttack("player", GUID); } }
         public bool IsCasting
         {
             get
@@ -49,12 +51,19 @@ namespace Wrapper.WoW
             }
         }
 
-      
+        public bool IsBossOrElite;
 
 
         public WoWUnit(string _GUID) 
             : base(_GUID)
         {
+            /*
+             [[
+                this.IsBossOrElite = (__LB__.UnitTagHandler(UnitClassification, this.GUID) == "worldboss"
+                    or __LB__.UnitTagHandler(UnitClassification, this.GUID) == "elite"
+                    or __LB__.UnitTagHandler(UnitClassification, this.GUID) == "rareelite")
+             ]]
+            */
         }
 
         public void Interact()
@@ -94,6 +103,24 @@ namespace Wrapper.WoW
             }
 
             base.Update();
+        }
+
+
+        public bool UnitIsFlying()
+        {
+            this.Position = LuaBox.Instance.ObjectPositionVector3(this.GUID);
+
+
+            var HitPos = LuaBox.Instance.RaycastPosition(Position.X, Position.Y, Position.Z + 1,
+                    Position.X, Position.Y, Position.Z - 100,
+                    0x100010);
+
+            if (HitPos.HasValue)
+            {
+                return Vector3.Distance(HitPos.Value, Position) > 5;
+            }
+
+            return true;
         }
 
         public void Target()

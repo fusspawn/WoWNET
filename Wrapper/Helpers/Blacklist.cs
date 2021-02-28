@@ -27,5 +27,6 @@ namespace Wrapper.Helpers
         {
             BlackListEntrys[GUID] = Program.CurrentTime + NumSeconds;
         }
+
     }
 }

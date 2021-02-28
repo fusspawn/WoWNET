@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Wrapper.API;
+using Wrapper.BotBases;
 using Wrapper.Helpers;
 using Wrapper.WoW;
 
@@ -15,21 +16,19 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
         public NativeGrindKillTask(NativeGrindSmartObjective.SmartObjectiveTask Task)
         {
             this.Task = Task;
-            SetMaxStateTime(120);
+            SetMaxStateTime(5);
         }
 
         public override bool Complete()
         {
             if (IsOutOfTime())
             {
-                Console.WriteLine("IsOutOfTime");
+               
                 return true;
             }
 
             if (WoWAPI.UnitIsDeadOrGhost("player"))
             {
-
-                Console.WriteLine("IsGhost?!");
                 return true;
             }
 
@@ -40,27 +39,23 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
             if (!LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID))
             {
-
-                Console.WriteLine("!ObjectExists");
                 return true;
             }
-            
 
-            /*
-            NativeGrindBaseState.SmartObjective.Update();
-            if (NativeGrindBaseState.SmartObjective.GetNextTask() != Task)
+            if (WoWAPI.UnitIsDead(Task.TargetUnitOrObject.GUID))
+            {
+                return true;
+            } 
+
+            if(Blacklist.IsOnBlackList(Task.TargetUnitOrObject.GUID))
             {
                 return true;
             }
-            */
 
-
-            return
-                (!LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)
-                ||  WoWAPI.UnitIsDeadOrGhost(Task.TargetUnitOrObject.GUID)
-              /*  || !WoWAPI.UnitAffectingCombat("player") */
-                || IsOutOfTime()); 
+            return false;
         }
+
+        private double LastFaceDirection = Program.CurrentTime;
 
         public override void Tick()
         {
@@ -68,60 +63,106 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 LastCombatCheck = Program.CurrentTime;
 
           
-            if(WoWAPI.GetTime() - LastCombatCheck > 0.5)
+            /*
+            if(WoWAPI.GetTime() - LastCombatCheck > 2.5)
             {
                 NativeGrindBaseState.SmartObjective.Update();
+
                 var NextTask = NativeGrindBaseState.SmartObjective.GetNextTask();
 
-                if (NextTask != null && NextTask.TaskType == NativeGrindSmartObjective.SmartObjectiveTaskType.Kill && NextTask.TargetUnitOrObject.GUID != Task.TargetUnitOrObject.GUID)
+                if (NextTask != null && NextTask.TaskType == NativeGrindSmartObjective.SmartObjectiveTaskType.Kill 
+                        && NextTask.TargetUnitOrObject.GUID != Task.TargetUnitOrObject.GUID)
                 {
                     Task = NextTask;
                     Console.WriteLine("Reassigning Kill Task to better target");
                 }
 
-                LastCombatCheck =Program.CurrentTime;
+                LastCombatCheck = Program.CurrentTime;
+            }
+            */
+
+            //Console.WriteLine("In Combat Task");
+            Task.TargetUnitOrObject.Update();
+            var TaskUnit = Task.TargetUnitOrObject as WoWUnit;
+
+            /*
+            if(TaskUnit.UnitIsFlying() 
+                && (TaskUnit.TargetGUID != ObjectManager.Instance.Player.GUID))
+            {
+                Blacklist.AddToBlacklist(TaskUnit.GUID, 5);
+                return;
+            }
+            */
+
+            bool IsReachable = true;
+            
+            /*
+            [[
+                if not __LB__.NavMgr_IsReachable(TaskUnit.Position.X, TaskUnit.Position.Y, TaskUnit.Position.Z) then
+                    IsReachable = false;
+                end                    
+            ]]
+            */
+
+            if(!IsReachable)
+            {
+                Blacklist.AddToBlacklist(TaskUnit.GUID, 20);
             }
 
-            Console.WriteLine("In Combat Task");
             var Distance = Vector3.Distance(Task.TargetUnitOrObject.Position,
                 ObjectManager.Instance.Player.Position);
-            var CombatRange = 5;
+            var CombatRange = NativeGrindBotBase.ConfigOptions.CombatRange;
 
-            (Task.TargetUnitOrObject as WoWUnit).PlayerHasFought = true;
+           
 
-            if (Distance > CombatRange)
+            if (Distance > CombatRange || !(Task.TargetUnitOrObject as WoWUnit).LineOfSight)
             {
-                _StringRepr = $"Getting Closer: {Distance} TaskLocation: {Task.TargetUnitOrObject.Position} Player: {ObjectManager.Instance.Player.Position}";
-                LuaBox.Instance.Navigator.MoveTo(Task.TargetUnitOrObject.Position.X, Task.TargetUnitOrObject.Position.Y, Task.TargetUnitOrObject.Position.Z);
+                //Console.WriteLine("Getting Closer");
+                _StringRepr = $"Getting Closer: {Distance} TaskLocation: {Task.TargetUnitOrObject.Position}";
+                LuaBox.Instance.Navigator.MoveTo(Task.TargetUnitOrObject.Position.X, Task.TargetUnitOrObject.Position.Y, Task.TargetUnitOrObject.Position.Z, 1, CombatRange - 1 );
+
+
                 return;
             }
             else
             {
+                (Task.TargetUnitOrObject as WoWUnit).PlayerHasFought = true;
+
                 /*
                 [[
                      if IsMounted() then
                         Dismount()
                      end
-                ]]*/
+                ]]
+                */
 
-                _StringRepr = "Killing mob: " + Task.TargetUnitOrObject.Name + " has fought: " + (Task.TargetUnitOrObject as WoWUnit).PlayerHasFought;
-                
+                _StringRepr = "Killing mob: " + Task.TargetUnitOrObject.Name;                
                 LuaBox.Instance.Navigator.Stop();
+
+
 
                 if (ObjectManager.Instance.Player.TargetGUID != Task.TargetUnitOrObject.GUID)
                 {
+                    Console.WriteLine("Target");
                     WoWAPI.TargetUnit(Task.TargetUnitOrObject.GUID);
                 }
 
                 //LuaBox.Instance.ObjectInteract(Task.TargetUnitOrObject.GUID);
+                
+                if (!WoWAPI.UnitAffectingCombat("player"))
+                {
+                    Console.WriteLine("StartAttack");
+                    WoWAPI.InteractUnit(Task.TargetUnitOrObject.GUID);
+                    WoWAPI.StartAttack();
+                }
 
-                WoWAPI.RunMacroText("/startattack");
                 //WoWAPI.StartAttack();
-
-                ObjectManager.Instance.Player.FacePosition(Task.TargetUnitOrObject.Position);
-
-                var TaskUnit = Task.TargetUnitOrObject as WoWUnit;
-                TaskUnit.PlayerHasFought = true;
+                if (Program.CurrentTime - LastFaceDirection > 1)
+                {
+                    LastFaceDirection = Program.CurrentTime;
+                    //WoWAPI.InteractUnit(Task.TargetUnitOrObject.GUID);
+                    ObjectManager.Instance.Player.FacePosition(Task.TargetUnitOrObject.Position);
+                }
             }
 
             base.Tick();
