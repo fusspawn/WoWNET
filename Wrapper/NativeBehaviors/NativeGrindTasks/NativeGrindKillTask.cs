@@ -32,6 +32,12 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 return true;
             }
 
+            var NextTask = NativeGrindBaseState.SmartObjective.GetNextTask(true);
+            if (NextTask != null && NextTask.TaskType != NativeGrindSmartObjective.SmartObjectiveTaskType.Kill)
+            {
+               return true;
+            }
+
             /*
             if (!WoWAPI.UnitAffectingCombat("player"))
                 return true;
@@ -160,7 +166,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 if (Program.CurrentTime - LastFaceDirection > 1)
                 {
                     LastFaceDirection = Program.CurrentTime;
-                    //WoWAPI.InteractUnit(Task.TargetUnitOrObject.GUID);
+                    WoWAPI.InteractUnit(Task.TargetUnitOrObject.GUID);
                     ObjectManager.Instance.Player.FacePosition(Task.TargetUnitOrObject.Position);
                 }
             }

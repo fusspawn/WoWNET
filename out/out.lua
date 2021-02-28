@@ -24217,9 +24217,8 @@ System.namespace("Wrapper.BotBases", function (namespace)
 
       local CurrentTask = WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:GetNextTask(false)
       if CurrentTask ~= nil then
-        local Task = WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective.Tasks:get(0)
-        local OffSetPosition = WrapperWoW.Vector3.op_Subtraction(Task.TargetUnitOrObject.Position, WrapperWoW.Vector3(0, 0, .45))
-        WrapperAPI.LibDraw.Text(System.EnumToString(Task.TaskType, NativeGrindSmartObjective.SmartObjectiveTaskType) .. ": CURRENT TASK", OffSetPosition:__clone__(), 16, Purple)
+        local OffSetPosition = WrapperWoW.Vector3.op_Subtraction(CurrentTask.TargetUnitOrObject.Position, WrapperWoW.Vector3(0, 0, .45))
+        WrapperAPI.LibDraw.Text(System.EnumToString(CurrentTask.TaskType, NativeGrindSmartObjective.SmartObjectiveTaskType) .. ": CURRENT TASK", OffSetPosition:__clone__(), 16, Purple)
       end
 
 
@@ -27212,11 +27211,13 @@ local System = System
 local Wrapper
 local WrapperBotBases
 local WrapperHelpers
+local WrapperNativeBehaviors
 local WrapperWoW
 System.import(function (out)
   Wrapper = out.Wrapper
   WrapperBotBases = Wrapper.BotBases
   WrapperHelpers = Wrapper.Helpers
+  WrapperNativeBehaviors = Wrapper.NativeBehaviors
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace)
@@ -27233,6 +27234,11 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       end
 
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
+        return true
+      end
+
+      local NextTask = WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:GetNextTask(true)
+      if NextTask ~= nil and NextTask.TaskType ~= 0 --[[SmartObjectiveTaskType.Kill]] then
         return true
       end
 
@@ -27342,7 +27348,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
         --WoWAPI.StartAttack();
         if Wrapper.Program.CurrentTime - this.LastFaceDirection > 1 then
           this.LastFaceDirection = Wrapper.Program.CurrentTime
-          --WoWAPI.InteractUnit(Task.TargetUnitOrObject.GUID);
+          select(2,__LB__.UnitTagHandler(InteractUnit, this.Task.TargetUnitOrObject.GUID))
           WrapperWoW.ObjectManager.getInstance().Player:FacePosition(this.Task.TargetUnitOrObject.Position)
         end
       end

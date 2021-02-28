@@ -261,9 +261,8 @@ namespace Wrapper.BotBases
             var CurrentTask = NativeGrindBaseState.SmartObjective.GetNextTask(false);
             if (CurrentTask != null)
             {
-                var Task = NativeGrindBaseState.SmartObjective.Tasks[0];
-                var OffSetPosition = Task.TargetUnitOrObject.Position - new WoW.Vector3(0, 0, .45);
-                LibDraw.Text($"{Task.TaskType}: CURRENT TASK", OffSetPosition, 16,  Purple, null);
+                var OffSetPosition = CurrentTask.TargetUnitOrObject.Position - new WoW.Vector3(0, 0, .45);
+                LibDraw.Text($"{CurrentTask.TaskType}: CURRENT TASK", OffSetPosition, 16,  Purple, null);
             }
 
 
