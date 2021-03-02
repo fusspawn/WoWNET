@@ -23,6 +23,30 @@ namespace Wrapper.WoW
             }
         }
 
+        internal void RegisterFilteredList(ObjectManagerFilteredList objectManagerFilteredList)
+        {
+            FilteredLists.Add(objectManagerFilteredList);
+
+            foreach(var x in AllObjects)
+            {
+                if (x.Value.ObjectType == LuaBox.EObjectType.GameObject)
+                {
+                    if (objectManagerFilteredList.FilterGameObject(x.Value))
+                    {
+                        objectManagerFilteredList.TrackObject(x.Value);
+                    }
+                }
+
+                if (x.Value.ObjectType == LuaBox.EObjectType.Unit)
+                {
+                    if (objectManagerFilteredList.FilterUnit(x.Value as WoWUnit))
+                    {
+                        objectManagerFilteredList.TrackUnit(x.Value as WoWUnit);
+                    }
+                }
+            }
+        }
+
         public Dictionary<string, WoWGameObject> AllObjects = new Dictionary<string, WoWGameObject>();
         public LocalPlayer Player;
 
@@ -32,8 +56,18 @@ namespace Wrapper.WoW
         public delegate void OnNewGameObjectDelegate(WoWGameObject Object);
         public OnNewGameObjectDelegate OnNewGameObject;
 
+
+        public delegate void OnRemoveGameObjectDelegate(WoWGameObject Object);
+        public OnRemoveGameObjectDelegate OnRemoveObject;
+
         public List<WoWGameObject> Pendings = new List<WoWGameObject>();
+
+        public List<ObjectManagerFilteredList> FilteredLists
+            = new List<ObjectManagerFilteredList>();
+
+
         public static int ObjectManagerScanRange = 999999999;
+        private double LastFilterListUpdate;
 
         public void Pulse()
         {
@@ -47,6 +81,7 @@ namespace Wrapper.WoW
                         && LuaBox.Instance.ObjectName(GUID) != "Unknown")
                     {
                         this.AllObjects[GUID] = CreateWowObject(GUID);
+
                         switch (AllObjects[GUID].ObjectType)
                         {
                             case LuaBox.EObjectType.Unit:
@@ -54,6 +89,13 @@ namespace Wrapper.WoW
                                 {
                                     OnNewUnit(AllObjects[GUID] as WoWUnit);
                                 }
+
+                                FilteredLists.ForEach(x => {
+                                    if (x.FilterUnit(AllObjects[GUID] as WoWUnit)) { 
+                                        x.TrackUnit(AllObjects[GUID] as WoWUnit); 
+                                    } 
+                                });
+
                                 break;
 
                             case LuaBox.EObjectType.GameObject:
@@ -61,12 +103,18 @@ namespace Wrapper.WoW
                                 {
                                     OnNewGameObject(AllObjects[GUID]);
                                 }
+
+                                FilteredLists.ForEach(x => {
+                                    if (x.FilterGameObject(AllObjects[GUID])) {
+                                        x.TrackObject(AllObjects[GUID]);
+                                    }
+                                });
                                 break;
                         }
                     }
                 }
 
-                var CurrentTime =Program.CurrentTime;
+                var CurrentTime = Program.CurrentTime;
                 var RemovalList = new List<string>();
 
                 foreach (var kvp in this.AllObjects)
@@ -80,16 +128,26 @@ namespace Wrapper.WoW
                         if (CurrentTime - kvp.Value.NextUpdate > 0)
                         {
                             kvp.Value.Update();
-                        }                        
+                        }
                     }
                 }
 
                 RemovalList.ForEach((item) =>
                 {
+                    if (OnRemoveObject != null)
+                        OnRemoveObject(AllObjects[item]);
+
+                    FilteredLists.ForEach(x => x.Remove(item));
                     AllObjects.Remove(item);
                 });
-            } 
-            catch(Exception E)
+
+                if ( Program.CurrentTime - LastFilterListUpdate > 1)
+                {
+                    LastFilterListUpdate = Program.CurrentTime;
+                    FilteredLists.ForEach(x => x.ProcessChanges());
+                }
+            }
+            catch (Exception E)
             {
                 Console.WriteLine("OM Error: " + E.Message + "StackTrace: " + WoWAPI.DebugStack());
             }

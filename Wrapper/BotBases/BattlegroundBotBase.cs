@@ -4,6 +4,7 @@ using System.Text;
 using Wrapper.API;
 using Wrapper.Helpers;
 using Wrapper.WoW;
+using Wrapper.WoW.Filters;
 
 namespace Wrapper.BotBases
 {
@@ -12,6 +13,8 @@ namespace Wrapper.BotBases
     {
         SmartTargetPVP SmartTarget;
         SmartMovePVP SmartMove;
+        PlayerFilterList Players;
+
         Vector3? LastDestination;
         bool HasBGStart = false;
 
@@ -23,8 +26,9 @@ namespace Wrapper.BotBases
 
         public PVPBotBase()
         {
-            SmartTarget = new SmartTargetPVP();
-            SmartMove = new SmartMovePVP();
+            Players = new PlayerFilterList(true, true);
+            SmartTarget = new SmartTargetPVP(Players);
+            SmartMove = new SmartMovePVP(Players);
         }
 
         public override void Pulse()

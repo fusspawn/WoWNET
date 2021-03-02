@@ -7,6 +7,7 @@ using Wrapper.Helpers;
 using Wrapper.NativeBehaviors.BehaviorStateMachine;
 using Wrapper.NativeBehaviors.NativeGrindTasks;
 using Wrapper.WoW;
+using Wrapper.WoW.Filters;
 
 namespace Wrapper.NativeBehaviors
 {
@@ -97,13 +98,20 @@ namespace Wrapper.NativeBehaviors
         public double LastUpdateTime = Program.CurrentTime;
         public float BASE_SCORE = 200;
 
+        public GatheringNodeFilterList GatheringNodes;
+        public UnitFilterList Units;
+        public DeadUnitsFilterList DeadUnits;
+
         public NativeGrindSmartObjective()
         {
+            GatheringNodes = new GatheringNodeFilterList(true);
+            Units = new UnitFilterList(true, false);
+            DeadUnits = new DeadUnitsFilterList();
         }
 
         public void Update()
         {
-            if(Program.CurrentTime - LastUpdateTime < 1)
+            if(Program.CurrentTime - LastUpdateTime < 1.5)
             {
                 return;
             }
@@ -114,6 +122,8 @@ namespace Wrapper.NativeBehaviors
             ObjectManager.Instance.Pulse();
             Tasks.Clear();
 
+            //Console.WriteLine($"Units: {Units.GetUnits().Count} Gather: {GatheringNodes.GetObjects().Count} AllObjects: {ObjectManager.Instance.AllObjects.Count}");
+
 
             if (!ObjectManager.Instance.Player.IsInCombat || !NativeGrindBotBase.ConfigOptions.AllowSelfDefense)
             {
@@ -121,8 +131,7 @@ namespace Wrapper.NativeBehaviors
                 if (NativeGrindBotBase.ConfigOptions.AllowGather)
                 {
                     foreach (var GameObject in
-                        ObjectManager.Instance.AllObjects.Where(x => x.Value.IsHerb || x.Value.IsOre).Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)
-                                && ObjectManager.Instance.Player.HasRequiredSkillToHarvest(x.Value)))
+                        GatheringNodes.GetObjects().Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)))
                     {
                         double score = 0;
                         score = score + (BASE_SCORE - Vector3.Distance(GameObject.Value.Position, ObjectManager.Instance.Player.Position));
@@ -138,16 +147,11 @@ namespace Wrapper.NativeBehaviors
                 }
 
 
-                foreach (var Unit in ObjectManager.Instance.AllObjects.Where(x => x.Value.ObjectType == LuaBox.EObjectType.Unit
-                     && x.Value.ObjectType != LuaBox.EObjectType.Player).Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)))
+                foreach (var Unit in DeadUnits.GetUnits().Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)))
                 {
-                    if (!WoWAPI.UnitIsDeadOrGhost(Unit.Value.GUID))
-                        continue;
-
                     var AllowSkinning = NativeGrindBotBase.ConfigOptions.AllowSkin; // Default to true if BroBot doesnt Exist
 
-                    if ((Unit.Value as WoWUnit).PlayerHasFought
-                            && (LuaBox.Instance.UnitIsLootable(Unit.Value.GUID)
+                    if ((LuaBox.Instance.UnitIsLootable(Unit.Value.GUID)
                             || (LuaBox.Instance.UnitHasFlag(Unit.Value.GUID, LuaBox.EUnitFlags.Skinnable)
                             && AllowSkinning)))
                     {
@@ -155,8 +159,6 @@ namespace Wrapper.NativeBehaviors
                         double score = 0;
                         score = score + (BASE_SCORE - Vector3.Distance(Unit.Value.Position,
                             ObjectManager.Instance.Player.Position));
-
-
 
                         Tasks.Add(new SmartObjectiveTask()
                         {
@@ -169,8 +171,7 @@ namespace Wrapper.NativeBehaviors
                 }
             }
 
-            foreach (var Unit in ObjectManager.Instance.AllObjects.Where(x => x.Value.ObjectType == LuaBox.EObjectType.Unit
-                     && x.Value.ObjectType != LuaBox.EObjectType.Player).Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)))
+            foreach (var Unit in Units.GetUnits().Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)))
             {
                 var _Unit = Unit.Value as WoWUnit;
 

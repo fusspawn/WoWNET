@@ -23864,16 +23864,19 @@ do
 local System = System
 local WrapperHelpers
 local WrapperWoW
+local WrapperWoWFilters
 System.import(function (out)
   WrapperHelpers = Wrapper.Helpers
   WrapperWoW = Wrapper.WoW
+  WrapperWoWFilters = Wrapper.WoW.Filters
 end)
 System.namespace("Wrapper.BotBases", function (namespace)
   namespace.class("PVPBotBase", function (namespace)
     local Pulse, RunQueueLogic, RunBattleGroundLogic, __ctor__
     __ctor__ = function (this)
-      this.SmartTarget = WrapperHelpers.SmartTargetPVP()
-      this.SmartMove = WrapperHelpers.SmartMovePVP()
+      this.Players = WrapperWoWFilters.PlayerFilterList(true, true)
+      this.SmartTarget = WrapperHelpers.SmartTargetPVP(this.Players)
+      this.SmartMove = WrapperHelpers.SmartMovePVP(this.Players)
     end
     Pulse = function (this)
       if WrapperWoW.ObjectManager.getInstance().Player == nil or not (__LB__.Navigator ~= nil) then
@@ -24224,7 +24227,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
 
       for _, Entry in System.each(WrapperHelpers.Blacklist.BlackListEntrys) do
         if  __LB__.ObjectExists(Entry.Key) and WrapperWoW.ObjectManager.getInstance().AllObjects:ContainsKey(Entry.Key) then
-          WrapperAPI.LibDraw.Text("Blacklisted - Remaining: " .. Wrapper.Program.CurrentTime - Entry.Value, WrapperWoW.ObjectManager.getInstance().AllObjects:get(Entry.Key).Position, 12, Red)
+          WrapperAPI.LibDraw.Text("Blacklisted - Remaining: " .. System.ToInt32(math.Abs(Wrapper.Program.CurrentTime - Entry.Value)), WrapperWoW.ObjectManager.getInstance().AllObjects:get(Entry.Key).Position, 12, Red)
         end
       end
 
@@ -25449,8 +25452,9 @@ System.namespace("Wrapper.Helpers", function (namespace)
 
   namespace.class("SmartMovePVP", function (namespace)
     local Pulse, GetBestUnit, __ctor__
-    __ctor__ = function (this)
+    __ctor__ = function (this, players)
       this.Units = ListScoredWowPlayer()
+      this.players = players
     end
     Pulse = function (this)
       if GetTime() - this.LastUpdateTime < 5 then
@@ -25472,8 +25476,8 @@ System.namespace("Wrapper.Helpers", function (namespace)
       end
 
 
-      local ValidUnits = Linq.Where(WrapperWoW.ObjectManager.GetAllPlayers(500), function (x)
-        return x.GUID ~= WrapperWoW.ObjectManager.getInstance().Player.GUID and not x.Dead
+      local ValidUnits = Linq.Where(this.players:GetUnits(), function (x)
+        return x.Value.GUID ~= WrapperWoW.ObjectManager.getInstance().Player.GUID and not x.Value.Dead
       end)
 
       --Console.WriteLine("Smart Move Found " + ValidUnits.Count() + " Units");
@@ -25482,11 +25486,11 @@ System.namespace("Wrapper.Helpers", function (namespace)
         local score = 0
 
         local NumFriends = Linq.Count((Linq.Where(ValidUnits, function (x)
-          return WrapperWoW.Vector3.Distance(x.Position, unit.Position) < 60 and x.Reaction > 4
+          return WrapperWoW.Vector3.Distance(x.Value.Position, unit.Value.Position) < 60 and x.Value.Reaction > 4
         end)))
 
         local NumHostile = Linq.Count((Linq.Where(ValidUnits, function (x)
-          return WrapperWoW.Vector3.Distance(x.Position, unit.Position) < 60 and x.Reaction < 4
+          return WrapperWoW.Vector3.Distance(x.Value.Position, unit.Value.Position) < 60 and x.Value.Reaction < 4
         end)))
 
         score = 1000 + (NumFriends * FriendlyScore) + (NumHostile * HostileScore)
@@ -25498,7 +25502,7 @@ System.namespace("Wrapper.Helpers", function (namespace)
 
         --Console.WriteLine("Scored New Unit: " + unit.Name + " score: " + score);
         local default = WrapperHelpers.ScoredWowPlayer()
-        default.Player = unit
+        default.Player = System.as(unit.Value, WrapperWoW.WoWPlayer)
         default.Score = score
         this.Units:Add(default)
       end
@@ -25540,8 +25544,9 @@ end)
 System.namespace("Wrapper.Helpers", function (namespace)
   namespace.class("SmartTargetPVP", function (namespace)
     local Pulse, GetBestUnit, __ctor__
-    __ctor__ = function (this)
+    __ctor__ = function (this, players)
       this.Units = ListScoredWowPlayer()
+      this.Players = players
     end
     Pulse = function (this)
       if GetTime() - this.LastUpdateTime < 5 then
@@ -25552,19 +25557,21 @@ System.namespace("Wrapper.Helpers", function (namespace)
 
       this.Units:Clear()
 
-      local AllValid = (Linq.Where(WrapperWoW.ObjectManager.GetAllPlayers(60), function (p)
-        return not p.Dead and p.GUID ~= WrapperWoW.ObjectManager.getInstance().Player.GUID and p.Reaction < 4
+      local AllValid = (Linq.Where(Linq.Where(this.Players:GetUnits(), function (x)
+        return WrapperWoW.Vector3.Distance(x.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position) < 60
+      end), function (p)
+        return not p.Value.Dead and p.Value.GUID ~= WrapperWoW.ObjectManager.getInstance().Player.GUID and p.Value.Reaction < 4
       end))
 
       for _, player in System.each(AllValid) do
-        local score = 1000 - System.ToSingle(WrapperWoW.Vector3.Distance(player.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
-        score = score + (System.div((player.HealthMax - player.Health), 5))
+        local score = 1000 - System.ToSingle(WrapperWoW.Vector3.Distance(player.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
+        score = score + (System.div((player.Value.HealthMax - player.Value.Health), 5))
 
-        if __LB__.UnitTagHandler(UnitPvpClassification, player.GUID) ~= -1 --[[PVPClassification.None]] then
+        if __LB__.UnitTagHandler(UnitPvpClassification, player.Value.GUID) ~= -1 --[[PVPClassification.None]] then
           score = score + 100
         end
 
-        local target =  __LB__.UnitTarget(player.GUID)
+        local target =  __LB__.UnitTarget(player.Value.GUID)
         if target ~= nil then
           if target == WrapperWoW.ObjectManager.getInstance().Player.GUID and __LB__.UnitTagHandler(UnitAffectingCombat, target) then
             score = score + 152
@@ -25572,7 +25579,7 @@ System.namespace("Wrapper.Helpers", function (namespace)
         end
 
         local default = WrapperHelpers.ScoredWowPlayer()
-        default.Player = player
+        default.Player = System.as(player.Value, WrapperWoW.WoWPlayer)
         default.Score = score
         this.Units:Add(default)
       end
@@ -25608,6 +25615,7 @@ local WrapperNativeBehaviors
 local NativeGrindSmartObjective
 local WrapperNativeGrindTasks
 local WrapperWoW
+local WrapperWoWFilters
 local ListSmartObjectiveTask
 System.import(function (out)
   Wrapper = out.Wrapper
@@ -25617,6 +25625,7 @@ System.import(function (out)
   NativeGrindSmartObjective = Wrapper.NativeBehaviors.NativeGrindSmartObjective
   WrapperNativeGrindTasks = Wrapper.NativeBehaviors.NativeGrindTasks
   WrapperWoW = Wrapper.WoW
+  WrapperWoWFilters = Wrapper.WoW.Filters
   ListSmartObjectiveTask = System.List(NativeGrindSmartObjective.SmartObjectiveTask)
 end)
 System.namespace("Wrapper.NativeBehaviors", function (namespace)
@@ -25713,9 +25722,12 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
     __ctor__ = function (this)
       this.Tasks = ListSmartObjectiveTask()
       this.LastUpdateTime = Wrapper.Program.CurrentTime
+      this.GatheringNodes = WrapperWoWFilters.GatheringNodeFilterList(true)
+      this.Units = WrapperWoWFilters.UnitFilterList(true, false)
+      this.DeadUnits = WrapperWoWFilters.DeadUnitsFilterList()
     end
     Update = function (this)
-      if Wrapper.Program.CurrentTime - this.LastUpdateTime < 1 then
+      if Wrapper.Program.CurrentTime - this.LastUpdateTime < 1.5 then
         return
       end
 
@@ -25725,13 +25737,13 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
       WrapperWoW.ObjectManager.getInstance():Pulse()
       this.Tasks:Clear()
 
+      --Console.WriteLine($"Units: {Units.GetUnits().Count} Gather: {GatheringNodes.GetObjects().Count} AllObjects: {ObjectManager.Instance.AllObjects.Count}");
+
 
       if not WrapperWoW.ObjectManager.getInstance().Player.IsInCombat or not WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowSelfDefense then
         if WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowGather then
-          for _, GameObject in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
-            return x.Value:getIsHerb() or x.Value:getIsOre()
-          end), function (x)
-            return not WrapperHelpers.Blacklist.IsOnBlackList(x.Value.GUID) and WrapperWoW.ObjectManager.getInstance().Player:HasRequiredSkillToHarvest(x.Value)
+          for _, GameObject in System.each(Linq.Where(this.GatheringNodes:GetObjects(), function (x)
+            return not WrapperHelpers.Blacklist.IsOnBlackList(x.Value.GUID)
           end)) do
             local score = 0
             score = score + (this.BASE_SCORE - WrapperWoW.Vector3.Distance(GameObject.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
@@ -25746,49 +25758,31 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
         end
 
 
-        for _, Unit in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
-          return x.Value.ObjectType == 5 --[[EObjectType.Unit]] and x.Value.ObjectType ~= 6 --[[EObjectType.Player]]
-        end), function (x)
+        for _, Unit in System.each(Linq.Where(this.DeadUnits:GetUnits(), function (x)
           return not WrapperHelpers.Blacklist.IsOnBlackList(x.Value.GUID)
         end)) do
-          local continue
-          repeat
-            if not __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) then
-              continue = true
-              break
-            end
+          local AllowSkinning = WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowSkin
+          -- Default to true if BroBot doesnt Exist
 
-            local AllowSkinning = WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowSkin
-            -- Default to true if BroBot doesnt Exist
+          if ( __LB__.UnitIsLootable(Unit.Value.GUID) or ( __LB__.UnitHasFlag(Unit.Value.GUID, 67108864 --[[EUnitFlags.Skinnable]]) and AllowSkinning)) then
+            local score = 0
+            score = score + (this.BASE_SCORE - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
 
-            if (System.as(Unit.Value, WrapperWoW.WoWUnit)).PlayerHasFought and ( __LB__.UnitIsLootable(Unit.Value.GUID) or ( __LB__.UnitHasFlag(Unit.Value.GUID, 67108864 --[[EUnitFlags.Skinnable]]) and AllowSkinning)) then
-              local score = 0
-              score = score + (this.BASE_SCORE - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position))
-
-
-
-              local default = class.SmartObjectiveTask()
-              default.Score = score
-              default.TargetUnitOrObject = Unit.Value
-              default.TaskType = 2 --[[SmartObjectiveTaskType.Loot]]
-              this.Tasks:Add(default)
-            end
-            continue = true
-          until 1
-          if not continue then
-            break
+            local default = class.SmartObjectiveTask()
+            default.Score = score
+            default.TargetUnitOrObject = Unit.Value
+            default.TaskType = 2 --[[SmartObjectiveTaskType.Loot]]
+            this.Tasks:Add(default)
           end
         end
       end
 
-      for _, Unit in System.each(Linq.Where(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
-        return x.Value.ObjectType == 5 --[[EObjectType.Unit]] and x.Value.ObjectType ~= 6 --[[EObjectType.Player]]
-      end), function (x)
+      for _, Unit in System.each(Linq.Where(this.Units:GetUnits(), function (x)
         return not WrapperHelpers.Blacklist.IsOnBlackList(x.Value.GUID)
       end)) do
         local continue
         repeat
-          local _Unit = System.as(Unit.Value, WrapperWoW.WoWUnit)
+          local _Unit = Unit.Value
 
           if __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) or _Unit.Reaction > (WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowPullingYellows and 4 or 3) or not _Unit:getAttackable() then
             --Console.WriteLine($"Skipping {Unit.Value.Name} Its dead or shit reaction");
@@ -26071,6 +26065,50 @@ end)
 end
 do
 local System = System
+local WrapperWoW
+local DictStringWoWUnit
+local DictStringWoWGameObject
+System.import(function (out)
+  WrapperWoW = Wrapper.WoW
+  DictStringWoWUnit = System.Dictionary(System.String, WrapperWoW.WoWUnit)
+  DictStringWoWGameObject = System.Dictionary(System.String, WrapperWoW.WoWGameObject)
+end)
+System.namespace("Wrapper.WoW", function (namespace)
+  namespace.class("FilteredList", function (namespace)
+    local GetObjects, GetUnits, Remove, __ctor__
+    __ctor__ = function (this)
+      this.FilteredObjects = DictStringWoWGameObject()
+      this.FilteredUnits = DictStringWoWUnit()
+    end
+    GetObjects = function (this)
+      return this.FilteredObjects
+    end
+    GetUnits = function (this)
+      return this.FilteredUnits
+    end
+    Remove = function (this, item)
+      --  Console.WriteLine($"removing {LuaBox.Instance.ObjectName(item)} in List {this.GetType().Name}");
+
+      if this.FilteredObjects:ContainsKey(item) then
+        this.FilteredObjects:RemoveKey(item)
+      end
+
+      if this.FilteredUnits:ContainsKey(item) then
+        this.FilteredUnits:RemoveKey(item)
+      end
+    end
+    return {
+      GetObjects = GetObjects,
+      GetUnits = GetUnits,
+      Remove = Remove,
+      __ctor__ = __ctor__
+    }
+  end)
+end)
+
+end
+do
+local System = System
 local Linq = System.Linq.Enumerable
 local Wrapper
 local WrapperAPI
@@ -26315,18 +26353,22 @@ local Wrapper
 local WrapperWoW
 local ListWoWGameObject
 local DictStringWoWGameObject
+local ListObjectManagerFilteredList
 System.import(function (out)
   Wrapper = out.Wrapper
   WrapperWoW = Wrapper.WoW
   ListWoWGameObject = System.List(WrapperWoW.WoWGameObject)
   DictStringWoWGameObject = System.Dictionary(System.String, WrapperWoW.WoWGameObject)
+  ListObjectManagerFilteredList = System.List(WrapperWoW.ObjectManagerFilteredList)
 end)
 System.namespace("Wrapper.WoW", function (namespace)
   namespace.class("ObjectManager", function (namespace)
-    local _instance, getInstance, Pulse, CreateWowObject, GetAllPlayers, FindNPCByObjectID, class, __ctor__
+    local _instance, getInstance, RegisterFilteredList, Pulse, CreateWowObject, GetAllPlayers, FindNPCByObjectID, class, 
+    __ctor__
     __ctor__ = function (this)
       this.AllObjects = DictStringWoWGameObject()
       this.Pendings = ListWoWGameObject()
+      this.FilteredLists = ListObjectManagerFilteredList()
     end
     getInstance = function ()
       if _instance == nil then
@@ -26336,6 +26378,23 @@ System.namespace("Wrapper.WoW", function (namespace)
 
       return _instance
     end
+    RegisterFilteredList = function (this, objectManagerFilteredList)
+      this.FilteredLists:Add(objectManagerFilteredList)
+
+      for _, x in System.each(this.AllObjects) do
+        if x.Value.ObjectType == 8 --[[EObjectType.GameObject]] then
+          if objectManagerFilteredList:FilterGameObject(x.Value) then
+            objectManagerFilteredList:TrackObject(x.Value)
+          end
+        end
+
+        if x.Value.ObjectType == 5 --[[EObjectType.Unit]] then
+          if objectManagerFilteredList:FilterUnit(System.as(x.Value, WrapperWoW.WoWUnit)) then
+            objectManagerFilteredList:TrackUnit(System.as(x.Value, WrapperWoW.WoWUnit))
+          end
+        end
+      end
+    end
     Pulse = function (this)
       System.try(function ()
         this.Player:Update()
@@ -26343,17 +26402,31 @@ System.namespace("Wrapper.WoW", function (namespace)
         for _, GUID in System.each(__LB__.GetObjects(class.ObjectManagerScanRange)) do
           if not this.AllObjects:ContainsKey(GUID) and __LB__.ObjectName(GUID) ~= "Unknown" then
             this.AllObjects:set(GUID, CreateWowObject(this, GUID))
+
             repeat
               local default = this.AllObjects:get(GUID).ObjectType
               if default == 5 --[[EObjectType.Unit]] then
                 if this.OnNewUnit ~= nil then
                   this.OnNewUnit(System.as(this.AllObjects:get(GUID), WrapperWoW.WoWUnit))
                 end
+
+                this.FilteredLists:ForEach(function (x)
+                  if x:FilterUnit(System.as(this.AllObjects:get(GUID), WrapperWoW.WoWUnit)) then
+                    x:TrackUnit(System.as(this.AllObjects:get(GUID), WrapperWoW.WoWUnit))
+                  end
+                end)
+
                 break
               elseif default == 8 --[[EObjectType.GameObject]] then
                 if this.OnNewGameObject ~= nil then
                   this.OnNewGameObject(this.AllObjects:get(GUID))
                 end
+
+                this.FilteredLists:ForEach(function (x)
+                  if x:FilterGameObject(this.AllObjects:get(GUID)) then
+                    x:TrackObject(this.AllObjects:get(GUID))
+                  end
+                end)
                 break
               end
             until 1
@@ -26374,8 +26447,22 @@ System.namespace("Wrapper.WoW", function (namespace)
         end
 
         RemovalList:ForEach(function (item)
+          if this.OnRemoveObject ~= nil then
+            this.OnRemoveObject(this.AllObjects:get(item))
+          end
+
+          this.FilteredLists:ForEach(function (x)
+            x:Remove(item)
+          end)
           this.AllObjects:RemoveKey(item)
         end)
+
+        if Wrapper.Program.CurrentTime - this.LastFilterListUpdate > 1 then
+          this.LastFilterListUpdate = Wrapper.Program.CurrentTime
+          this.FilteredLists:ForEach(function (x)
+            x:ProcessChanges()
+          end)
+        end
       end, function (default)
         local E = default
         System.Console.WriteLine("OM Error: " .. System.toString(E:getMessage()) .. "StackTrace: " .. System.toString(debugstack()))
@@ -26409,13 +26496,89 @@ System.namespace("Wrapper.WoW", function (namespace)
     end
     class = {
       getInstance = getInstance,
+      RegisterFilteredList = RegisterFilteredList,
       ObjectManagerScanRange = 999999999,
+      LastFilterListUpdate = 0,
       Pulse = Pulse,
       GetAllPlayers = GetAllPlayers,
       FindNPCByObjectID = FindNPCByObjectID,
       __ctor__ = __ctor__
     }
     return class
+  end)
+end)
+
+end
+do
+local System = System
+local ListString = System.List(System.String)
+local WrapperWoW
+System.import(function (out)
+  WrapperWoW = Wrapper.WoW
+end)
+System.namespace("Wrapper.WoW", function (namespace)
+  namespace.class("ObjectManagerFilteredList", function (namespace)
+    local FilterGameObject, FilterUnit, TrackObject, TrackUnit, ProcessChanges, __ctor__
+    __ctor__ = function (this)
+      WrapperWoW.FilteredList.__ctor__(this)
+      WrapperWoW.ObjectManager.getInstance():RegisterFilteredList(this)
+    end
+    FilterGameObject = function (this, GameObject)
+      return false
+    end
+    FilterUnit = function (this, Unit)
+      return false
+    end
+    TrackObject = function (this, _Object)
+      -- Console.WriteLine($"Tracking GameObject {_Object.Name} in List {this.GetType().Name}"); 
+      this.FilteredObjects:AddKeyValue(_Object.GUID, _Object)
+    end
+    TrackUnit = function (this, _Object)
+      -- Console.WriteLine($"Tracking Unit {_Object.Name} in List {this.GetType().Name}");
+      this.FilteredUnits:AddKeyValue(_Object.GUID, _Object)
+    end
+    ProcessChanges = function (this)
+      if not this.TrackChanges then
+        return
+      end
+
+      local RemovalList = ListString()
+
+      for _, GameObject in System.each(this.FilteredObjects) do
+        if not this:FilterGameObject(GameObject.Value) then
+          RemovalList:Add(GameObject.Key)
+        end
+      end
+
+      RemovalList:ForEach(function (x)
+        this.FilteredObjects:RemoveKey(x)
+      end)
+      RemovalList:Clear()
+
+      for _, GameObject in System.each(this.FilteredUnits) do
+        if not this:FilterUnit(GameObject.Value) then
+          RemovalList:Add(GameObject.Key)
+        end
+      end
+
+      RemovalList:ForEach(function (x)
+        this.FilteredUnits:RemoveKey(x)
+      end)
+    end
+    return {
+      base = function (out)
+        return {
+          out.Wrapper.WoW.FilteredList
+        }
+      end,
+      TrackChanges = false,
+      FilterGameObject = FilterGameObject,
+      FilterUnit = FilterUnit,
+      TrackObject = TrackObject,
+      TrackUnit = TrackUnit,
+      ProcessChanges = ProcessChanges,
+      __ctor__ = __ctor__
+    }
   end)
 end)
 
@@ -27512,6 +27675,10 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
         return true
       end
 
+      if WrapperWoW.ObjectManager.getInstance().Player.IsInCombat then
+        System.Console.WriteLine("Switching to Combat?!")
+        return true
+      end
       return this.ObjectiveScanner:GetNextTask(true) ~= nil or WrapperWoW.ObjectManager.getInstance().Player.IsInCombat
     end
     Tick = function (this)
@@ -27566,6 +27733,179 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 end)
 
 end
+do
+local System = System
+local Linq = System.Linq.Enumerable
+local WrapperWoW
+System.import(function (out)
+  WrapperWoW = Wrapper.WoW
+end)
+System.namespace("Wrapper.WoW.Filters", function (namespace)
+  namespace.class("DeadUnitsFilterList", function (namespace)
+    local CreateEventTrackingFrame, ScanObjectManager, __ctor__
+    __ctor__ = function (this)
+      System.base(this).__ctor__(this)
+      ScanObjectManager(this)
+      CreateEventTrackingFrame(this)
+
+      WrapperWoW.ObjectManager.getInstance().OnRemoveObject = System.DelegateCombine(WrapperWoW.ObjectManager.getInstance().OnRemoveObject, function (gameObject)
+        if this.FilteredUnits:ContainsKey(gameObject.GUID) then
+          System.Console.WriteLine("RemovingDead Unit: " .. System.toString(gameObject.Name))
+          this.FilteredUnits:RemoveKey(gameObject.GUID)
+        end
+      end)
+    end
+    CreateEventTrackingFrame = function (this)
+      this.EventFrame = CreateFrame("Frame", nil, nil, nil)
+      this.EventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+      this.EventFrame:SetScript("OnEvent", function (timeStamp, subevent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags)
+        timeStamp, subevent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = CombatLogGetCurrentEventInfo()
+
+        --Console.WriteLine("CombatEvent: " + subevent);
+        if subevent ~= "PARTY_KILL" then
+          return
+        end
+
+        local DestExists = WrapperWoW.ObjectManager.getInstance().AllObjects:ContainsKey(destGUID)
+        if not DestExists then
+          System.Console.WriteLine("DeadUnitsFilterList: Was given a dead event guid for an unknown unit")
+          return
+        end
+
+        System.Console.WriteLine("Found Dead Unit: " .. System.toString(WrapperWoW.ObjectManager.getInstance().AllObjects:get(destGUID).Name))
+        this.FilteredUnits:AddKeyValue(destGUID, System.as(WrapperWoW.ObjectManager.getInstance().AllObjects:get(destGUID), WrapperWoW.WoWUnit))
+      end, System.Delegate)
+    end
+    ScanObjectManager = function (this)
+      Linq.ToList(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
+        return System.is(x.Value, WrapperWoW.WoWUnit) and __LB__.UnitTagHandler(UnitIsDead, x.Value.GUID)
+      end)):ForEach(function (x)
+        this.FilteredUnits:AddKeyValue(x.Key, System.as(x.Value, WrapperWoW.WoWUnit))
+      end)
+    end
+    return {
+      base = function (out)
+        return {
+          out.Wrapper.WoW.FilteredList
+        }
+      end,
+      __ctor__ = __ctor__
+    }
+  end)
+end)
+
+end
+do
+local System = System
+local WrapperWoW
+System.import(function (out)
+  WrapperWoW = Wrapper.WoW
+end)
+System.namespace("Wrapper.WoW.Filters", function (namespace)
+  namespace.class("GatheringNodeFilterList", function (namespace)
+    local FilterGameObject, __ctor__
+    __ctor__ = function (this, OnlyViableProfessions)
+      System.base(this).__ctor__(this)
+      this.RequireProfessions = OnlyViableProfessions
+    end
+    FilterGameObject = function (this, GameObject)
+      return (GameObject:getIsHerb() or GameObject:getIsOre()) and (not this.RequireProfessions or WrapperWoW.ObjectManager.getInstance().Player:HasRequiredSkillToHarvest(GameObject))
+    end
+    return {
+      base = function (out)
+        return {
+          out.Wrapper.WoW.ObjectManagerFilteredList
+        }
+      end,
+      RequireProfessions = false,
+      FilterGameObject = FilterGameObject,
+      __ctor__ = __ctor__
+    }
+  end)
+end)
+
+end
+do
+local System = System
+System.namespace("Wrapper.WoW.Filters", function (namespace)
+  namespace.class("PlayerFilterList", function (namespace)
+    local FilterUnit, __ctor__
+    __ctor__ = function (this, AllowFriendly, AllowHostile)
+      System.base(this).__ctor__(this)
+      this.AllowFriendly = AllowFriendly
+      this.AllowHostile = AllowHostile
+    end
+    FilterUnit = function (this, GameObject)
+      local Result = GameObject.ObjectType == 6 --[[EObjectType.Player]]
+
+      if Result and this.AllowFriendly and GameObject:getFriend() then
+        return true
+      end
+
+      if Result and this.AllowHostile and GameObject:getHostile() then
+        return true
+      end
+
+      return false
+    end
+    return {
+      base = function (out)
+        return {
+          out.Wrapper.WoW.ObjectManagerFilteredList
+        }
+      end,
+      AllowFriendly = true,
+      AllowHostile = true,
+      FilterUnit = FilterUnit,
+      __ctor__ = __ctor__
+    }
+  end)
+end)
+
+end
+do
+local System = System
+System.namespace("Wrapper.WoW.Filters", function (namespace)
+  namespace.class("UnitFilterList", function (namespace)
+    local FilterUnit, __ctor__
+    __ctor__ = function (this, AllowTrivial, AllowCritter)
+      System.base(this).__ctor__(this)
+      this.AllowCritter = AllowCritter
+      this.AllowTrivial = AllowTrivial
+    end
+    FilterUnit = function (this, GameObject)
+      if not this.AllowCritter then
+        if __LB__.UnitTagHandler(UnitCreatureType, GameObject.GUID) == "Critter" then
+          return false
+        end
+      end
+
+      if not this.AllowTrivial then
+        if __LB__.UnitTagHandler(UnitIsTrivial, GameObject.GUID) then
+          return false
+        end
+      end
+
+      local Result = GameObject.ObjectType == 5 --[[EObjectType.Unit]] and GameObject.ObjectType ~= 6 --[[EObjectType.Player]]
+
+      -- Console.WriteLine($"{GameObject.Name}: {Result}");
+      return Result
+    end
+    return {
+      base = function (out)
+        return {
+          out.Wrapper.WoW.ObjectManagerFilteredList
+        }
+      end,
+      AllowCritter = false,
+      AllowTrivial = false,
+      FilterUnit = FilterUnit,
+      __ctor__ = __ctor__
+    }
+  end)
+end)
+
+end
 System.init({
   types = {
     "Wrapper.StdUI",
@@ -27573,6 +27913,7 @@ System.init({
     "Wrapper.WoW.WoWGameObject",
     "Wrapper.BotBase",
     "Wrapper.StdUI.StdUiFrame",
+    "Wrapper.WoW.FilteredList",
     "Wrapper.WoW.WoWUnit",
     "Wrapper.API.LibDraw",
     "Wrapper.API.LuaBox",
@@ -27586,6 +27927,7 @@ System.init({
     "Wrapper.StdUI.StdUiDropdown",
     "Wrapper.UI.BotMainUI",
     "Wrapper.UI.NativeErrorLoggerUI",
+    "Wrapper.WoW.ObjectManagerFilteredList",
     "Wrapper.WoW.WoWPlayer",
     "Wrapper.API.DataProviderBase",
     "Wrapper.API.LibDraw.LibDrawColor",
@@ -27645,6 +27987,10 @@ System.init({
     "Wrapper.UI.NativeErrorLoggerUI.ErrorMessageData",
     "Wrapper.UI.SlashCommands",
     "Wrapper.UI.Tracker",
+    "Wrapper.WoW.Filters.DeadUnitsFilterList",
+    "Wrapper.WoW.Filters.GatheringNodeFilterList",
+    "Wrapper.WoW.Filters.PlayerFilterList",
+    "Wrapper.WoW.Filters.UnitFilterList",
     "Wrapper.WoW.LocalPlayer",
     "Wrapper.WoW.ObjectManager",
     "Wrapper.WoW.Vector3"

@@ -25,6 +25,11 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             if (WoWAPI.UnitIsDeadOrGhost("player"))
                 return true;
 
+            if(ObjectManager.Instance.Player.IsInCombat)
+            {
+                Console.WriteLine("Switching to Combat?!");
+                return true;
+            }
             return ObjectiveScanner.GetNextTask() != null
                 || ObjectManager.Instance.Player.IsInCombat;
         }

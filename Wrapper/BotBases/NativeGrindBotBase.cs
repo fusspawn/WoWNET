@@ -271,7 +271,7 @@ namespace Wrapper.BotBases
                 if(LuaBox.Instance.ObjectExists(Entry.Key) 
                     && ObjectManager.Instance.AllObjects.ContainsKey(Entry.Key))
                 {
-                    LibDraw.Text($"Blacklisted - Remaining: {Program.CurrentTime - Entry.Value}", ObjectManager.Instance.AllObjects[Entry.Key].Position, 12, Red, null);
+                    LibDraw.Text($"Blacklisted - Remaining: {(int)Math.Abs(Program.CurrentTime - Entry.Value)}", ObjectManager.Instance.AllObjects[Entry.Key].Position, 12, Red, null);
                 }
             }
 

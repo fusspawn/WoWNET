@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Wrapper.API;
 using Wrapper.WoW;
+using Wrapper.WoW.Filters;
 
 namespace Wrapper.Helpers
 {
@@ -20,6 +21,12 @@ namespace Wrapper.Helpers
             = new List<ScoredWowPlayer>();
 
         double LastUpdateTime;
+        private PlayerFilterList players;
+
+        public SmartMovePVP(PlayerFilterList players)
+        {
+            this.players = players;
+        }
 
         public void Pulse()
         {
@@ -43,9 +50,9 @@ namespace Wrapper.Helpers
             }
 
 
-            var ValidUnits = ObjectManager.GetAllPlayers(500).Where(x =>
+            var ValidUnits = players.GetUnits().Where(x =>
             {
-                return x.GUID != ObjectManager.Instance.Player.GUID && !x.Dead;
+                return x.Value.GUID != ObjectManager.Instance.Player.GUID && !x.Value.Dead;
             });
 
             //Console.WriteLine("Smart Move Found " + ValidUnits.Count() + " Units");
@@ -55,11 +62,11 @@ namespace Wrapper.Helpers
                 float score = 0;
 
                 int NumFriends = (from p in ValidUnits.Where(x =>
-                                  Vector3.Distance(x.Position, unit.Position) < 60 && x.Reaction > 4)
+                                  Vector3.Distance(x.Value.Position, unit.Value.Position) < 60 && x.Value.Reaction > 4)
                                   select p).Count();
 
                 int NumHostile = (from p in ValidUnits.Where(x =>
-                                  Vector3.Distance(x.Position, unit.Position) < 60 && x.Reaction < 4)
+                                  Vector3.Distance(x.Value.Position, unit.Value.Position) < 60 && x.Value.Reaction < 4)
                                   select p).Count();
 
                 score = 1000 + (NumFriends * FriendlyScore) + (NumHostile * HostileScore);
@@ -71,7 +78,7 @@ namespace Wrapper.Helpers
                 }
 
                 //Console.WriteLine("Scored New Unit: " + unit.Name + " score: " + score);
-                Units.Add(new ScoredWowPlayer() { Player = unit, Score = score });
+                Units.Add(new ScoredWowPlayer() { Player = unit.Value as WoWPlayer, Score = score });
             }
 
             
