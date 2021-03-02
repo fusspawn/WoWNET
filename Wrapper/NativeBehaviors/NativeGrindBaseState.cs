@@ -187,8 +187,13 @@ namespace Wrapper.NativeBehaviors
                     || WoWAPI.UnitCreatureType(Unit.Value.GUID) == "Critter")
                 {
 
-                    // DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} Its Trivial or a Critter");
-                    continue;
+                    if (!WoWAPI.UnitAffectingCombat(Unit.Value.GUID) 
+                        || !NativeGrindBotBase.ConfigOptions.AllowSelfDefense)
+                    {
+
+                        // DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} Its Trivial or a Critter");
+                        continue;
+                    }
                 }
 
                 // DebugLog.Log("BroBot", "Found Valid Combat Target");
@@ -198,7 +203,8 @@ namespace Wrapper.NativeBehaviors
                     ObjectManager.Instance.Player.Position)) + 0.25;
 
                 if (WoWAPI.UnitAffectingCombat(_Unit.GUID)
-                    && _Unit.TargetGUID == ObjectManager.Instance.Player.GUID)
+                    && _Unit.TargetGUID == ObjectManager.Instance.Player.GUID
+                    && NativeGrindBotBase.ConfigOptions.AllowSelfDefense)
                 {
                     DebugLog.Log("BroBot", "Found In Combat Unit");
                     score = score + 500;

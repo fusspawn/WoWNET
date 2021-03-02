@@ -189,6 +189,13 @@ namespace Wrapper.API
         /// </summary>
         public static extern void CastSpellByName(string SpellName, string? TargetGUID);
 
+        public static void SetCVar(string cvar, object value)
+        {
+            /*[[
+                    __LB__.Unlock(SetCVar, cvar, value);
+            ]]*/
+        }
+
         // <summary>
         /// @CSharpLua.Template = "CreateFrame({0}, {1}, {2}, {3})
         /// </summary>

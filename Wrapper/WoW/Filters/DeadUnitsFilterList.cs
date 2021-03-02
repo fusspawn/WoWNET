@@ -20,7 +20,7 @@ namespace Wrapper.WoW.Filters
             {
                 if (FilteredUnits.ContainsKey(gameObject.GUID))
                 {
-                    DebugLog.Log("BroBot", $"RemovingDead Unit: {gameObject.Name}");
+                    DebugLog.Log("DeadUnitFilter", $"Removing Dead Unit: {gameObject.Name}");
                     FilteredUnits.Remove(gameObject.GUID);
                 }
             };
@@ -46,17 +46,22 @@ namespace Wrapper.WoW.Filters
                 var DestExists = ObjectManager.Instance.AllObjects.ContainsKey(destGUID);
                 if(!DestExists)
                 {
-                    DebugLog.Log("BroBot", "DeadUnitsFilterList: Was given a dead event guid for an unknown unit");
+                    DebugLog.Log("DeadUnitFilter", "Was given a dead event guid for an unknown unit");
                     return;
                 }
 
-                DebugLog.Log("BroBot", $"Found Dead Unit: {ObjectManager.Instance.AllObjects[destGUID].Name}");
+                DebugLog.Log("DeadUnitFilter", $"Found Dead Unit: {ObjectManager.Instance.AllObjects[destGUID].Name}");
                 FilteredUnits.Add(destGUID, ObjectManager.Instance.AllObjects[destGUID] as WoWUnit);
             });
         }
 
 
-        private void ScanObjectManager() => ObjectManager.Instance.AllObjects.Where(x => x.Value is WoWUnit
-                && WoWAPI.UnitIsDead(x.Value.GUID)).ToList().ForEach(x => FilteredUnits.Add(x.Key, x.Value as WoWUnit));
+        private void ScanObjectManager()
+        {
+            foreach (var Unit in ObjectManager.Instance.AllObjects.Where(x => x.Value.ObjectType == LuaBox.EObjectType.Unit
+                 && WoWAPI.UnitIsDead(x.Value.GUID))) {
+                FilteredUnits.Add(Unit.Value.GUID, (WoWUnit)Unit.Value);
+            };
+        }
     }
 }

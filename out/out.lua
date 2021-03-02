@@ -17948,7 +17948,7 @@ System.namespace("Wrapper", function (namespace)
         WrapperAPI.DebugLog.Log("BroBot", "Clicking At Cast Location", false)
         this.CastTimeStamp = Wrapper.Program.CurrentTime
       else
-        if GetTime() - this.CastTimeStamp > 10 then
+        if GetTime() - this.CastTimeStamp > 5 then
           WrapperAPI.DebugLog.Log("BroBot", "Have been chilling a bit. Recast", false)
           MoveForwardStart()
           MoveForwardStop()
@@ -19320,7 +19320,19 @@ System.namespace("Wrapper.API", function (namespace)
 
 
   namespace.class("Navigator", function (namespace)
-    return {}
+    local MoveTo
+    MoveTo = function (this, x, y, z, index, proximityTolerance)
+      --DebugLog.Log("Navigator", $"Moving to: {x}/{y}/{z}");
+      local Destination = WrapperWoW.Vector3(x, y, z)
+      local Distance = WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, Destination:__clone__())
+      __LB__.Navigator.AllowMounting(Distance > 20)
+      --DebugLog.Log("Navigator", "AllowMounting: " + (Distance > 20) + " Dist: " + Distance);
+
+      __LB__.Navigator.MoveTo(x,y,z, index, proxmityTolerance);
+    end
+    return {
+      MoveTo = MoveTo
+    }
   end)
 end)
 
@@ -23815,6 +23827,7 @@ do
 local System = System
 System.namespace("Wrapper.API", function (namespace)
   namespace.class("WoWAPI", function (namespace)
+    local SetCVar
     namespace.enum("PVPClassification", function ()
       return {
         None = -1,
@@ -23849,7 +23862,12 @@ System.namespace("Wrapper.API", function (namespace)
         end
       }
     end)
-    return {}
+    SetCVar = function (cvar, value)
+      __LB__.Unlock(SetCVar, cvar, value);
+    end
+    return {
+      SetCVar = SetCVar
+    }
   end)
 
   namespace.class("WoWFrame", function (namespace)
@@ -24036,7 +24054,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
 
         if (WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, BestTarget.Position) > 25 or not BestTarget.LineOfSight) and not (WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() or WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling()) then
           __LB__.Navigator.AllowMounting(false)
-          __LB__.Navigator.MoveTo(BestTarget.Position.X, BestTarget.Position.Y, BestTarget.Position.Z, 1, 15)
+          WrapperAPI.LuaBox.getInstance().Navigator:MoveTo(BestTarget.Position.X, BestTarget.Position.Y, BestTarget.Position.Z, 1, 15)
           return
         else
           __LB__.Navigator.Stop()
@@ -24069,7 +24087,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
 
         if WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, System.Nullable.Value(this.LastDestination)) > 15 then
           __LB__.Navigator.AllowMounting(WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, System.Nullable.Value(this.LastDestination)) > 20)
-          __LB__.Navigator.MoveTo(System.Nullable.Value(this.LastDestination).X, System.Nullable.Value(this.LastDestination).Y, System.Nullable.Value(this.LastDestination).Z, 1, 1)
+          WrapperAPI.LuaBox.getInstance().Navigator:MoveTo(System.Nullable.Value(this.LastDestination).X, System.Nullable.Value(this.LastDestination).Y, System.Nullable.Value(this.LastDestination).Z, 1, 1)
         else
           __LB__.Navigator.Stop()
         end
@@ -26090,9 +26108,11 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
           end
 
           if __LB__.UnitTagHandler(UnitIsTrivial, Unit.Value.GUID) or __LB__.UnitTagHandler(UnitCreatureType, Unit.Value.GUID) == "Critter" then
-            -- DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} Its Trivial or a Critter");
-            continue = true
-            break
+            if not __LB__.UnitTagHandler(UnitAffectingCombat, Unit.Value.GUID) or not WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowSelfDefense then
+              -- DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} Its Trivial or a Critter");
+              continue = true
+              break
+            end
           end
 
           -- DebugLog.Log("BroBot", "Found Valid Combat Target");
@@ -26100,7 +26120,7 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
           local score = 0
           score = score + (this.BASE_SCORE - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)) + 0.25
 
-          if __LB__.UnitTagHandler(UnitAffectingCombat, _Unit.GUID) and _Unit.TargetGUID == WrapperWoW.ObjectManager.getInstance().Player.GUID then
+          if __LB__.UnitTagHandler(UnitAffectingCombat, _Unit.GUID) and _Unit.TargetGUID == WrapperWoW.ObjectManager.getInstance().Player.GUID and WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowSelfDefense then
             WrapperAPI.DebugLog.Log("BroBot", "Found In Combat Unit", false)
             score = score + 500
           else
@@ -26521,7 +26541,7 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.WoW", function (namespace)
   namespace.class("LocalPlayer", function (namespace)
-    local CreateCombatTrackingFrame, Update, HasRequiredSkillToHarvest, HasProfession, GetDurability, FacePosition, __ctor__
+    local CreateCombatTrackingFrame, Update, HasRequiredSkillToHarvest, HasProfession, GetDurability, FaceUnit, __ctor__
     __ctor__ = function (this)
       System.base(this).__ctor__(this, "player")
       CreateCombatTrackingFrame(this)
@@ -26559,7 +26579,7 @@ System.namespace("Wrapper.WoW", function (namespace)
             if senderarg[2] == "Mining" then
                 return true
             else
-            local name = select(11, GetProfessionInfo(prof2))
+                local name = select(11, GetProfessionInfo(prof2))
                 local senderarg = { (" "):split(name) }
                 return senderarg[2] == "Mining"
             end
@@ -26629,20 +26649,15 @@ System.namespace("Wrapper.WoW", function (namespace)
 
       return - 1
     end
-    FacePosition = function (this, Pos)
-      local CurrentAngle =  __LB__.ObjectFacing("player")
-      local Pitch = __LB__.ObjectPitch("player")
-      local Angle = math.Atan2(Pos.Y - this.Position.Y, Pos.X - this.Position.X)
+    FaceUnit = function (this, targetUnitOrObject)
+      local PlayerPos = WrapperWoW.ObjectManager.getInstance().Player.Position:__clone__()
+      local ObjectPos = targetUnitOrObject.Position:__clone__()
 
-      --Angle = (Math.PI / 180) * Angle;
-
-      --DebugLog.Log("BroBot", $"Setting Player Angle/Pitch: {Angle} / {Pitch}");
-
-      if math.Abs(Angle - CurrentAngle) > 0.01 then
-        if Angle > 0 then
-           __LB__.SetPlayerAngles(Angle, Pitch)
-        end
-      end
+      local X1,Y1,Z1 = PlayerPos.X, PlayerPos.Y, PlayerPos.Z
+      	            local X2,Y2,Z2 = ObjectPos.X, ObjectPos.Y, ObjectPos.Z
+      local angle = math.atan2(Y2 - Y1, X2 - X1) % (math.pi * 2),
+      		            math.atan((Z1 - Z2) / math.sqrt(math.pow(X1 - X2, 2) + math.pow(Y1 - Y2, 2))) % math.pi
+      		         lb.SetPlayerAngles(angle)
     end
     return {
       base = function (out)
@@ -26655,7 +26670,7 @@ System.namespace("Wrapper.WoW", function (namespace)
       HasRequiredSkillToHarvest = HasRequiredSkillToHarvest,
       HasProfession = HasProfession,
       GetDurability = GetDurability,
-      FacePosition = FacePosition,
+      FaceUnit = FaceUnit,
       __ctor__ = __ctor__
     }
   end)
@@ -26848,7 +26863,9 @@ System.namespace("Wrapper.WoW", function (namespace)
     local FilterGameObject, FilterUnit, TrackObject, TrackUnit, ProcessChanges, __ctor__
     __ctor__ = function (this)
       WrapperWoW.FilteredList.__ctor__(this)
-      WrapperWoW.ObjectManager.getInstance():RegisterFilteredList(this)
+      C_Timer.After(1, function ()
+        WrapperWoW.ObjectManager.getInstance():RegisterFilteredList(this)
+      end)
     end
     FilterGameObject = function (this, GameObject)
       return false
@@ -27566,8 +27583,10 @@ end)
 end
 do
 local System = System
+local WrapperAPI
 local WrapperWoW
 System.import(function (out)
+  WrapperAPI = Wrapper.API
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace)
@@ -27587,7 +27606,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
 
       if WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, CorpsePos:__clone__()) > 28 then
-        __LB__.Navigator.MoveTo(CorpsePos.X, CorpsePos.Y, CorpsePos.Z, 1, 1)
+        WrapperAPI.LuaBox.getInstance().Navigator:MoveTo(CorpsePos.X, CorpsePos.Y, CorpsePos.Z, 1, 1)
         return
       end
 
@@ -27661,7 +27680,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       if Distance > 5 then
         --SetMaxStateTime(5); // Can spend at MAX 5 mins trying to get to the target node;
         this._StringRepr = "NativeGatherTask Getting Closer: " .. System.ToInt32(Distance) .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString()
-        __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 4)
+        WrapperAPI.LuaBox.getInstance().Navigator:MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 4)
         return
       end
 
@@ -27808,7 +27827,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       if Distance > CombatRange or not (System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)).LineOfSight then
         --DebugLog.Log("BroBot", "Getting Closer");
         this._StringRepr = "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString()
-        __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, CombatRange - 1)
+        WrapperAPI.LuaBox.getInstance().Navigator:MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, CombatRange - 1)
 
 
         return
@@ -27839,9 +27858,10 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
         --WoWAPI.StartAttack();
         if Wrapper.Program.CurrentTime - this.LastFaceDirection > 1 then
+          WrapperAPI.DebugLog.Log("Combat", "Facing Unit", false)
           this.LastFaceDirection = Wrapper.Program.CurrentTime
-          select(2,__LB__.UnitTagHandler(InteractUnit, this.Task.TargetUnitOrObject.GUID))
-          WrapperWoW.ObjectManager.getInstance().Player:FacePosition(this.Task.TargetUnitOrObject.Position)
+          --WoWAPI.InteractUnit(Task.TargetUnitOrObject.GUID);
+          WrapperWoW.ObjectManager.getInstance().Player:FaceUnit(this.Task.TargetUnitOrObject)
         end
       end
 
@@ -27864,9 +27884,11 @@ end)
 end
 do
 local System = System
+local WrapperAPI
 local WrapperHelpers
 local WrapperWoW
 System.import(function (out)
+  WrapperAPI = Wrapper.API
   WrapperHelpers = Wrapper.Helpers
   WrapperWoW = Wrapper.WoW
 end)
@@ -27893,7 +27915,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
       if Distance > 5 then
         this._StringRepr = "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString() .. " Player: " .. WrapperWoW.ObjectManager.getInstance().Player.Position:ToString()
-        __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 4)
+        WrapperAPI.LuaBox.getInstance().Navigator:MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, 4)
         return
       end
 
@@ -27951,7 +27973,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       local NPCPosition = WrapperWoW.Vector3(NPC.X, NPC.Y, NPC.Z)
 
       if WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, NPCPosition:__clone__()) > 5 then
-        __LB__.Navigator.MoveTo(NPC.X, NPC.Y, NPC.Z, 1, 4)
+        WrapperAPI.LuaBox.getInstance().Navigator:MoveTo(NPC.X, NPC.Y, NPC.Z, 1, 4)
         this._StringRepr = "Moving To: " .. NPCPosition:ToString() .. " to repair at npc: " .. System.toString(NPC.Name)
         return
       end
@@ -28043,7 +28065,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       end
 
       this._StringRepr = "Moving To TargetNode"
-      __LB__.Navigator.MoveTo(this.TargetNode.X, this.TargetNode.Y, this.TargetNode.Z, 1, 1)
+      WrapperAPI.LuaBox.getInstance().Navigator:MoveTo(this.TargetNode.X, this.TargetNode.Y, this.TargetNode.Z, 1, 1)
 
       if WrapperWoW.Vector3.Distance(WrapperWoW.Vector3(this.TargetNode.X, this.TargetNode.Y, this.TargetNode.Z), WrapperWoW.ObjectManager.getInstance().Player.Position) < 10 then
         WrapperAPI.DebugLog.Log("BroBot", "Got to target node with nothing to do. Lets give this one up and grab another", false)
@@ -28085,7 +28107,7 @@ System.namespace("Wrapper.WoW.Filters", function (namespace)
 
       WrapperWoW.ObjectManager.getInstance().OnRemoveObject = System.DelegateCombine(WrapperWoW.ObjectManager.getInstance().OnRemoveObject, function (gameObject)
         if this.FilteredUnits:ContainsKey(gameObject.GUID) then
-          WrapperAPI.DebugLog.Log("BroBot", "RemovingDead Unit: " .. System.toString(gameObject.Name), false)
+          WrapperAPI.DebugLog.Log("DeadUnitFilter", "Removing Dead Unit: " .. System.toString(gameObject.Name), false)
           this.FilteredUnits:RemoveKey(gameObject.GUID)
         end
       end)
@@ -28103,20 +28125,20 @@ System.namespace("Wrapper.WoW.Filters", function (namespace)
 
         local DestExists = WrapperWoW.ObjectManager.getInstance().AllObjects:ContainsKey(destGUID)
         if not DestExists then
-          WrapperAPI.DebugLog.Log("BroBot", "DeadUnitsFilterList: Was given a dead event guid for an unknown unit", false)
+          WrapperAPI.DebugLog.Log("DeadUnitFilter", "Was given a dead event guid for an unknown unit", false)
           return
         end
 
-        WrapperAPI.DebugLog.Log("BroBot", "Found Dead Unit: " .. System.toString(WrapperWoW.ObjectManager.getInstance().AllObjects:get(destGUID).Name), false)
+        WrapperAPI.DebugLog.Log("DeadUnitFilter", "Found Dead Unit: " .. System.toString(WrapperWoW.ObjectManager.getInstance().AllObjects:get(destGUID).Name), false)
         this.FilteredUnits:AddKeyValue(destGUID, System.as(WrapperWoW.ObjectManager.getInstance().AllObjects:get(destGUID), WrapperWoW.WoWUnit))
       end, System.Delegate)
     end
     ScanObjectManager = function (this)
-      Linq.ToList(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
-        return System.is(x.Value, WrapperWoW.WoWUnit) and __LB__.UnitTagHandler(UnitIsDead, x.Value.GUID)
-      end)):ForEach(function (x)
-        this.FilteredUnits:AddKeyValue(x.Key, System.as(x.Value, WrapperWoW.WoWUnit))
-      end)
+      for _, Unit in System.each(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
+        return x.Value.ObjectType == 5 --[[EObjectType.Unit]] and __LB__.UnitTagHandler(UnitIsDead, x.Value.GUID)
+      end)) do
+        this.FilteredUnits:AddKeyValue(Unit.Value.GUID, System.cast(WrapperWoW.WoWUnit, Unit.Value))
+      end
     end
     return {
       base = function (out)
@@ -28132,8 +28154,10 @@ end)
 end
 do
 local System = System
+local WrapperAPI
 local WrapperWoW
 System.import(function (out)
+  WrapperAPI = Wrapper.API
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.WoW.Filters", function (namespace)
@@ -28142,9 +28166,24 @@ System.namespace("Wrapper.WoW.Filters", function (namespace)
     __ctor__ = function (this, OnlyViableProfessions)
       System.base(this).__ctor__(this)
       this.RequireProfessions = OnlyViableProfessions
+      WrapperAPI.DebugLog.Log("GatheringNodeFilter", "Gathering Node filter created with only Professions: " .. System.toString(OnlyViableProfessions), false)
     end
     FilterGameObject = function (this, GameObject)
-      return (GameObject:getIsHerb() or GameObject:getIsOre()) and (not this.RequireProfessions or WrapperWoW.ObjectManager.getInstance().Player:HasRequiredSkillToHarvest(GameObject))
+      local IsHerbOrOre = (GameObject:getIsHerb() or GameObject:getIsOre())
+      if not IsHerbOrOre then
+        return false
+      end
+
+      if not this.RequireProfessions then
+        System.Console.WriteLine("Require Professions Was False")
+        return true
+      end
+
+      local HasProfession = WrapperWoW.ObjectManager.getInstance().Player:HasRequiredSkillToHarvest(GameObject)
+      if HasProfession then
+        WrapperAPI.DebugLog.Log("GatheringNodeFilter", "Found Filter with Profession: " .. System.toString(GameObject.Name) .. " Herb: " .. System.toString(GameObject:getIsHerb()) .. " Ore " .. System.toString(GameObject:getIsOre()), false)
+      end
+      return HasProfession
     end
     return {
       base = function (out)

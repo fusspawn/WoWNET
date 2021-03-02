@@ -12,8 +12,10 @@ namespace Wrapper.WoW
 
         public ObjectManagerFilteredList()
         {
-           
-            ObjectManager.Instance.RegisterFilteredList(this);
+            WoWAPI.After(() =>
+            {
+                ObjectManager.Instance.RegisterFilteredList(this);
+            }, 1);
         }
 
        

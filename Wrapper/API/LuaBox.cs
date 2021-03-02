@@ -700,10 +700,18 @@ namespace Wrapper.API
         /// </summary>
         public extern void GetDestination(out double x, out double y, out double z);
 
-        /// <summary>
-        /// @CSharpLua.Template = "__LB__.Navigator.MoveTo({0}, {1}, {2}, {3}, {4})"
-        /// </summary>
-        public extern void MoveTo(double x, double y, double z, int index = 1, double proximityTolerance = 1);
+      
+        public void MoveTo(double x, double y, double z, int index = 1, double proximityTolerance = 1) {
+            //DebugLog.Log("Navigator", $"Moving to: {x}/{y}/{z}");
+            var Destination = new WoW.Vector3(x, y, z);
+            var Distance = Vector3.Distance(ObjectManager.Instance.Player.Position, Destination);
+            AllowMounting(Distance > 20);
+            //DebugLog.Log("Navigator", "AllowMounting: " + (Distance > 20) + " Dist: " + Distance);
+
+            /*[[
+                __LB__.Navigator.MoveTo(x,y,z, index, proxmityTolerance);
+            ]]*/
+        }
 
         /// <summary>
         /// @CSharpLua.Template = "__LB__.Navigator.Stop()"

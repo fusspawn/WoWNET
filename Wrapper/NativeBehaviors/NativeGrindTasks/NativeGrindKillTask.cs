@@ -165,9 +165,10 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 //WoWAPI.StartAttack();
                 if (Program.CurrentTime - LastFaceDirection > 1)
                 {
+                    DebugLog.Log("Combat", "Facing Unit");
                     LastFaceDirection = Program.CurrentTime;
-                    WoWAPI.InteractUnit(Task.TargetUnitOrObject.GUID);
-                    ObjectManager.Instance.Player.FacePosition(Task.TargetUnitOrObject.Position);
+                    //WoWAPI.InteractUnit(Task.TargetUnitOrObject.GUID);
+                    ObjectManager.Instance.Player.FaceUnit(Task.TargetUnitOrObject);
                 }
             }
 

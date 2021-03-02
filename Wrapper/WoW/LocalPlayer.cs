@@ -11,7 +11,6 @@ namespace Wrapper.WoW
     {
 
         private WoWFrame CombatTrackingFrame;
-
         public bool IsInCombat = false;
 
 
@@ -101,7 +100,7 @@ end
                         if senderarg[2] == "Mining" then
                             return true
                         else
-                        local name = select(11, GetProfessionInfo(prof2))
+                            local name = select(11, GetProfessionInfo(prof2))
                             local senderarg = { (" "):split(name) }
                             return senderarg[2] == "Mining"
                         end
@@ -196,23 +195,19 @@ end
             return -1f;
         }
 
-        public void FacePosition(Vector3 Pos)
+        public void FaceUnit(WoWGameObject targetUnitOrObject)
         {
-            var CurrentAngle = LuaBox.Instance.ObjectFacing("player");
-            var Pitch = LuaBox.Instance.ObjectPitch("player");
-            var Angle =  Math.Atan2(Pos.Y - this.Position.Y, Pos.X - this.Position.X);
-            
-            //Angle = (Math.PI / 180) * Angle;
+            var PlayerPos = ObjectManager.Instance.Player.Position;
+            var ObjectPos = targetUnitOrObject.Position;
 
-            //DebugLog.Log("BroBot", $"Setting Player Angle/Pitch: {Angle} / {Pitch}");
+            /*[[
+                local X1,Y1,Z1 = PlayerPos.X, PlayerPos.Y, PlayerPos.Z
+	            local X2,Y2,Z2 = ObjectPos.X, ObjectPos.Y, ObjectPos.Z
 
-            if (Math.Abs(Angle - CurrentAngle) > 0.01)
-            {
-                if (Angle > 0)
-                {
-                    LuaBox.Instance.SetPlayerAngles(Angle, Pitch);
-                }
-            }
+                local angle = math.atan2(Y2 - Y1, X2 - X1) % (math.pi * 2),
+		            math.atan((Z1 - Z2) / math.sqrt(math.pow(X1 - X2, 2) + math.pow(Y1 - Y2, 2))) % math.pi
+		         lb.SetPlayerAngles(angle)
+            ]]*/
         }
     }
 }

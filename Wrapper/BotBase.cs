@@ -494,7 +494,7 @@ namespace Wrapper
             }
             else
             {
-                if (WoWAPI.GetTime() - CastTimeStamp > 10)
+                if (WoWAPI.GetTime() - CastTimeStamp > 5)
                 {
                     DebugLog.Log("BroBot", "Have been chilling a bit. Recast");
                     WoWAPI.MoveForwardStart();
