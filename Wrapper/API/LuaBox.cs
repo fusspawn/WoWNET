@@ -705,8 +705,17 @@ namespace Wrapper.API
             //DebugLog.Log("Navigator", $"Moving to: {x}/{y}/{z}");
             var Destination = new WoW.Vector3(x, y, z);
             var Distance = Vector3.Distance(ObjectManager.Instance.Player.Position, Destination);
-            AllowMounting(Distance > 20);
+            AllowMounting(false);
+
             //DebugLog.Log("Navigator", "AllowMounting: " + (Distance > 20) + " Dist: " + Distance);
+
+            if(Distance > 20)
+            {
+                if(WoWAPI.IsOutdoors() && !WoWAPI.IsMounted() && WoWAPI.IsUsableSpell("Summon Random Favorite Mount"))
+                {
+                    WoWAPI.CastSpellByName("Summon Random Favorite Mount", null);
+                }
+            }
 
             /*[[
                 __LB__.Navigator.MoveTo(x,y,z, index, proxmityTolerance);

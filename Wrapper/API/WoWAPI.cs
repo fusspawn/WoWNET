@@ -273,6 +273,15 @@ namespace Wrapper.API
         /// </summary>
         public static extern bool UnitCanAttack(string from, string to);
 
+        /// <summary>
+        /// @CSharpLua.Template = "IsOutdoors()" 
+        /// </summary>
+        public static extern bool IsOutdoors();
+
+        /// <summary>
+        /// @CSharpLua.Template = "IsMounted()" 
+        /// </summary>
+        public static extern bool IsMounted();
     }
 
     public class WoWFrame

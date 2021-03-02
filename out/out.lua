@@ -19325,8 +19325,15 @@ System.namespace("Wrapper.API", function (namespace)
       --DebugLog.Log("Navigator", $"Moving to: {x}/{y}/{z}");
       local Destination = WrapperWoW.Vector3(x, y, z)
       local Distance = WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, Destination:__clone__())
-      __LB__.Navigator.AllowMounting(Distance > 20)
+      __LB__.Navigator.AllowMounting(false)
+
       --DebugLog.Log("Navigator", "AllowMounting: " + (Distance > 20) + " Dist: " + Distance);
+
+      if Distance > 20 then
+        if IsOutdoors() and not IsMounted() and IsUsableSpell("Summon Random Favorite Mount") then
+          __LB__.UnitTagHandler(CastSpellByName, "Summon Random Favorite Mount", nil)
+        end
+      end
 
       __LB__.Navigator.MoveTo(x,y,z, index, proxmityTolerance);
     end
