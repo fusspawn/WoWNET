@@ -30,14 +30,14 @@ namespace Wrapper.WoW.Filters
 
             if (Result && AllowFriendly && GameObject.Friend)
             {
-                Console.WriteLine("Found Player F");
+                DebugLog.Log("BroBot", "Found Player F");
                 return true;
             }
 
             if (Result && AllowHostile && GameObject.Hostile)
             {
 
-                Console.WriteLine("Found Player H");
+                DebugLog.Log("BroBot", "Found Player H");
                 return true;
             }
 

@@ -25,7 +25,7 @@ namespace Wrapper.WoW
 
         public void Remove(string item)
         {
-            //  Console.WriteLine($"removing {LuaBox.Instance.ObjectName(item)} in List {this.GetType().Name}");
+            //  DebugLog.Log("BroBot", $"removing {LuaBox.Instance.ObjectName(item)} in List {this.GetType().Name}");
 
             if (FilteredObjects.ContainsKey(item))
             {

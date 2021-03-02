@@ -60,7 +60,7 @@ namespace Wrapper.UI
             UIContainer.EnabledCheckbox.OnValueChanged += (self, state, value) =>
             {
                 Program.IsRunning = UIContainer.EnabledCheckbox.GetValue<bool>();
-                Console.WriteLine("Toggled Bot: Is Running: " + Program.IsRunning);
+                DebugLog.Log("BroBot", "Toggled Bot: Is Running: " + Program.IsRunning);
 
                 LuaBox.Instance.Navigator.Stop();
             };
@@ -86,21 +86,21 @@ namespace Wrapper.UI
                 var Value = UIContainer.SelectedBotBase.GetValue<int>();
                 if (Value == 1)
                 {
-                    Console.WriteLine("Switching to PVP Bot base");
+                    DebugLog.Log("BroBot", "Switching to PVP Bot base");
                     Program.Base = new PVPBotBase();
                 }
                 else if (Value == 2)
                 {
-                    Console.WriteLine("Switching to Grind Bot base");
+                    DebugLog.Log("BroBot", "Switching to Grind Bot base");
                     Program.Base = new NativeGrindBotBase();
                 }
                 else if (Value == 3)
                 {
-                    Console.WriteLine("Switching to DataRecorder Bot base");
+                    DebugLog.Log("BroBot", "Switching to DataRecorder Bot base");
                     Program.Base = new DataLoggerBase();
                 } else
                 {
-                    Console.WriteLine("Selected Empty Bot Base");
+                    DebugLog.Log("BroBot", "Selected Empty Bot Base");
                     Program.Base = null;
                 }
 

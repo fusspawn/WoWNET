@@ -17772,7 +17772,7 @@ System.namespace("Wrapper", function (namespace)
         class.UIData.ProfileLoadButton = _StdUI:HighlightButton(class.UIData.MainUIFrame, 150, 25, "Load Profile")
         class.UIData.ProfileLoadButton:SetScript("OnClick", function ()
           if not  __LB__.FileExists(System.toString(DataBaseProfileFolder) .. System.toString(class.UIData.ProfileNameBox:GetValue(System.String)) .. ".json") then
-            System.Console.WriteLine("Dont be a retard. file is missing")
+            WrapperAPI.DebugLog.Log("BroBot", "Dont be a retard. file is missing", false)
             return
           end
 
@@ -17785,7 +17785,7 @@ System.namespace("Wrapper", function (namespace)
             this.ManualScanLocations:Add(WrapperWoW.Vector3(point.X, point.Y, point.Z))
           end
 
-          System.Console.WriteLine("Restored: " .. #this.ManualScanLocations .. " points")
+          WrapperAPI.DebugLog.Log("BroBot", "Restored: " .. #this.ManualScanLocations .. " points", false)
         end, System.Delegate)
 
         _StdUI:GlueTop(class.UIData.ProfileLoadButton, class.UIData.MainUIFrame, - 140, - 550, "TOP")
@@ -17821,10 +17821,10 @@ System.namespace("Wrapper", function (namespace)
         class.UIData.BotBaseSelector.OnValueChanged = System.DelegateCombine(class.UIData.BotBaseSelector.OnValueChanged, function (self, values)
           local Value = class.UIData.BotBaseSelector:GetValue(System.Int32)
           if Value == 1 then
-            System.Console.WriteLine("Switching to PVP Bot base")
+            WrapperAPI.DebugLog.Log("BroBot", "Switching to PVP Bot base", false)
             Wrapper.Program.Base = WrapperBotBases.PVPBotBase()
           elseif Value == 2 then
-            System.Console.WriteLine("Switching to Grind Bot base")
+            WrapperAPI.DebugLog.Log("BroBot", "Switching to Grind Bot base", false)
             Wrapper.Program.Base = WrapperBotBases.NativeGrindBotBase()
           end
         end)
@@ -17898,15 +17898,15 @@ System.namespace("Wrapper", function (namespace)
         this.LastHandledTime = Wrapper.Program.CurrentTime
         local HitPos = WrapperAPI.LuaBox.getInstance():RaycastPosition(X, Y, 10000, X, Y, - 10000, 1048849 --[[(int)LuaBox.ERaycastFlags.Collision]])
         if not (HitPos ~= nil) then
-          System.Console.WriteLine("Unable to add accurate scan point at: " .. X .. " / " .. Y .. " because Raycast failed to hit anything doing something crazy")
+          WrapperAPI.DebugLog.Log("BroBot", "Unable to add accurate scan point at: " .. X .. " / " .. Y .. " because Raycast failed to hit anything doing something crazy", false)
           local StartHeight = WrapperWoW.ObjectManager.getInstance().Player.Position.Z
 
           for i = StartHeight - 2000, StartHeight + 2000 - 500, 500 do
-            System.Console.WriteLine("adding rough scan point at: " .. X .. " / " .. Y .. " / " .. i)
+            WrapperAPI.DebugLog.Log("BroBot", "adding rough scan point at: " .. X .. " / " .. Y .. " / " .. i, false)
             this.ManualScanLocations:Add(WrapperWoW.Vector3(X, Y, i))
           end
         else
-          System.Console.WriteLine("adding manual scan point at: " .. X .. " / " .. Y .. " / " .. System.Nullable.Value(HitPos).Z)
+          WrapperAPI.DebugLog.Log("BroBot", "adding manual scan point at: " .. X .. " / " .. Y .. " / " .. System.Nullable.Value(HitPos).Z, false)
           this.ManualScanLocations:Add(System.Nullable.Value(HitPos))
         end
       end
@@ -17915,17 +17915,17 @@ System.namespace("Wrapper", function (namespace)
       this.HunterScanGridRange = System.Int32.Parse(class.UIData.HunterGridRangeEntry:GetValue(System.String))
       this.HunterScanGridHeightOffset = System.Int32.Parse(class.UIData.HunterScanGridHeightOffsetEntry:GetValue(System.String))
       this.HunterScanGridMaxHorizontalRange = System.Int32.Parse(class.UIData.HunterScanGridMaxHorizontalRangeBeforeReset:GetValue(System.String))
-      System.Console.WriteLine("Handling Hunter Logics")
+      WrapperAPI.DebugLog.Log("BroBot", "Handling Hunter Logics", false)
 
       if not WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling() and not WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() then
         if not IsUsableSpell("Eagle Eye") then
-          System.Console.WriteLine("Wants To Cast Eagle Eye but IsUsableSpell is false")
+          WrapperAPI.DebugLog.Log("BroBot", "Wants To Cast Eagle Eye but IsUsableSpell is false", false)
           return
         end
 
         if not  __LB__.IsAoEPending() then
           __LB__.UnitTagHandler(CastSpellByName, "Eagle Eye", nil)
-          System.Console.WriteLine("Casting Eagle Eye")
+          WrapperAPI.DebugLog.Log("BroBot", "Casting Eagle Eye", false)
           return
         end
 
@@ -17936,7 +17936,7 @@ System.namespace("Wrapper", function (namespace)
 
         if #this.ManualScanLocations == 0 then
           if WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, CastLocation:__clone__()) > this.HunterScanGridMaxHorizontalRange then
-            System.Console.WriteLine("Reached Max Range - Reset And Move Up")
+            WrapperAPI.DebugLog.Log("BroBot", "Reached Max Range - Reset And Move Up", false)
             this.CastIndex = 1
             class.UIData.HunterScanGridHeightOffsetEntry:SetValue(this.HunterScanGridMaxHorizontalRange + 175)
             return
@@ -17945,16 +17945,16 @@ System.namespace("Wrapper", function (namespace)
 
 
         __LB__.ClickPosition(CastLocation.X, CastLocation.Y, CastLocation.Z, false)
-        System.Console.WriteLine("Clicking At Cast Location")
+        WrapperAPI.DebugLog.Log("BroBot", "Clicking At Cast Location", false)
         this.CastTimeStamp = Wrapper.Program.CurrentTime
       else
         if GetTime() - this.CastTimeStamp > 10 then
-          System.Console.WriteLine("Have been chilling a bit. Recast")
+          WrapperAPI.DebugLog.Log("BroBot", "Have been chilling a bit. Recast", false)
           MoveForwardStart()
           MoveForwardStop()
           return
         else
-          System.Console.WriteLine("Waiting " .. 10 - (GetTime() - this.CastTimeStamp) .. " more seconds for shit to load")
+          WrapperAPI.DebugLog.Log("BroBot", "Waiting " .. 10 - (GetTime() - this.CastTimeStamp) .. " more seconds for shit to load", false)
         end
       end
     end
@@ -17967,7 +17967,7 @@ System.namespace("Wrapper", function (namespace)
       else
         if #this.ManualScanLocations <= this.CastIndex then
           this.CastIndex = 0
-          System.Console.WriteLine("Completed Map Scan. Reset")
+          WrapperAPI.DebugLog.Log("BroBot", "Completed Map Scan. Reset", false)
         end
 
         return this.ManualScanLocations:get(this.CastIndex)
@@ -18033,7 +18033,7 @@ System.namespace("Wrapper", function (namespace)
     end
     ThrowWowErrors = true
     Main = function (args)
-      System.Console.WriteLine("BroBot V2 Loading")
+      WrapperAPI.DebugLog.Log("BroBot", "BroBot V2 Loading", false)
       __LB__.LoadScript("NavigatorNightly")
       __LB__.LoadScript("AntiAFK")
       __LB__.LoadScript("LibDrawNightly")
@@ -18042,7 +18042,7 @@ System.namespace("Wrapper", function (namespace)
       WrapperAPI.LibJson.Init()
       WrapperWoW.ObjectManager.getInstance():Pulse()
 
-      System.Console.WriteLine("BroBot V2 Loaded Libs")
+      WrapperAPI.DebugLog.Log("BroBot", "BroBot V2 Loaded Libs", false)
 
       class.MainUI = WrapperUI.BotMainUI()
 
@@ -18060,7 +18060,12 @@ System.namespace("Wrapper", function (namespace)
             end
           end, function (default)
             local E = default
-            System.Console.WriteLine("Exception in mainBot Thread: " .. System.toString(E:getMessage()) .. " StackTrace: " .. System.toString(debugstack()))
+            local DebugStack = debugstack()
+            if DLAPI then DLAPI.DebugLog("ObjectManagerError", E.Message + " StackTrace: " + DebugStack) end                          
+
+            WrapperAPI.DebugLog.Log("BroBot", "Exception in mainBot Thread: " .. System.toString(E:getMessage()) .. " StackTrace: " .. System.toString(DebugStack), false)
+
+
             WrapperUI.NativeErrorLoggerUI.getInstance():AddErrorMessage(E:getMessage(), debugstack())
           end)
         else
@@ -18091,6 +18096,25 @@ System.namespace("Wrapper", function (namespace)
       static = static
     }
     return class
+  end)
+end)
+
+end
+do
+local System = System
+System.namespace("Wrapper.API", function (namespace)
+  namespace.class("DebugLog", function (namespace)
+    local Log
+    Log = function (Object, Message, Print)
+      if DLAPI then DLAPI.DebugLog(Object, Message) else print("[" .. Object .. "]: " .. Message) end                          
+
+      if Print then
+        System.Console.WriteLine("BroBot", Message)
+      end
+    end
+    return {
+      Log = Log
+    }
   end)
 end)
 
@@ -19303,6 +19327,10 @@ end)
 end
 do
 local System = System
+local WrapperAPI
+System.import(function (out)
+  WrapperAPI = Wrapper.API
+end)
 System.namespace("Wrapper", function (namespace)
   namespace.class("StdUI", function (namespace)
     local IsInjected, Init
@@ -19375,7 +19403,7 @@ System.namespace("Wrapper", function (namespace)
     IsInjected = false
     Init = function ()
       if not IsInjected then
-        System.Console.WriteLine("Injecting StdUI")
+        WrapperAPI.DebugLog.Log("BroBot", "Injecting StdUI", false)
         --LibStub is a simple versioning stub meant for use in Libraries.http://www.wowace.com/wiki/LibStub for more info
         --LibStub is hereby placed in the Public Domain Credits: Kaelten, Cladhaire, ckknight, Mikk, Ammo, Nevcairiel, joshborke
         local LIBSTUB_MAJOR, LIBSTUB_MINOR = "LibStub", 2-- NEVER MAKE THIS AN SVN REVISION! IT NEEDS TO BE USABLE IN ALL REPOS!
@@ -23772,7 +23800,7 @@ System.namespace("Wrapper", function (namespace)
                   fZ()
                   g8()
                   gh()
-        System.Console.WriteLine("StdUI was Injected")
+        WrapperAPI.DebugLog.Log("BroBot", "StdUI was Injected", false)
         IsInjected = true
       end
     end
@@ -23870,12 +23898,14 @@ end
 do
 local System = System
 local Wrapper
+local WrapperAPI
 local WrapperBotBases
 local WrapperHelpers
 local WrapperWoW
 local WrapperWoWFilters
 System.import(function (out)
   Wrapper = out.Wrapper
+  WrapperAPI = Wrapper.API
   WrapperBotBases = Wrapper.BotBases
   WrapperHelpers = Wrapper.Helpers
   WrapperWoW = Wrapper.WoW
@@ -23938,7 +23968,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
     end
     Pulse = function (this)
       if WrapperWoW.ObjectManager.getInstance().Player == nil or not (__LB__.Navigator ~= nil) then
-        System.Console.WriteLine("Waiting on Player to spawn in ObjectManager")
+        WrapperAPI.DebugLog.Log("BroBot", "Waiting on Player to spawn in ObjectManager", false)
         return
       end
 
@@ -23975,7 +24005,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
       end
     end
     RunBattleGroundLogic = function (this)
-      -- Console.WriteLine("In Battleground");
+      -- DebugLog.Log("BroBot", "In Battleground");
 
       this.SmartMove:Pulse()
       this.SmartTarget:Pulse()
@@ -23998,7 +24028,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
 
 
       if BestTarget ~= nil then
-        --Console.WriteLine("BestTarget: " + BestTarget.Name);
+        --DebugLog.Log("BroBot", "BestTarget: " + BestTarget.Name);
         if WrapperWoW.ObjectManager.getInstance().Player.TargetGUID ~= BestTarget.TargetGUID then
           BestTarget:Target()
           RunMacroText("/startattack")
@@ -24139,7 +24169,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
     SaveConfig = function (this)
       local DirectoryPath = System.toString( __LB__.GetBaseDirectory()) .. "\\BroBot\\Config\\NativeGrind\\"
       local ConfigString = LibJSON.Serialize(class.ConfigOptions)
-      System.Console.WriteLine("Saving ConfigString: " .. System.toString(ConfigString))
+      WrapperAPI.DebugLog.Log("BroBot", "Saving ConfigString: " .. System.toString(ConfigString), false)
 
        __LB__.WriteFile(System.toString(DirectoryPath) .. System.toString(System.toString(WrapperWoW.ObjectManager.getInstance().Player.Name) .. "-" .. System.toString(GetRealmName()) .. ".NativeGrind.json"), ConfigString, false)
     end
@@ -24164,7 +24194,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
       UIContainer.AllowGather = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Gathering", 200, 25)
       UIContainer.AllowGather:SetChecked(true)
       UIContainer.AllowGather.OnValueChanged = System.DelegateCombine(UIContainer.AllowGather.OnValueChanged, function (self, state, value)
-        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        WrapperAPI.DebugLog.Log("BroBot", "OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value), false)
         class.ConfigOptions.AllowGather = state
         SaveConfig(this)
       end)
@@ -24174,7 +24204,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
       UIContainer.AllowSkin = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Skinning", 200, 25)
       UIContainer.AllowSkin:SetChecked(class.ConfigOptions.AllowSkin)
       UIContainer.AllowSkin.OnValueChanged = System.DelegateCombine(UIContainer.AllowSkin.OnValueChanged, function (self, state, value)
-        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        WrapperAPI.DebugLog.Log("BroBot", "OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value), false)
         class.ConfigOptions.AllowSkin = state
         SaveConfig(this)
       end)
@@ -24184,7 +24214,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
       UIContainer.AllowLoot = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Looting", 200, 25)
       UIContainer.AllowLoot:SetChecked(class.ConfigOptions.AllowLoot)
       UIContainer.AllowLoot.OnValueChanged = System.DelegateCombine(UIContainer.AllowLoot.OnValueChanged, function (self, state, value)
-        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        WrapperAPI.DebugLog.Log("BroBot", "OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value), false)
         class.ConfigOptions.AllowLoot = state
         SaveConfig(this)
       end)
@@ -24195,7 +24225,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
 
       UIContainer.AllowPullingMobs:SetChecked(class.ConfigOptions.AllowPullingMobs)
       UIContainer.AllowPullingMobs.OnValueChanged = System.DelegateCombine(UIContainer.AllowPullingMobs.OnValueChanged, function (self, state, value)
-        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        WrapperAPI.DebugLog.Log("BroBot", "OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value), false)
         class.ConfigOptions.AllowPullingMobs = state
         SaveConfig(this)
       end)
@@ -24205,7 +24235,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
       UIContainer.AllowSelfDefense = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Self Defense", 200, 25)
       UIContainer.AllowSelfDefense:SetChecked(class.ConfigOptions.AllowSelfDefense)
       UIContainer.AllowSelfDefense.OnValueChanged = System.DelegateCombine(UIContainer.AllowSelfDefense.OnValueChanged, function (self, state, value)
-        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        WrapperAPI.DebugLog.Log("BroBot", "OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value), false)
         class.ConfigOptions.AllowSelfDefense = state
         SaveConfig(this)
       end)
@@ -24216,7 +24246,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
       UIContainer.AllowPullingYellows = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Allow Pulling Yellows", 200, 25)
       UIContainer.AllowPullingYellows:SetChecked(class.ConfigOptions.AllowPullingYellows)
       UIContainer.AllowPullingYellows.OnValueChanged = System.DelegateCombine(UIContainer.AllowPullingYellows.OnValueChanged, function (self, state, value)
-        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        WrapperAPI.DebugLog.Log("BroBot", "OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value), false)
         class.ConfigOptions.AllowPullingYellows = state
         SaveConfig(this)
       end)
@@ -24226,7 +24256,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
       UIContainer.IgnoreElitesAndBosses = Wrapper.Program.MainUI.StdUI:Checkbox(UIContainer.Container, "Ignore Elites And Bosses", 200, 25)
       UIContainer.IgnoreElitesAndBosses:SetChecked(class.ConfigOptions.IgnoreElitesAndBosses)
       UIContainer.IgnoreElitesAndBosses.OnValueChanged = System.DelegateCombine(UIContainer.IgnoreElitesAndBosses.OnValueChanged, function (self, state, value)
-        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value))
+        WrapperAPI.DebugLog.Log("BroBot", "OnValueChanged: " .. System.toString(self) .. " " .. System.toString(state) .. " " .. System.toString(value), false)
         class.ConfigOptions.IgnoreElitesAndBosses = state
         SaveConfig(this)
       end)
@@ -24238,7 +24268,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
       UIContainer.CombatRange = Wrapper.Program.MainUI.StdUI:NumericBox(UIContainer.Container, 150, 25, class.ConfigOptions.CombatRange .. "")
       UIContainer.CombatRange:SetValue(class.ConfigOptions.CombatRange)
       UIContainer.CombatRange.OnValueChanged = System.DelegateCombine(UIContainer.CombatRange.OnValueChanged, function (self, value)
-        System.Console.WriteLine("OnValueChanged: " .. System.toString(self) .. " " .. value)
+        WrapperAPI.DebugLog.Log("BroBot", "OnValueChanged: " .. System.toString(self) .. " " .. value, false)
         class.ConfigOptions.CombatRange = value
         SaveConfig(this)
       end)
@@ -24907,12 +24937,14 @@ end)
 end
 do
 local System = System
+local WrapperAPI
 local WrapperDatabase
 local WrapperWoW
 local ListVector3
 local ListNPCLocationInfo
 local ListNodeLocationInfo
 System.import(function (out)
+  WrapperAPI = Wrapper.API
   WrapperDatabase = Wrapper.Database
   WrapperWoW = Wrapper.WoW
   ListVector3 = System.List(WrapperWoW.Vector3)
@@ -24950,7 +24982,7 @@ System.namespace("Wrapper.Database", function (namespace)
         local continue
         repeat
           if WrapperDatabase.WoWDatabase.BannedObjectIDs:Contains(node.ObjectId) then
-            System.Console.WriteLine("Removing Banned Repair Vendor From DataBase")
+            WrapperAPI.DebugLog.Log("BroBot", "Removing Banned Repair Vendor From DataBase", false)
             continue = true
             break
           end
@@ -24975,7 +25007,7 @@ System.namespace("Wrapper.Database", function (namespace)
         local continue
         repeat
           if WrapperDatabase.WoWDatabase.BannedObjectIDs:Contains(node.ObjectId) then
-            System.Console.WriteLine("Removing Banned Vendor From DataBase")
+            WrapperAPI.DebugLog.Log("BroBot", "Removing Banned Vendor From DataBase", false)
             continue = true
             break
           end
@@ -25162,12 +25194,14 @@ local System = System
 local Linq = System.Linq.Enumerable
 local ListInt32 = System.List(System.Int32)
 local HashSetInt32 = System.HashSet(System.Int32)
+local WrapperAPI
 local WrapperDatabase
 local WrapperWoW
 local ListNPCLocationInfo
 local ListNodeLocationInfo
 local DictInt32MapDataEntry
 System.import(function (out)
+  WrapperAPI = Wrapper.API
   WrapperDatabase = Wrapper.Database
   WrapperWoW = Wrapper.WoW
   ListNPCLocationInfo = System.List(WrapperDatabase.NPCLocationInfo)
@@ -25268,7 +25302,7 @@ System.namespace("Wrapper.Database", function (namespace)
           extern.Name = Unit.Name
           MapDatabase.Repair:Add(extern)
 
-          System.Console.WriteLine("[WoWDatabase] Found New Repair NPC: " .. System.toString(Unit.Name))
+          WrapperAPI.DebugLog.Log("BroBot", "[WoWDatabase] Found New Repair NPC: " .. System.toString(Unit.Name), false)
           IsDirty = true
         end
       end
@@ -25304,7 +25338,7 @@ System.namespace("Wrapper.Database", function (namespace)
           extern.Name = Unit.Name
           MapDatabase.Vendors:Add(extern)
 
-          System.Console.WriteLine("[WoWDatabase] Found New Vendor NPC: " .. System.toString(Unit.Name))
+          WrapperAPI.DebugLog.Log("BroBot", "[WoWDatabase] Found New Vendor NPC: " .. System.toString(Unit.Name), false)
           IsDirty = true
         end
       end
@@ -25340,7 +25374,7 @@ System.namespace("Wrapper.Database", function (namespace)
           extern.Name = Unit.Name
           MapDatabase.InnKeepers:Add(extern)
 
-          System.Console.WriteLine("[WoWDatabase] Found New InnKeeper NPC: " .. System.toString(Unit.Name))
+          WrapperAPI.DebugLog.Log("BroBot", "[WoWDatabase] Found New InnKeeper NPC: " .. System.toString(Unit.Name), false)
           IsDirty = true
         end
       end
@@ -25376,7 +25410,7 @@ System.namespace("Wrapper.Database", function (namespace)
           extern.Name = Unit.Name
           MapDatabase.FlightMaster:Add(extern)
 
-          System.Console.WriteLine("[WoWDatabase] Found New Flightmaster NPC: " .. System.toString(Unit.Name))
+          WrapperAPI.DebugLog.Log("BroBot", "[WoWDatabase] Found New Flightmaster NPC: " .. System.toString(Unit.Name), false)
           IsDirty = true
         end
       end
@@ -25412,7 +25446,7 @@ System.namespace("Wrapper.Database", function (namespace)
           extern.Name = Unit.Name
           MapDatabase.MailBoxes:Add(extern)
 
-          System.Console.WriteLine("[WoWDatabase] Found New MailBox NPC: " .. System.toString(Unit.Name))
+          WrapperAPI.DebugLog.Log("BroBot", "[WoWDatabase] Found New MailBox NPC: " .. System.toString(Unit.Name), false)
           IsDirty = true
         end
       end
@@ -25440,7 +25474,7 @@ System.namespace("Wrapper.Database", function (namespace)
         local Path = System.toString( __LB__.GetBaseDirectory()) .. "\\BroBot\\Database\\MapData\\" .. MapId .. ".db"
         local Data = GetMapDatabase(MapId)
          __LB__.WriteFile(Path, LibJSON.Serialize(Data), false)
-        System.Console.WriteLine("[WoWDatabase] Persisted Changes to MapId: " .. MapId)
+        WrapperAPI.DebugLog.Log("BroBot", "[WoWDatabase] Persisted Changes to MapId: " .. MapId, false)
       end
 
       DirtyMapIds:Clear()
@@ -25461,7 +25495,7 @@ System.namespace("Wrapper.Database", function (namespace)
 
 
       if IsMailBox then
-        System.Console.WriteLine("Handling MailBox")
+        WrapperAPI.DebugLog.Log("BroBot", "Handling MailBox", false)
 
         if not Linq.Any(MapDatabase.MailBoxes, function (x)
           return x.ObjectId == Unit.ObjectId and WrapperWoW.Vector3.Distance(Unit.Position, WrapperWoW.Vector3(x.X, x.Y, x.Z)) < class.GRID_SIZE
@@ -25477,7 +25511,7 @@ System.namespace("Wrapper.Database", function (namespace)
           default.Name = Unit.Name
           MapDatabase.MailBoxes:Add(default)
 
-          System.Console.WriteLine("[WoWDatabase] Found New MailBox GameObject: " .. System.toString(Unit.Name))
+          WrapperAPI.DebugLog.Log("BroBot", "[WoWDatabase] Found New MailBox GameObject: " .. System.toString(Unit.Name), false)
           IsDirty = true
         end
 
@@ -25499,7 +25533,7 @@ System.namespace("Wrapper.Database", function (namespace)
           default.Name = Unit.Name
           MapDatabase.Nodes:Add(default)
 
-          System.Console.WriteLine("[WoWDatabase] Found New Fishing Node: " .. System.toString(Unit.Name))
+          WrapperAPI.DebugLog.Log("BroBot", "[WoWDatabase] Found New Fishing Node: " .. System.toString(Unit.Name), false)
           IsDirty = true
         end
       end
@@ -25521,7 +25555,7 @@ System.namespace("Wrapper.Database", function (namespace)
         default.Name = Unit.Name
         MapDatabase.Nodes:Add(default)
 
-        System.Console.WriteLine("[WoWDatabase] Found New Harvest Node: " .. System.toString(Unit.Name))
+        WrapperAPI.DebugLog.Log("BroBot", "[WoWDatabase] Found New Harvest Node: " .. System.toString(Unit.Name), false)
         IsDirty = true
       end
 
@@ -25674,11 +25708,11 @@ System.namespace("Wrapper.Helpers", function (namespace)
     local GetGlobalFrom_G_Namespace
     GetGlobalFrom_G_Namespace = function (PropertyChain, T)
       local CurrentObject = _G[PropertyChain:get(0)]
-      --Console.WriteLine("Aquired Global Object: " + PropertyChain[0]);
+      --DebugLog.Log("BroBot", "Aquired Global Object: " + PropertyChain[0]);
       local Index = 1
 
       while Index < #PropertyChain do
-        --Console.WriteLine("Trying To Access Property: " + PropertyChain[Index]);
+        --DebugLog.Log("BroBot", "Trying To Access Property: " + PropertyChain[Index]);
         local NameValue = PropertyChain:get(Index)
         CurrentObject = CurrentObject[NameValue]
         Index = Index + 1
@@ -25743,7 +25777,7 @@ System.namespace("Wrapper.Helpers", function (namespace)
         return x.Value.GUID ~= WrapperWoW.ObjectManager.getInstance().Player.GUID and not x.Value.Dead
       end)
 
-      --Console.WriteLine("Smart Move Found " + ValidUnits.Count() + " Units");
+      --DebugLog.Log("BroBot", "Smart Move Found " + ValidUnits.Count() + " Units");
 
       for _, unit in System.each(ValidUnits) do
         local score = 0
@@ -25763,7 +25797,7 @@ System.namespace("Wrapper.Helpers", function (namespace)
           -- No suicde plx.
         end
 
-        --Console.WriteLine("Scored New Unit: " + unit.Name + " score: " + score);
+        --DebugLog.Log("BroBot", "Scored New Unit: " + unit.Name + " score: " + score);
         local default = WrapperHelpers.ScoredWowPlayer()
         default.Player = System.as(unit.Value, WrapperWoW.WoWPlayer)
         default.Score = score
@@ -25872,6 +25906,7 @@ do
 local System = System
 local Linq = System.Linq.Enumerable
 local Wrapper
+local WrapperAPI
 local WrapperBotBases
 local WrapperHelpers
 local WrapperNativeBehaviors
@@ -25882,6 +25917,7 @@ local WrapperWoWFilters
 local ListSmartObjectiveTask
 System.import(function (out)
   Wrapper = out.Wrapper
+  WrapperAPI = Wrapper.API
   WrapperBotBases = Wrapper.BotBases
   WrapperHelpers = Wrapper.Helpers
   WrapperNativeBehaviors = Wrapper.NativeBehaviors
@@ -25931,7 +25967,7 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
           end
         until 1
 
-        --   Console.WriteLine("Pushed a task of Type: " + NextObjective.TaskType);
+        --   DebugLog.Log("BroBot", "Pushed a task of Type: " + NextObjective.TaskType);
       else
         WrapperBotBases.NativeGrindBotBase.StateMachine.States:Push(WrapperNativeGrindTasks.NativeGrindSearchForNode(class.SmartObjective))
       end
@@ -26000,7 +26036,7 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
       WrapperWoW.ObjectManager.getInstance():Pulse()
       this.Tasks:Clear()
 
-      --Console.WriteLine($"Units: {Units.GetUnits().Count} Gather: {GatheringNodes.GetObjects().Count} AllObjects: {ObjectManager.Instance.AllObjects.Count}");
+      --DebugLog.Log("BroBot", $"Units: {Units.GetUnits().Count} Gather: {GatheringNodes.GetObjects().Count} AllObjects: {ObjectManager.Instance.AllObjects.Count}");
 
 
       if not WrapperWoW.ObjectManager.getInstance().Player.IsInCombat or not WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowSelfDefense then
@@ -26048,28 +26084,28 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
           local _Unit = Unit.Value
 
           if __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) or _Unit.Reaction > (WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowPullingYellows and 4 or 3) or not _Unit:getAttackable() then
-            --Console.WriteLine($"Skipping {Unit.Value.Name} Its dead or shit reaction");
+            --DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} Its dead or shit reaction");
             continue = true
             break
           end
 
           if __LB__.UnitTagHandler(UnitIsTrivial, Unit.Value.GUID) or __LB__.UnitTagHandler(UnitCreatureType, Unit.Value.GUID) == "Critter" then
-            -- Console.WriteLine($"Skipping {Unit.Value.Name} Its Trivial or a Critter");
+            -- DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} Its Trivial or a Critter");
             continue = true
             break
           end
 
-          -- Console.WriteLine("Found Valid Combat Target");
+          -- DebugLog.Log("BroBot", "Found Valid Combat Target");
 
           local score = 0
           score = score + (this.BASE_SCORE - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)) + 0.25
 
           if __LB__.UnitTagHandler(UnitAffectingCombat, _Unit.GUID) and _Unit.TargetGUID == WrapperWoW.ObjectManager.getInstance().Player.GUID then
-            System.Console.WriteLine("Found In Combat Unit")
+            WrapperAPI.DebugLog.Log("BroBot", "Found In Combat Unit", false)
             score = score + 500
           else
             if not WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowPullingMobs then
-              --Console.WriteLine($"Skipping {Unit.Value.Name} AllowPull Is off");
+              --DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} AllowPull Is off");
               --dont pull this one if allow pulling is off.
               continue = true
               break
@@ -26134,9 +26170,11 @@ end
 do
 local System = System
 local Wrapper
+local WrapperAPI
 local WrapperBotBases
 System.import(function (out)
   Wrapper = out.Wrapper
+  WrapperAPI = Wrapper.API
   WrapperBotBases = Wrapper.BotBases
 end)
 System.namespace("Wrapper.UI", function (namespace)
@@ -26173,7 +26211,7 @@ System.namespace("Wrapper.UI", function (namespace)
       this.UIContainer.EnabledCheckbox = this.StdUI:Checkbox(this.UIContainer.MainBotUIFrame, "Enabled", 150, 25)
       this.UIContainer.EnabledCheckbox.OnValueChanged = System.DelegateCombine(this.UIContainer.EnabledCheckbox.OnValueChanged, function (self, state, value)
         Wrapper.Program.IsRunning = this.UIContainer.EnabledCheckbox:GetValue(System.Boolean)
-        System.Console.WriteLine("Toggled Bot: Is Running: " .. System.toString(Wrapper.Program.IsRunning))
+        WrapperAPI.DebugLog.Log("BroBot", "Toggled Bot: Is Running: " .. System.toString(Wrapper.Program.IsRunning), false)
 
         __LB__.Navigator.Stop()
       end)
@@ -26195,16 +26233,16 @@ System.namespace("Wrapper.UI", function (namespace)
       this.UIContainer.SelectedBotBase.OnValueChanged = System.DelegateCombine(this.UIContainer.SelectedBotBase.OnValueChanged, function (self, values)
         local Value = this.UIContainer.SelectedBotBase:GetValue(System.Int32)
         if Value == 1 then
-          System.Console.WriteLine("Switching to PVP Bot base")
+          WrapperAPI.DebugLog.Log("BroBot", "Switching to PVP Bot base", false)
           Wrapper.Program.Base = WrapperBotBases.PVPBotBase()
         elseif Value == 2 then
-          System.Console.WriteLine("Switching to Grind Bot base")
+          WrapperAPI.DebugLog.Log("BroBot", "Switching to Grind Bot base", false)
           Wrapper.Program.Base = WrapperBotBases.NativeGrindBotBase()
         elseif Value == 3 then
-          System.Console.WriteLine("Switching to DataRecorder Bot base")
+          WrapperAPI.DebugLog.Log("BroBot", "Switching to DataRecorder Bot base", false)
           Wrapper.Program.Base = Wrapper.DataLoggerBase()
         else
-          System.Console.WriteLine("Selected Empty Bot Base")
+          WrapperAPI.DebugLog.Log("BroBot", "Selected Empty Bot Base", false)
           Wrapper.Program.Base = nil
         end
 
@@ -26268,6 +26306,10 @@ end)
 end
 do
 local System = System
+local WrapperAPI
+System.import(function (out)
+  WrapperAPI = Wrapper.API
+end)
 System.namespace("Wrapper.UI", function (namespace)
   namespace.class("SlashCommands", function (namespace)
     local RegisterSlashCommand
@@ -26275,7 +26317,7 @@ System.namespace("Wrapper.UI", function (namespace)
       _G["SLASH_" .. System.toString(command)] = "/" .. System.toString(command)
       SlashCmdList[command] = Function;
 
-      System.Console.WriteLine("Registed /" .. System.toString(command) .. " slash command")
+      WrapperAPI.DebugLog.Log("BroBot", "Registed /" .. System.toString(command) .. " slash command", false)
     end
     return {
       RegisterSlashCommand = RegisterSlashCommand
@@ -26350,7 +26392,7 @@ System.namespace("Wrapper.WoW", function (namespace)
       return this.FilteredUnits
     end
     Remove = function (this, item)
-      --  Console.WriteLine($"removing {LuaBox.Instance.ObjectName(item)} in List {this.GetType().Name}");
+      --  DebugLog.Log("BroBot", $"removing {LuaBox.Instance.ObjectName(item)} in List {this.GetType().Name}");
 
       if this.FilteredObjects:ContainsKey(item) then
         this.FilteredObjects:RemoveKey(item)
@@ -26469,9 +26511,11 @@ end)
 end
 do
 local System = System
+local WrapperAPI
 local WrapperDatabase
 local WrapperWoW
 System.import(function (out)
+  WrapperAPI = Wrapper.API
   WrapperDatabase = Wrapper.Database
   WrapperWoW = Wrapper.WoW
 end)
@@ -26490,10 +26534,10 @@ System.namespace("Wrapper.WoW", function (namespace)
 
       this.CombatTrackingFrame:SetScript("OnEvent", function (self, _event)
         if _event == "PLAYER_REGEN_ENABLED" then
-          System.Console.WriteLine("[BroBot] Left Combat")
+          WrapperAPI.DebugLog.Log("BroBot", "[BroBot] Left Combat", false)
           this.IsInCombat = false
         elseif _event == "PLAYER_REGEN_DISABLED" then
-          System.Console.WriteLine("[BroBot] Entered Combat")
+          WrapperAPI.DebugLog.Log("BroBot", "[BroBot] Entered Combat", false)
           this.IsInCombat = true
         elseif _event == "PLAYER_DIED" then
           WrapperDatabase.WoWDatabase.InsertDeathSpotIfRequired(WrapperWoW.ObjectManager.getInstance().Player.Position)
@@ -26592,7 +26636,7 @@ System.namespace("Wrapper.WoW", function (namespace)
 
       --Angle = (Math.PI / 180) * Angle;
 
-      --Console.WriteLine($"Setting Player Angle/Pitch: {Angle} / {Pitch}");
+      --DebugLog.Log("BroBot", $"Setting Player Angle/Pitch: {Angle} / {Pitch}");
 
       if math.Abs(Angle - CurrentAngle) > 0.01 then
         if Angle > 0 then
@@ -26623,12 +26667,14 @@ local System = System
 local Linq = System.Linq.Enumerable
 local ListString = System.List(System.String)
 local Wrapper
+local WrapperAPI
 local WrapperWoW
 local ListWoWGameObject
 local DictStringWoWGameObject
 local ListObjectManagerFilteredList
 System.import(function (out)
   Wrapper = out.Wrapper
+  WrapperAPI = Wrapper.API
   WrapperWoW = Wrapper.WoW
   ListWoWGameObject = System.List(WrapperWoW.WoWGameObject)
   DictStringWoWGameObject = System.Dictionary(System.String, WrapperWoW.WoWGameObject)
@@ -26738,7 +26784,7 @@ System.namespace("Wrapper.WoW", function (namespace)
         end
       end, function (default)
         local E = default
-        System.Console.WriteLine("OM Error: " .. System.toString(E:getMessage()) .. "StackTrace: " .. System.toString(debugstack()))
+        WrapperAPI.DebugLog.Log("BroBot", "OM Error: " .. System.toString(E:getMessage()) .. "StackTrace: " .. System.toString(debugstack()), false)
       end)
     end
     FindByName = function (this, Name)
@@ -26811,11 +26857,11 @@ System.namespace("Wrapper.WoW", function (namespace)
       return false
     end
     TrackObject = function (this, _Object)
-      -- Console.WriteLine($"Tracking GameObject {_Object.Name} in List {this.GetType().Name}"); 
+      -- DebugLog.Log("BroBot", $"Tracking GameObject {_Object.Name} in List {this.GetType().Name}"); 
       this.FilteredObjects:AddKeyValue(_Object.GUID, _Object)
     end
     TrackUnit = function (this, _Object)
-      -- Console.WriteLine($"Tracking Unit {_Object.Name} in List {this.GetType().Name}");
+      -- DebugLog.Log("BroBot", $"Tracking Unit {_Object.Name} in List {this.GetType().Name}");
       this.FilteredUnits:AddKeyValue(_Object.GUID, _Object)
     end
     ProcessChanges = function (this)
@@ -27480,7 +27526,7 @@ System.namespace("Wrapper.NativeBehaviors.BehaviorStateMachine", function (names
         return false
       end
 
-      --Console.WriteLine($"Out Of time Data: Current: {WoWAPI.GetTime()}   Entry: {EntryTime} Max: {MaxStateTime}");
+      --DebugLog.Log("BroBot", $"Out Of time Data: Current: {WoWAPI.GetTime()}   Entry: {EntryTime} Max: {MaxStateTime}");
       return Wrapper.Program.CurrentTime - this.EntryTime > this.MaxStateTime
     end
     StringRepr = function (this)
@@ -27566,10 +27612,12 @@ end)
 end
 do
 local System = System
+local WrapperAPI
 local WrapperHelpers
 local WrapperNativeBehaviors
 local WrapperWoW
 System.import(function (out)
+  WrapperAPI = Wrapper.API
   WrapperHelpers = Wrapper.Helpers
   WrapperNativeBehaviors = Wrapper.NativeBehaviors
   WrapperWoW = Wrapper.WoW
@@ -27591,17 +27639,17 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       local NextTask = WrapperNativeBehaviors.NativeGrindBaseState.SmartObjective:GetNextTask(true)
 
       if NextTask ~= nil and NextTask.TaskType == 0 --[[SmartObjectiveTaskType.Kill]] then
-        System.Console.WriteLine("combat wants to take over")
+        WrapperAPI.DebugLog.Log("BroBot", "combat wants to take over", false)
         return true
       end
 
       --[[
-            Console.WriteLine("In Gather Complete");
-           Console.WriteLine($"Object Exists: {LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)}");
-           Console.WriteLine($"GatherAndNotCasting: {(HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling)}");
-           Console.WriteLine($"InCombat: {ObjectManager.Instance.Player.IsInCombat}");
-           Console.WriteLine($"Out Of Time: {IsOutOfTime()}");
-           Console.WriteLine($"BlackList: {Blacklist.IsOnBlackList(Task.TargetUnitOrObject.GUID)}");
+            DebugLog.Log("BroBot", "In Gather Complete");
+           DebugLog.Log("BroBot", $"Object Exists: {LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)}");
+           DebugLog.Log("BroBot", $"GatherAndNotCasting: {(HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling)}");
+           DebugLog.Log("BroBot", $"InCombat: {ObjectManager.Instance.Player.IsInCombat}");
+           DebugLog.Log("BroBot", $"Out Of Time: {IsOutOfTime()}");
+           DebugLog.Log("BroBot", $"BlackList: {Blacklist.IsOnBlackList(Task.TargetUnitOrObject.GUID)}");
             ]]
       return (not  __LB__.ObjectExists(this.Task.TargetUnitOrObject.GUID) or (this.HasGathered and not WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() and not WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling()) or WrapperWoW.ObjectManager.getInstance().Player.IsInCombat or this:IsOutOfTime() or WrapperHelpers.Blacklist.IsOnBlackList(this.Task.TargetUnitOrObject.GUID))
     end
@@ -27622,7 +27670,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       --SetMaxStateTime(5); // If we spend more than 5 seconds doing this. Just bail. If its still valid the object manager will reassign
 
       if WrapperWoW.ObjectManager.getInstance().Player:getIsCasting() or WrapperWoW.ObjectManager.getInstance().Player:getIsChanneling() then
-        System.Console.WriteLine("Blacklisting Gather Node" .. "")
+        WrapperAPI.DebugLog.Log("BroBot", "Blacklisting Gather Node" .. "", false)
         WrapperHelpers.Blacklist.AddToBlacklist(this.Task.TargetUnitOrObject.GUID, 120)
         this.HasGathered = true
       else
@@ -27651,12 +27699,14 @@ end
 do
 local System = System
 local Wrapper
+local WrapperAPI
 local WrapperBotBases
 local WrapperHelpers
 local WrapperNativeBehaviors
 local WrapperWoW
 System.import(function (out)
   Wrapper = out.Wrapper
+  WrapperAPI = Wrapper.API
   WrapperBotBases = Wrapper.BotBases
   WrapperHelpers = Wrapper.Helpers
   WrapperNativeBehaviors = Wrapper.NativeBehaviors
@@ -27720,14 +27770,14 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
                         && NextTask.TargetUnitOrObject.GUID != Task.TargetUnitOrObject.GUID)
                 {
                     Task = NextTask;
-                    Console.WriteLine("Reassigning Kill Task to better target");
+                    DebugLog.Log("BroBot", "Reassigning Kill Task to better target");
                 }
 
                 LastCombatCheck = Program.CurrentTime;
             }
             ]]
 
-      --Console.WriteLine("In Combat Task");
+      --DebugLog.Log("BroBot", "In Combat Task");
       this.Task.TargetUnitOrObject:Update()
       local TaskUnit = System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)
 
@@ -27756,7 +27806,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
 
       if Distance > CombatRange or not (System.as(this.Task.TargetUnitOrObject, WrapperWoW.WoWUnit)).LineOfSight then
-        --Console.WriteLine("Getting Closer");
+        --DebugLog.Log("BroBot", "Getting Closer");
         this._StringRepr = "Getting Closer: " .. Distance .. " TaskLocation: " .. this.Task.TargetUnitOrObject.Position:ToString()
         __LB__.Navigator.MoveTo(this.Task.TargetUnitOrObject.Position.X, this.Task.TargetUnitOrObject.Position.Y, this.Task.TargetUnitOrObject.Position.Z, 1, CombatRange - 1)
 
@@ -27775,14 +27825,14 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
 
         if WrapperWoW.ObjectManager.getInstance().Player.TargetGUID ~= this.Task.TargetUnitOrObject.GUID then
-          System.Console.WriteLine("Target")
+          WrapperAPI.DebugLog.Log("BroBot", "Target", false)
           __LB__.UnitTagHandler(TargetUnit, this.Task.TargetUnitOrObject.GUID)
         end
 
         --LuaBox.Instance.ObjectInteract(Task.TargetUnitOrObject.GUID);
 
         if not __LB__.UnitTagHandler(UnitAffectingCombat, "player") then
-          System.Console.WriteLine("StartAttack")
+          WrapperAPI.DebugLog.Log("BroBot", "StartAttack", false)
           select(2,__LB__.UnitTagHandler(InteractUnit, this.Task.TargetUnitOrObject.GUID))
           StartAttack()
         end
@@ -27875,9 +27925,11 @@ end)
 end
 do
 local System = System
+local WrapperAPI
 local WrapperDatabase
 local WrapperWoW
 System.import(function (out)
+  WrapperAPI = Wrapper.API
   WrapperDatabase = Wrapper.Database
   WrapperWoW = Wrapper.WoW
 end)
@@ -27891,7 +27943,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       local NPC = WrapperDatabase.WoWDatabase.GetClosestRepairNPC()
 
       if NPC == nil then
-        System.Console.WriteLine("Database has no repair NPC?!")
+        WrapperAPI.DebugLog.Log("BroBot", "Database has no repair NPC?!", false)
         return
       end
 
@@ -27907,7 +27959,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
       local NpcUnit = WrapperWoW.ObjectManager.FindNPCByObjectID(NPC.ObjectId)
       if NpcUnit == nil then
-        System.Console.WriteLine("Could not find NPC with ID " .. NPC.ObjectId .. " Name: " .. System.toString(NPC.Name) .. " at location: " .. NPCPosition:ToString() .. " ")
+        WrapperAPI.DebugLog.Log("BroBot", "Could not find NPC with ID " .. NPC.ObjectId .. " Name: " .. System.toString(NPC.Name) .. " at location: " .. NPCPosition:ToString() .. " ", false)
       end
 
 
@@ -27937,9 +27989,11 @@ end
 do
 local System = System
 local Linq = System.Linq.Enumerable
+local WrapperAPI
 local WrapperDatabase
 local WrapperWoW
 System.import(function (out)
+  WrapperAPI = Wrapper.API
   WrapperDatabase = Wrapper.Database
   WrapperWoW = Wrapper.WoW
 end)
@@ -27955,7 +28009,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       end
 
       if WrapperWoW.ObjectManager.getInstance().Player.IsInCombat then
-        System.Console.WriteLine("Switching to Combat?!")
+        WrapperAPI.DebugLog.Log("BroBot", "Switching to Combat?!", false)
         return true
       end
       return this.ObjectiveScanner:GetNextTask(true) ~= nil or WrapperWoW.ObjectManager.getInstance().Player.IsInCombat
@@ -27983,7 +28037,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
           this.TargetNode = AllNodes:get(System.Random():Next(0, #AllNodes - 1))
           this._StringRepr = "Moving to new destination: " .. System.ToInt32(this.TargetNode.X) .. " / " .. System.ToInt32(this.TargetNode.Y) .. " / " .. System.ToInt32(this.TargetNode.Z)
         else
-          System.Console.WriteLine("Unable to find a valid node in the database? Has the map been scanned?!")
+          WrapperAPI.DebugLog.Log("BroBot", "Unable to find a valid node in the database? Has the map been scanned?!", false)
           return
         end
       end
@@ -27992,7 +28046,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
       __LB__.Navigator.MoveTo(this.TargetNode.X, this.TargetNode.Y, this.TargetNode.Z, 1, 1)
 
       if WrapperWoW.Vector3.Distance(WrapperWoW.Vector3(this.TargetNode.X, this.TargetNode.Y, this.TargetNode.Z), WrapperWoW.ObjectManager.getInstance().Player.Position) < 10 then
-        System.Console.WriteLine("Got to target node with nothing to do. Lets give this one up and grab another")
+        WrapperAPI.DebugLog.Log("BroBot", "Got to target node with nothing to do. Lets give this one up and grab another", false)
         this.TargetNode = nil
       end
 
@@ -28015,8 +28069,10 @@ end
 do
 local System = System
 local Linq = System.Linq.Enumerable
+local WrapperAPI
 local WrapperWoW
 System.import(function (out)
+  WrapperAPI = Wrapper.API
   WrapperWoW = Wrapper.WoW
 end)
 System.namespace("Wrapper.WoW.Filters", function (namespace)
@@ -28029,7 +28085,7 @@ System.namespace("Wrapper.WoW.Filters", function (namespace)
 
       WrapperWoW.ObjectManager.getInstance().OnRemoveObject = System.DelegateCombine(WrapperWoW.ObjectManager.getInstance().OnRemoveObject, function (gameObject)
         if this.FilteredUnits:ContainsKey(gameObject.GUID) then
-          System.Console.WriteLine("RemovingDead Unit: " .. System.toString(gameObject.Name))
+          WrapperAPI.DebugLog.Log("BroBot", "RemovingDead Unit: " .. System.toString(gameObject.Name), false)
           this.FilteredUnits:RemoveKey(gameObject.GUID)
         end
       end)
@@ -28040,18 +28096,18 @@ System.namespace("Wrapper.WoW.Filters", function (namespace)
       this.EventFrame:SetScript("OnEvent", function (timeStamp, subevent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags)
         timeStamp, subevent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = CombatLogGetCurrentEventInfo()
 
-        --Console.WriteLine("CombatEvent: " + subevent);
+        --DebugLog.Log("BroBot", "CombatEvent: " + subevent);
         if subevent ~= "PARTY_KILL" then
           return
         end
 
         local DestExists = WrapperWoW.ObjectManager.getInstance().AllObjects:ContainsKey(destGUID)
         if not DestExists then
-          System.Console.WriteLine("DeadUnitsFilterList: Was given a dead event guid for an unknown unit")
+          WrapperAPI.DebugLog.Log("BroBot", "DeadUnitsFilterList: Was given a dead event guid for an unknown unit", false)
           return
         end
 
-        System.Console.WriteLine("Found Dead Unit: " .. System.toString(WrapperWoW.ObjectManager.getInstance().AllObjects:get(destGUID).Name))
+        WrapperAPI.DebugLog.Log("BroBot", "Found Dead Unit: " .. System.toString(WrapperWoW.ObjectManager.getInstance().AllObjects:get(destGUID).Name), false)
         this.FilteredUnits:AddKeyValue(destGUID, System.as(WrapperWoW.ObjectManager.getInstance().AllObjects:get(destGUID), WrapperWoW.WoWUnit))
       end, System.Delegate)
     end
@@ -28106,6 +28162,10 @@ end)
 end
 do
 local System = System
+local WrapperAPI
+System.import(function (out)
+  WrapperAPI = Wrapper.API
+end)
 System.namespace("Wrapper.WoW.Filters", function (namespace)
   namespace.class("PlayerFilterList", function (namespace)
     local FilterUnit, __ctor__
@@ -28118,12 +28178,12 @@ System.namespace("Wrapper.WoW.Filters", function (namespace)
       local Result = GameObject.ObjectType == 6 --[[EObjectType.Player]]
 
       if Result and this.AllowFriendly and GameObject:getFriend() then
-        System.Console.WriteLine("Found Player F")
+        WrapperAPI.DebugLog.Log("BroBot", "Found Player F", false)
         return true
       end
 
       if Result and this.AllowHostile and GameObject:getHostile() then
-        System.Console.WriteLine("Found Player H")
+        WrapperAPI.DebugLog.Log("BroBot", "Found Player H", false)
         return true
       end
 
@@ -28169,7 +28229,7 @@ System.namespace("Wrapper.WoW.Filters", function (namespace)
 
       local Result = GameObject.ObjectType == 5 --[[EObjectType.Unit]] and GameObject.ObjectType ~= 6 --[[EObjectType.Player]]
 
-      -- Console.WriteLine($"{GameObject.Name}: {Result}");
+      -- DebugLog.Log("BroBot", $"{GameObject.Name}: {Result}");
       return Result
     end
     return {
@@ -28212,6 +28272,7 @@ System.init({
     "Wrapper.WoW.ObjectManagerFilteredList",
     "Wrapper.WoW.WoWPlayer",
     "Wrapper.API.DataProviderBase",
+    "Wrapper.API.DebugLog",
     "Wrapper.API.LibDraw.LibDrawColor",
     "Wrapper.API.LibJson",
     "Wrapper.API.LibStub",

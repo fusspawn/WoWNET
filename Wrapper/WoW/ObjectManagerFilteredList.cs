@@ -21,12 +21,12 @@ namespace Wrapper.WoW
         public virtual bool FilterUnit(WoWUnit Unit) => false;
 
         public void TrackObject(WoWGameObject _Object) {
-           // Console.WriteLine($"Tracking GameObject {_Object.Name} in List {this.GetType().Name}"); 
+           // DebugLog.Log("BroBot", $"Tracking GameObject {_Object.Name} in List {this.GetType().Name}"); 
             FilteredObjects.Add(_Object.GUID, _Object); 
         }
         public void TrackUnit(WoWUnit _Object)
         {
-           // Console.WriteLine($"Tracking Unit {_Object.Name} in List {this.GetType().Name}");
+           // DebugLog.Log("BroBot", $"Tracking Unit {_Object.Name} in List {this.GetType().Name}");
             FilteredUnits.Add(_Object.GUID, _Object);
         } 
 

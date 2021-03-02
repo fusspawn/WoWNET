@@ -98,7 +98,7 @@ namespace Wrapper.BotBases
         {
             var DirectoryPath = $"{LuaBox.Instance.GetBaseDirectory()}\\BroBot\\Config\\NativeGrind\\";
             var ConfigString = LibJson.Serialize(ConfigOptions);
-            Console.WriteLine("Saving ConfigString: " + ConfigString);
+            DebugLog.Log("BroBot", "Saving ConfigString: " + ConfigString);
 
             LuaBox.Instance.WriteFile(DirectoryPath + $"{ObjectManager.Instance.Player.Name}-{WoWAPI.GetRealmName()}.NativeGrind.json", ConfigString, false);
         }
@@ -129,7 +129,7 @@ namespace Wrapper.BotBases
             UIContainer.AllowGather.SetChecked(true);
             UIContainer.AllowGather.OnValueChanged += (self, state, value) =>
             {
-                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                DebugLog.Log("BroBot", $"OnValueChanged: {self} {state} {value}");
                 ConfigOptions.AllowGather = state;
                 SaveConfig();
             };
@@ -140,7 +140,7 @@ namespace Wrapper.BotBases
             UIContainer.AllowSkin.SetChecked(ConfigOptions.AllowSkin);
             UIContainer.AllowSkin.OnValueChanged += (self, state, value) =>
             {
-                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                DebugLog.Log("BroBot", $"OnValueChanged: {self} {state} {value}");
                 ConfigOptions.AllowSkin = state;
                  SaveConfig();
              };
@@ -151,7 +151,7 @@ namespace Wrapper.BotBases
             UIContainer.AllowLoot.SetChecked(ConfigOptions.AllowLoot);
             UIContainer.AllowLoot.OnValueChanged += (self, state, value) =>
             {
-                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                DebugLog.Log("BroBot", $"OnValueChanged: {self} {state} {value}");
                 ConfigOptions.AllowLoot = state;
                  SaveConfig();
              };
@@ -163,7 +163,7 @@ namespace Wrapper.BotBases
             UIContainer.AllowPullingMobs.SetChecked(ConfigOptions.AllowPullingMobs);
             UIContainer.AllowPullingMobs.OnValueChanged += (self, state, value) =>
             {
-                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                DebugLog.Log("BroBot", $"OnValueChanged: {self} {state} {value}");
                 ConfigOptions.AllowPullingMobs = state;
                 SaveConfig();
             };
@@ -174,7 +174,7 @@ namespace Wrapper.BotBases
             UIContainer.AllowSelfDefense.SetChecked(ConfigOptions.AllowSelfDefense);
             UIContainer.AllowSelfDefense.OnValueChanged += (self, state, value) =>
             {
-                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                DebugLog.Log("BroBot", $"OnValueChanged: {self} {state} {value}");
                 ConfigOptions.AllowSelfDefense = state;
                 SaveConfig();
             };
@@ -186,7 +186,7 @@ namespace Wrapper.BotBases
             UIContainer.AllowPullingYellows.SetChecked(ConfigOptions.AllowPullingYellows);
             UIContainer.AllowPullingYellows.OnValueChanged += (self, state, value) =>
             {
-                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                DebugLog.Log("BroBot", $"OnValueChanged: {self} {state} {value}");
                 ConfigOptions.AllowPullingYellows = state;
                 SaveConfig();
             };
@@ -197,7 +197,7 @@ namespace Wrapper.BotBases
             UIContainer.IgnoreElitesAndBosses.SetChecked(ConfigOptions.IgnoreElitesAndBosses);
             UIContainer.IgnoreElitesAndBosses.OnValueChanged += (self, state, value) =>
             {
-                Console.WriteLine($"OnValueChanged: {self} {state} {value}");
+                DebugLog.Log("BroBot", $"OnValueChanged: {self} {state} {value}");
                 ConfigOptions.IgnoreElitesAndBosses = state;
                 SaveConfig();
             };
@@ -210,7 +210,7 @@ namespace Wrapper.BotBases
             UIContainer.CombatRange.SetValue(ConfigOptions.CombatRange);
             UIContainer.CombatRange.OnValueChanged += (self, value) =>
             {
-                Console.WriteLine($"OnValueChanged: {self} {value}");
+                DebugLog.Log("BroBot", $"OnValueChanged: {self} {value}");
                 ConfigOptions.CombatRange = value;
                 SaveConfig();
             };

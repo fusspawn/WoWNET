@@ -108,7 +108,7 @@ namespace Wrapper
         {
             if (!IsInjected)
             {
-                Console.WriteLine("Injecting StdUI");
+                DebugLog.Log("BroBot", "Injecting StdUI");
                 /*
 				 [[
 				 
@@ -4519,7 +4519,7 @@ namespace Wrapper
                 gh()
 	]]
 				*/
-                Console.WriteLine("StdUI was Injected");
+                DebugLog.Log("BroBot", "StdUI was Injected");
                 IsInjected = true;
             }
         }

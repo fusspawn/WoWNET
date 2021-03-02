@@ -28,17 +28,17 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
             if (NextTask != null && NextTask.TaskType == NativeGrindSmartObjective.SmartObjectiveTaskType.Kill)
             {
-                Console.WriteLine("combat wants to take over");
+                DebugLog.Log("BroBot", "combat wants to take over");
                 return true;
             }
 
             /*
-            Console.WriteLine("In Gather Complete");
-           Console.WriteLine($"Object Exists: {LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)}");
-           Console.WriteLine($"GatherAndNotCasting: {(HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling)}");
-           Console.WriteLine($"InCombat: {ObjectManager.Instance.Player.IsInCombat}");
-           Console.WriteLine($"Out Of Time: {IsOutOfTime()}");
-           Console.WriteLine($"BlackList: {Blacklist.IsOnBlackList(Task.TargetUnitOrObject.GUID)}");
+            DebugLog.Log("BroBot", "In Gather Complete");
+           DebugLog.Log("BroBot", $"Object Exists: {LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)}");
+           DebugLog.Log("BroBot", $"GatherAndNotCasting: {(HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling)}");
+           DebugLog.Log("BroBot", $"InCombat: {ObjectManager.Instance.Player.IsInCombat}");
+           DebugLog.Log("BroBot", $"Out Of Time: {IsOutOfTime()}");
+           DebugLog.Log("BroBot", $"BlackList: {Blacklist.IsOnBlackList(Task.TargetUnitOrObject.GUID)}");
             */
             return (!LuaBox.Instance.ObjectExists(Task.TargetUnitOrObject.GUID)
                 || (HasGathered && !ObjectManager.Instance.Player.IsCasting && !ObjectManager.Instance.Player.IsChanneling)
@@ -71,7 +71,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             if (ObjectManager.Instance.Player.IsCasting
                 || ObjectManager.Instance.Player.IsChanneling)
             {
-                Console.WriteLine($"Blacklisting Gather Node");
+                DebugLog.Log("BroBot", $"Blacklisting Gather Node");
                 Blacklist.AddToBlacklist(Task.TargetUnitOrObject.GUID, 120);
                 HasGathered = true;
             }

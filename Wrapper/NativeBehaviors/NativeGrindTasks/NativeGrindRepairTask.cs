@@ -31,7 +31,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             
             if (NPC == null)
             {
-                Console.WriteLine("Database has no repair NPC?!");
+                DebugLog.Log("BroBot", "Database has no repair NPC?!");
                 return;
 
             }
@@ -50,7 +50,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             var NpcUnit = ObjectManager.FindNPCByObjectID(NPC.ObjectId);
             if(NpcUnit == null)
             {
-                Console.WriteLine($"Could not find NPC with ID {NPC.ObjectId} Name: {NPC.Name} at location: {NPCPosition} ");
+                DebugLog.Log("BroBot", $"Could not find NPC with ID {NPC.ObjectId} Name: {NPC.Name} at location: {NPCPosition} ");
             }
 
 

@@ -17,7 +17,7 @@ namespace Wrapper
 
         public static void Main(string[] args)
         {
-            Console.WriteLine("BroBot V2 Loading");
+            DebugLog.Log("BroBot", "BroBot V2 Loading");
             LuaBox.Instance.LoadScript("NavigatorNightly");
             LuaBox.Instance.LoadScript("AntiAFK");
             LuaBox.Instance.LoadScript("LibDrawNightly");
@@ -26,7 +26,7 @@ namespace Wrapper
             LibJson.Init();
             ObjectManager.Instance.Pulse();
 
-            Console.WriteLine("BroBot V2 Loaded Libs");
+            DebugLog.Log("BroBot", "BroBot V2 Loaded Libs");
 
             Program.MainUI = new BotMainUI();
 
@@ -47,7 +47,16 @@ namespace Wrapper
                     }
                     catch (Exception E)
                     {
-                        Console.WriteLine("Exception in mainBot Thread: " + E.Message + " StackTrace: "  + WoWAPI.DebugStack());
+                        var DebugStack = WoWAPI.DebugStack();
+                        /*
+                          [[
+                                if DLAPI then DLAPI.DebugLog("ObjectManagerError", E.Message + " StackTrace: " + DebugStack) end                          
+                          ]]
+                        */
+
+                        DebugLog.Log("BroBot", "Exception in mainBot Thread: " + E.Message + " StackTrace: "  + DebugStack);
+
+
                         NativeErrorLoggerUI.Instance.AddErrorMessage(E.Message, WoWAPI.DebugStack());
                     }
                 }

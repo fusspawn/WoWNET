@@ -55,7 +55,7 @@ namespace Wrapper.Helpers
                 return x.Value.GUID != ObjectManager.Instance.Player.GUID && !x.Value.Dead;
             });
 
-            //Console.WriteLine("Smart Move Found " + ValidUnits.Count() + " Units");
+            //DebugLog.Log("BroBot", "Smart Move Found " + ValidUnits.Count() + " Units");
 
             foreach(var unit in ValidUnits)
             {
@@ -77,7 +77,7 @@ namespace Wrapper.Helpers
                     score = score - 1000; // No suicde plx.
                 }
 
-                //Console.WriteLine("Scored New Unit: " + unit.Name + " score: " + score);
+                //DebugLog.Log("BroBot", "Scored New Unit: " + unit.Name + " score: " + score);
                 Units.Add(new ScoredWowPlayer() { Player = unit.Value as WoWPlayer, Score = score });
             }
 

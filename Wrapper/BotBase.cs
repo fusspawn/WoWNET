@@ -262,7 +262,7 @@ namespace Wrapper
                 {
                     if (!LuaBox.Instance.FileExists(DataBaseProfileFolder + UIData.ProfileNameBox.GetValue<string>() + ".json"))
                     {
-                        Console.WriteLine("Dont be a retard. file is missing");
+                        DebugLog.Log("BroBot", "Dont be a retard. file is missing");
                         return;
                     }
 
@@ -278,7 +278,7 @@ namespace Wrapper
                         ManualScanLocations.Add(new Vector3(point.X, point.Y, point.Z));
                     }
 
-                    Console.WriteLine("Restored: " + ManualScanLocations.Count + " points");
+                    DebugLog.Log("BroBot", "Restored: " + ManualScanLocations.Count + " points");
                 });
 
                 _StdUI.GlueTop(UIData.ProfileLoadButton, UIData.MainUIFrame, -140, -550, "TOP");
@@ -317,12 +317,12 @@ namespace Wrapper
                 {
                     var Value = UIData.BotBaseSelector.GetValue<int>();
                     if (Value == 1) { 
-                        Console.WriteLine("Switching to PVP Bot base");    
+                        DebugLog.Log("BroBot", "Switching to PVP Bot base");    
                         Program.Base = new PVPBotBase();
                     } 
                     else if(Value == 2)
                     {
-                        Console.WriteLine("Switching to Grind Bot base");
+                        DebugLog.Log("BroBot", "Switching to Grind Bot base");
                         Program.Base = new NativeGrindBotBase();
                     }
                 };
@@ -422,18 +422,18 @@ namespace Wrapper
                 Vector3? HitPos = LuaBox.Instance.RaycastPosition(X, Y, 10000, X, Y, -10000, (int)LuaBox.ERaycastFlags.Collision);
                 if(!HitPos.HasValue)
                 {
-                    Console.WriteLine($"Unable to add accurate scan point at: {X} / {Y} because Raycast failed to hit anything doing something crazy");
+                    DebugLog.Log("BroBot", $"Unable to add accurate scan point at: {X} / {Y} because Raycast failed to hit anything doing something crazy");
                     double StartHeight = ObjectManager.Instance.Player.Position.Z;
 
                     for(double i = StartHeight - 2000; i < StartHeight + 2000; i += 500)
                     {
-                        Console.WriteLine($"adding rough scan point at: {X} / {Y} / {i}");
+                        DebugLog.Log("BroBot", $"adding rough scan point at: {X} / {Y} / {i}");
                         ManualScanLocations.Add(new WoW.Vector3(X,Y,i));
                     }
                 } 
                 else
                 {
-                    Console.WriteLine($"adding manual scan point at: {X} / {Y} / {HitPos.Value.Z}");
+                    DebugLog.Log("BroBot", $"adding manual scan point at: {X} / {Y} / {HitPos.Value.Z}");
                     ManualScanLocations.Add(HitPos.Value);
                 }
             }
@@ -451,21 +451,21 @@ namespace Wrapper
             HunterScanGridRange = int.Parse(UIData.HunterGridRangeEntry.GetValue<string>());
             HunterScanGridHeightOffset = int.Parse(UIData.HunterScanGridHeightOffsetEntry.GetValue<string>());
             HunterScanGridMaxHorizontalRange = int.Parse(UIData.HunterScanGridMaxHorizontalRangeBeforeReset.GetValue<string>());
-            Console.WriteLine("Handling Hunter Logics");
+            DebugLog.Log("BroBot", "Handling Hunter Logics");
 
             if (!ObjectManager.Instance.Player.IsChanneling
                 && !ObjectManager.Instance.Player.IsCasting)
             {
                 if (!WoWAPI.IsUsableSpell("Eagle Eye"))
                 {
-                    Console.WriteLine("Wants To Cast Eagle Eye but IsUsableSpell is false");
+                    DebugLog.Log("BroBot", "Wants To Cast Eagle Eye but IsUsableSpell is false");
                     return;
                 }
 
                 if (!LuaBox.Instance.IsAoEPending())
                 {
                     WoWAPI.CastSpellByName("Eagle Eye", null);
-                    Console.WriteLine("Casting Eagle Eye");
+                    DebugLog.Log("BroBot", "Casting Eagle Eye");
                     return;
                 }
 
@@ -479,7 +479,7 @@ namespace Wrapper
                     if (WoW.Vector3.Distance(ObjectManager.Instance.Player.Position, CastLocation)
                         > HunterScanGridMaxHorizontalRange)
                     {
-                        Console.WriteLine("Reached Max Range - Reset And Move Up");
+                        DebugLog.Log("BroBot", "Reached Max Range - Reset And Move Up");
                         CastIndex = 1;
                         UIData.HunterScanGridHeightOffsetEntry.SetValue(HunterScanGridMaxHorizontalRange + 175);
                         return;
@@ -488,7 +488,7 @@ namespace Wrapper
 
 
                  LuaBox.Instance.ClickPosition(CastLocation.X, CastLocation.Y, CastLocation.Z, false);
-                 Console.WriteLine("Clicking At Cast Location");
+                 DebugLog.Log("BroBot", "Clicking At Cast Location");
                  CastTimeStamp =Program.CurrentTime;
               
             }
@@ -496,13 +496,13 @@ namespace Wrapper
             {
                 if (WoWAPI.GetTime() - CastTimeStamp > 10)
                 {
-                    Console.WriteLine("Have been chilling a bit. Recast");
+                    DebugLog.Log("BroBot", "Have been chilling a bit. Recast");
                     WoWAPI.MoveForwardStart();
                     WoWAPI.MoveForwardStop();
                     return;
                 } else
                 {
-                    Console.WriteLine($"Waiting {10 - (WoWAPI.GetTime() - CastTimeStamp)} more seconds for shit to load");
+                    DebugLog.Log("BroBot", $"Waiting {10 - (WoWAPI.GetTime() - CastTimeStamp)} more seconds for shit to load");
                 }
             }
         }
@@ -523,7 +523,7 @@ namespace Wrapper
                 if(ManualScanLocations.Count <= CastIndex)
                 {
                     CastIndex = 0;
-                    Console.WriteLine("Completed Map Scan. Reset");
+                    DebugLog.Log("BroBot", "Completed Map Scan. Reset");
                 }
 
                 return ManualScanLocations[CastIndex];

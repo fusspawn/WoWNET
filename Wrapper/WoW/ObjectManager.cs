@@ -149,7 +149,7 @@ namespace Wrapper.WoW
             }
             catch (Exception E)
             {
-                Console.WriteLine("OM Error: " + E.Message + "StackTrace: " + WoWAPI.DebugStack());
+                DebugLog.Log("BroBot", "OM Error: " + E.Message + "StackTrace: " + WoWAPI.DebugStack());
             }
         }
 

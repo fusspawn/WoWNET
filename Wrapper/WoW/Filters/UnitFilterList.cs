@@ -39,7 +39,7 @@ namespace Wrapper.WoW.Filters
             var Result = GameObject.ObjectType == LuaBox.EObjectType.Unit
                      && GameObject.ObjectType != LuaBox.EObjectType.Player;
 
-           // Console.WriteLine($"{GameObject.Name}: {Result}");
+           // DebugLog.Log("BroBot", $"{GameObject.Name}: {Result}");
             return Result;
         }
     }

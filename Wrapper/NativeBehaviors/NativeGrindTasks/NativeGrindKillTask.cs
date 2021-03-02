@@ -80,14 +80,14 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                         && NextTask.TargetUnitOrObject.GUID != Task.TargetUnitOrObject.GUID)
                 {
                     Task = NextTask;
-                    Console.WriteLine("Reassigning Kill Task to better target");
+                    DebugLog.Log("BroBot", "Reassigning Kill Task to better target");
                 }
 
                 LastCombatCheck = Program.CurrentTime;
             }
             */
 
-            //Console.WriteLine("In Combat Task");
+            //DebugLog.Log("BroBot", "In Combat Task");
             Task.TargetUnitOrObject.Update();
             var TaskUnit = Task.TargetUnitOrObject as WoWUnit;
 
@@ -123,7 +123,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
             if (Distance > CombatRange || !(Task.TargetUnitOrObject as WoWUnit).LineOfSight)
             {
-                //Console.WriteLine("Getting Closer");
+                //DebugLog.Log("BroBot", "Getting Closer");
                 _StringRepr = $"Getting Closer: {Distance} TaskLocation: {Task.TargetUnitOrObject.Position}";
                 LuaBox.Instance.Navigator.MoveTo(Task.TargetUnitOrObject.Position.X, Task.TargetUnitOrObject.Position.Y, Task.TargetUnitOrObject.Position.Z, 1, CombatRange - 1 );
 
@@ -149,7 +149,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
                 if (ObjectManager.Instance.Player.TargetGUID != Task.TargetUnitOrObject.GUID)
                 {
-                    Console.WriteLine("Target");
+                    DebugLog.Log("BroBot", "Target");
                     WoWAPI.TargetUnit(Task.TargetUnitOrObject.GUID);
                 }
 
@@ -157,7 +157,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 
                 if (!WoWAPI.UnitAffectingCombat("player"))
                 {
-                    Console.WriteLine("StartAttack");
+                    DebugLog.Log("BroBot", "StartAttack");
                     WoWAPI.InteractUnit(Task.TargetUnitOrObject.GUID);
                     WoWAPI.StartAttack();
                 }

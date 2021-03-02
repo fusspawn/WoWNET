@@ -117,7 +117,7 @@ namespace Wrapper.Database
                         Name = Unit.Name
                     });
 
-                    Console.WriteLine("[WoWDatabase] Found New Repair NPC: " + Unit.Name);
+                    DebugLog.Log("BroBot", "[WoWDatabase] Found New Repair NPC: " + Unit.Name);
                     IsDirty = true;
                 }
 
@@ -157,7 +157,7 @@ namespace Wrapper.Database
                         Name = Unit.Name
                     });
 
-                    Console.WriteLine("[WoWDatabase] Found New Vendor NPC: " + Unit.Name);
+                    DebugLog.Log("BroBot", "[WoWDatabase] Found New Vendor NPC: " + Unit.Name);
                     IsDirty = true;
                 }
             }
@@ -196,7 +196,7 @@ namespace Wrapper.Database
                         Name = Unit.Name
                     });
 
-                    Console.WriteLine("[WoWDatabase] Found New InnKeeper NPC: " + Unit.Name);
+                    DebugLog.Log("BroBot", "[WoWDatabase] Found New InnKeeper NPC: " + Unit.Name);
                     IsDirty = true;
                 }
             }
@@ -235,7 +235,7 @@ namespace Wrapper.Database
                         Name = Unit.Name
                     });
 
-                    Console.WriteLine("[WoWDatabase] Found New Flightmaster NPC: " + Unit.Name);
+                    DebugLog.Log("BroBot", "[WoWDatabase] Found New Flightmaster NPC: " + Unit.Name);
                     IsDirty = true;
                 }
             }
@@ -274,7 +274,7 @@ namespace Wrapper.Database
                         Name = Unit.Name
                     });
 
-                    Console.WriteLine("[WoWDatabase] Found New MailBox NPC: " + Unit.Name);
+                    DebugLog.Log("BroBot", "[WoWDatabase] Found New MailBox NPC: " + Unit.Name);
                     IsDirty = true;
                 }
             }
@@ -308,7 +308,7 @@ namespace Wrapper.Database
                 var Path = $"{LuaBox.Instance.GetBaseDirectory()}\\BroBot\\Database\\MapData\\{MapId}.db";
                 var Data = GetMapDatabase(MapId);
                 LuaBox.Instance.WriteFile(Path, LibJson.Serialize(Data), false);
-                Console.WriteLine("[WoWDatabase] Persisted Changes to MapId: " + MapId);
+                DebugLog.Log("BroBot", "[WoWDatabase] Persisted Changes to MapId: " + MapId);
             }
 
             DirtyMapIds.Clear();
@@ -335,7 +335,7 @@ namespace Wrapper.Database
 
             if (IsMailBox)
             {
-                Console.WriteLine("Handling MailBox");
+                DebugLog.Log("BroBot", "Handling MailBox");
 
                 if (!MapDatabase.MailBoxes.Any(x => x.ObjectId == Unit.ObjectId
                   && Vector3.Distance(Unit.Position, new Vector3(x.X, x.Y, x.Z)) < GRID_SIZE))
@@ -354,7 +354,7 @@ namespace Wrapper.Database
                         Name = Unit.Name
                     });
 
-                    Console.WriteLine("[WoWDatabase] Found New MailBox GameObject: " + Unit.Name);
+                    DebugLog.Log("BroBot", "[WoWDatabase] Found New MailBox GameObject: " + Unit.Name);
                     IsDirty = true;
                 }
 
@@ -379,7 +379,7 @@ namespace Wrapper.Database
                         Name = Unit.Name
                     });
 
-                    Console.WriteLine("[WoWDatabase] Found New Fishing Node: " + Unit.Name);
+                    DebugLog.Log("BroBot", "[WoWDatabase] Found New Fishing Node: " + Unit.Name);
                     IsDirty = true;
                 }
             }
@@ -403,7 +403,7 @@ namespace Wrapper.Database
                     Name = Unit.Name
                 });
 
-                Console.WriteLine("[WoWDatabase] Found New Harvest Node: " + Unit.Name);
+                DebugLog.Log("BroBot", "[WoWDatabase] Found New Harvest Node: " + Unit.Name);
                 IsDirty = true;
             }
 

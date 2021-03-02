@@ -29,7 +29,7 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
             if (!HasMaxStateTime)
                 return false;
 
-            //Console.WriteLine($"Out Of time Data: Current: {WoWAPI.GetTime()}   Entry: {EntryTime} Max: {MaxStateTime}");
+            //DebugLog.Log("BroBot", $"Out Of time Data: Current: {WoWAPI.GetTime()}   Entry: {EntryTime} Max: {MaxStateTime}");
             return Program.CurrentTime - EntryTime > MaxStateTime;
         }
 

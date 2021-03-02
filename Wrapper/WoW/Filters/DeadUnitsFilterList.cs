@@ -20,7 +20,7 @@ namespace Wrapper.WoW.Filters
             {
                 if (FilteredUnits.ContainsKey(gameObject.GUID))
                 {
-                    Console.WriteLine($"RemovingDead Unit: {gameObject.Name}");
+                    DebugLog.Log("BroBot", $"RemovingDead Unit: {gameObject.Name}");
                     FilteredUnits.Remove(gameObject.GUID);
                 }
             };
@@ -39,18 +39,18 @@ namespace Wrapper.WoW.Filters
                     timeStamp, subevent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = CombatLogGetCurrentEventInfo()
                  ]]*/
 
-                //Console.WriteLine("CombatEvent: " + subevent);
+                //DebugLog.Log("BroBot", "CombatEvent: " + subevent);
                 if (subevent != "PARTY_KILL")
                     return;
 
                 var DestExists = ObjectManager.Instance.AllObjects.ContainsKey(destGUID);
                 if(!DestExists)
                 {
-                    Console.WriteLine("DeadUnitsFilterList: Was given a dead event guid for an unknown unit");
+                    DebugLog.Log("BroBot", "DeadUnitsFilterList: Was given a dead event guid for an unknown unit");
                     return;
                 }
 
-                Console.WriteLine($"Found Dead Unit: {ObjectManager.Instance.AllObjects[destGUID].Name}");
+                DebugLog.Log("BroBot", $"Found Dead Unit: {ObjectManager.Instance.AllObjects[destGUID].Name}");
                 FilteredUnits.Add(destGUID, ObjectManager.Instance.AllObjects[destGUID] as WoWUnit);
             });
         }

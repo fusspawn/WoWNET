@@ -57,7 +57,7 @@ namespace Wrapper.NativeBehaviors
                         break;
                 }
 
-             //   Console.WriteLine("Pushed a task of Type: " + NextObjective.TaskType);
+             //   DebugLog.Log("BroBot", "Pushed a task of Type: " + NextObjective.TaskType);
             }
             else
             {
@@ -122,7 +122,7 @@ namespace Wrapper.NativeBehaviors
             ObjectManager.Instance.Pulse();
             Tasks.Clear();
 
-            //Console.WriteLine($"Units: {Units.GetUnits().Count} Gather: {GatheringNodes.GetObjects().Count} AllObjects: {ObjectManager.Instance.AllObjects.Count}");
+            //DebugLog.Log("BroBot", $"Units: {Units.GetUnits().Count} Gather: {GatheringNodes.GetObjects().Count} AllObjects: {ObjectManager.Instance.AllObjects.Count}");
 
 
             if (!ObjectManager.Instance.Player.IsInCombat || !NativeGrindBotBase.ConfigOptions.AllowSelfDefense)
@@ -179,7 +179,7 @@ namespace Wrapper.NativeBehaviors
                     || _Unit.Reaction > (NativeGrindBotBase.ConfigOptions.AllowPullingYellows ? 4 : 3) 
                     || !_Unit.Attackable)
                 {
-                    //Console.WriteLine($"Skipping {Unit.Value.Name} Its dead or shit reaction");
+                    //DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} Its dead or shit reaction");
                     continue;
                 }
 
@@ -187,11 +187,11 @@ namespace Wrapper.NativeBehaviors
                     || WoWAPI.UnitCreatureType(Unit.Value.GUID) == "Critter")
                 {
 
-                    // Console.WriteLine($"Skipping {Unit.Value.Name} Its Trivial or a Critter");
+                    // DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} Its Trivial or a Critter");
                     continue;
                 }
 
-                // Console.WriteLine("Found Valid Combat Target");
+                // DebugLog.Log("BroBot", "Found Valid Combat Target");
 
                 double score = 0;
                 score = score + (BASE_SCORE - Vector3.Distance(Unit.Value.Position,
@@ -200,7 +200,7 @@ namespace Wrapper.NativeBehaviors
                 if (WoWAPI.UnitAffectingCombat(_Unit.GUID)
                     && _Unit.TargetGUID == ObjectManager.Instance.Player.GUID)
                 {
-                    Console.WriteLine("Found In Combat Unit");
+                    DebugLog.Log("BroBot", "Found In Combat Unit");
                     score = score + 500;
                 }
                 else
@@ -208,7 +208,7 @@ namespace Wrapper.NativeBehaviors
                     
                     if (!NativeGrindBotBase.ConfigOptions.AllowPullingMobs)
                     {
-                        //Console.WriteLine($"Skipping {Unit.Value.Name} AllowPull Is off");
+                        //DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} AllowPull Is off");
                         //dont pull this one if allow pulling is off.
                         continue;
                     }

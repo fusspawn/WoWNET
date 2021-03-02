@@ -31,12 +31,12 @@ namespace Wrapper.WoW
             CombatTrackingFrame.SetScript<Action<WoWFrame, string>>("OnEvent", (self, _event) => {
                 if(_event == "PLAYER_REGEN_ENABLED")
                 {
-                    Console.WriteLine("[BroBot] Left Combat");
+                    DebugLog.Log("BroBot", "[BroBot] Left Combat");
                     IsInCombat = false;
                 } 
                 else if(_event == "PLAYER_REGEN_DISABLED")
                 {
-                    Console.WriteLine("[BroBot] Entered Combat");
+                    DebugLog.Log("BroBot", "[BroBot] Entered Combat");
                     IsInCombat = true;
                 }
                 else if (_event == "PLAYER_DIED")
@@ -204,7 +204,7 @@ end
             
             //Angle = (Math.PI / 180) * Angle;
 
-            //Console.WriteLine($"Setting Player Angle/Pitch: {Angle} / {Pitch}");
+            //DebugLog.Log("BroBot", $"Setting Player Angle/Pitch: {Angle} / {Pitch}");
 
             if (Math.Abs(Angle - CurrentAngle) > 0.01)
             {

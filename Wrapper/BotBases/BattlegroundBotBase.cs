@@ -101,7 +101,7 @@ namespace Wrapper.BotBases
             if (ObjectManager.Instance.Player == null
                 || !LuaBox.Instance.IsNavLoaded())
             {
-                Console.WriteLine("Waiting on Player to spawn in ObjectManager");
+                DebugLog.Log("BroBot", "Waiting on Player to spawn in ObjectManager");
                 return;
             }
 
@@ -149,7 +149,7 @@ namespace Wrapper.BotBases
 
         private void RunBattleGroundLogic()
         {
-            // Console.WriteLine("In Battleground");
+            // DebugLog.Log("BroBot", "In Battleground");
 
             SmartMove.Pulse();
             SmartTarget.Pulse();
@@ -175,7 +175,7 @@ namespace Wrapper.BotBases
 
             if (BestTarget != null)
             {
-                //Console.WriteLine("BestTarget: " + BestTarget.Name);
+                //DebugLog.Log("BroBot", "BestTarget: " + BestTarget.Name);
                 if (ObjectManager.Instance.Player.TargetGUID
                     != BestTarget.TargetGUID)
                 {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Wrapper.API;
 using Wrapper.WoW;
 
 namespace Wrapper.Database
@@ -35,7 +36,7 @@ namespace Wrapper.Database
             {
                 if(WoWDatabase.BannedObjectIDs.Contains(node.ObjectId))
                 {
-                    Console.WriteLine("Removing Banned Repair Vendor From DataBase");
+                    DebugLog.Log("BroBot", "Removing Banned Repair Vendor From DataBase");
                     continue;
                 }
 
@@ -55,7 +56,7 @@ namespace Wrapper.Database
             {
                 if (WoWDatabase.BannedObjectIDs.Contains(node.ObjectId))
                 {
-                    Console.WriteLine("Removing Banned Vendor From DataBase");
+                    DebugLog.Log("BroBot", "Removing Banned Vendor From DataBase");
                     continue;
                 }
 

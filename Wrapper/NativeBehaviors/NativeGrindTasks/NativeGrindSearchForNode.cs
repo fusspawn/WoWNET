@@ -27,7 +27,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
             if(ObjectManager.Instance.Player.IsInCombat)
             {
-                Console.WriteLine("Switching to Combat?!");
+                DebugLog.Log("BroBot", "Switching to Combat?!");
                 return true;
             }
             return ObjectiveScanner.GetNextTask() != null
@@ -66,7 +66,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 }
                 else
                 {
-                    Console.WriteLine("Unable to find a valid node in the database? Has the map been scanned?!");
+                    DebugLog.Log("BroBot", "Unable to find a valid node in the database? Has the map been scanned?!");
                     return;
                 }
             }
@@ -76,7 +76,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
             if (Vector3.Distance(new Vector3(TargetNode.X, TargetNode.Y, TargetNode.Z), ObjectManager.Instance.Player.Position) < 10)
             {
-                Console.WriteLine("Got to target node with nothing to do. Lets give this one up and grab another");
+                DebugLog.Log("BroBot", "Got to target node with nothing to do. Lets give this one up and grab another");
                 TargetNode = null;
             }
             

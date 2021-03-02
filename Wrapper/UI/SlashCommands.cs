@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Wrapper.API;
 using Wrapper.Helpers;
 
 namespace Wrapper.UI
@@ -17,7 +18,7 @@ namespace Wrapper.UI
              ]]
             */
 
-            Console.WriteLine("Registed /" + command + " slash command");
+            DebugLog.Log("BroBot", "Registed /" + command + " slash command");
         }
     }
 }
