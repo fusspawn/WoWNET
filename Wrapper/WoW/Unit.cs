@@ -64,6 +64,8 @@ namespace Wrapper.WoW
                     or __LB__.UnitTagHandler(UnitClassification, this.GUID) == "rareelite")
              ]]
             */
+
+            Update();
         }
 
         public void Interact()
@@ -80,12 +82,7 @@ namespace Wrapper.WoW
             Dead = WoWAPI.UnitIsDeadOrGhost(GUID);
             TargetGUID = LuaBox.Instance.UnitTarget(GUID);
 
-            if(Name == "Unknown")
-            {
-                Name = LuaBox.Instance.ObjectName(GUID);
-            }
-
-
+         
 
             if(ObjectManager.Instance.Player != null 
                 && Vector3.Distance(ObjectManager.Instance.Player.Position, Position) < 50)

@@ -47,6 +47,21 @@ namespace Wrapper.WoW
             }
         }
 
+        private bool? WasFishingSpot = null;
+        public bool IsFishingSpot
+        {
+            get
+            {
+                if (WasFishingSpot == null)
+                {
+                    WasFishingSpot = GatherableTypes.FishingSpots.Any(x => x == this.Name);
+                }
+
+                return WasFishingSpot.Value;
+            }
+        }
+
+
         public WoWGameObject(string _GUID)
         {
             GUID = _GUID;

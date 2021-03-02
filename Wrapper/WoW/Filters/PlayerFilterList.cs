@@ -16,6 +16,7 @@ namespace Wrapper.WoW.Filters
         public PlayerFilterList(
             bool AllowFriendly = true,
             bool AllowHostile = true)
+            : base()
         {
             this.AllowFriendly = AllowFriendly;
             this.AllowHostile = AllowHostile;
@@ -29,11 +30,14 @@ namespace Wrapper.WoW.Filters
 
             if (Result && AllowFriendly && GameObject.Friend)
             {
+                Console.WriteLine("Found Player F");
                 return true;
             }
 
             if (Result && AllowHostile && GameObject.Hostile)
             {
+
+                Console.WriteLine("Found Player H");
                 return true;
             }
 

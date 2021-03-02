@@ -10173,7 +10173,7 @@ System.define("System.Random", (function ()
   end
   GenerateSeed = function ()
     if not rnd then
---      math.randomseed(GetTime())
+      --math.randomseed(GetTime())
       rnd = math.random
     end
     return rnd(0, 2147483647)
@@ -17696,6 +17696,9 @@ System.namespace("Wrapper", function (namespace)
         class.UIData.NumberOfInnKeepers = _StdUI:Label(class.UIData.MainUIFrame, "InnKeepers: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).InnKeepers, 12, nil, 150, 25)
         class.UIData.NumberOfMailBoxes = _StdUI:Label(class.UIData.MainUIFrame, "MailBoxes: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).MailBoxes, 12, nil, 150, 25)
 
+        class.UIData.NumberOfFishingSpots = _StdUI:Label(class.UIData.MainUIFrame, "Fishing Spots: " .. #Linq.ToList(Linq.Where(WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).Nodes, function (x)
+          return x.NodeType == 3 --[[NodeType.FishingHole]]
+        end)), 12, nil, 150, 25)
 
         class.UIData.ScanCurrentArea = _StdUI:HighlightButton(class.UIData.MainUIFrame, 150, 25, "Scan Current Area")
         class.UIData.ScanCurrentArea:SetScript("OnClick", function ()
@@ -17798,9 +17801,10 @@ System.namespace("Wrapper", function (namespace)
         _StdUI:GlueTop(class.UIData.NumberOfFlightMasters, class.UIData.MainUIFrame, 75, - 200, "TOP")
         _StdUI:GlueTop(class.UIData.NumberOfInnKeepers, class.UIData.MainUIFrame, 75, - 230, "TOP")
         _StdUI:GlueTop(class.UIData.NumberOfMailBoxes, class.UIData.MainUIFrame, 75, - 260, "TOP")
+        _StdUI:GlueTop(class.UIData.NumberOfFishingSpots, class.UIData.MainUIFrame, 75, - 290, "TOP")
 
         class.UIData.NativeGrindEnabledCheckBox = _StdUI:Checkbox(class.UIData.MainUIFrame, "Pulse SmartGrind", 150, 25)
-        _StdUI:GlueTop(class.UIData.NativeGrindEnabledCheckBox, class.UIData.MainUIFrame, 75, - 290, "TOP")
+        _StdUI:GlueTop(class.UIData.NativeGrindEnabledCheckBox, class.UIData.MainUIFrame, 75, - 320, "TOP")
 
         local Options = nil
 
@@ -17824,7 +17828,7 @@ System.namespace("Wrapper", function (namespace)
             Wrapper.Program.Base = WrapperBotBases.NativeGrindBotBase()
           end
         end)
-        _StdUI:GlueTop(class.UIData.BotBaseSelector, class.UIData.MainUIFrame, 75, - 350, "TOP")
+        _StdUI:GlueTop(class.UIData.BotBaseSelector, class.UIData.MainUIFrame, 75, - 380, "TOP")
 
         C_Timer.NewTicker(0.25, function ()
           class.UIData.NumberOfManualScanNodes:SetText("Manual Scan Nodes Count: " .. #this.ManualScanLocations)
@@ -17849,6 +17853,9 @@ System.namespace("Wrapper", function (namespace)
           class.UIData.NumberOfFlightMasters:SetText("FlightMasters: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).FlightMaster)
           class.UIData.NumberOfMailBoxes:SetText("MailBoxes: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).MailBoxes)
           class.UIData.NumberOfInnKeepers:SetText("InnKeepers: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).InnKeepers)
+          class.UIData.NumberOfFishingSpots:SetText("Fishing Spots: " .. #Linq.ToList(Linq.Where(WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).Nodes, function (x)
+            return x.NodeType == 3 --[[NodeType.FishingHole]]
+          end)))
         end)
 
 
@@ -23863,11 +23870,13 @@ end
 do
 local System = System
 local Wrapper
+local WrapperBotBases
 local WrapperHelpers
 local WrapperWoW
 local WrapperWoWFilters
 System.import(function (out)
   Wrapper = out.Wrapper
+  WrapperBotBases = Wrapper.BotBases
   WrapperHelpers = Wrapper.Helpers
   WrapperWoW = Wrapper.WoW
   WrapperWoWFilters = Wrapper.WoW.Filters
@@ -23879,16 +23888,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
       return {}
     end)
     namespace.class("BattleGroundUIConfigOptions", function (namespace)
-      return {
-        AllowGather = false,
-        AllowSkin = false,
-        AllowLoot = false,
-        AllowPullingMobs = false,
-        AllowSelfDefense = false,
-        CombatRange = 0,
-        AllowPullingYellows = false,
-        IgnoreElitesAndBosses = false
-      }
+      return {}
     end)
     __ctor__ = function (this)
       this.Players = WrapperWoWFilters.PlayerFilterList(true, true)
@@ -23930,6 +23930,11 @@ System.namespace("Wrapper.BotBases", function (namespace)
       this.UIContainer.SelectedRoles:SetOptions(OptionsRoles)
       this.UIContainer.SelectedRoles:SetPlaceholder("~-- Please Select a Role --~")
       Wrapper.Program.MainUI.StdUI:GlueTop(this.UIContainer.SelectedRoles, this.UIContainer.Container, 0, - 90, "TOP")
+
+
+      this.UIContainer.GrindWhenWaiting = Wrapper.Program.MainUI.StdUI:Checkbox(this.UIContainer.Container, "Grind Whilst Waiting", 200, 25)
+      this.UIContainer.GrindWhenWaiting:SetChecked(false)
+      Wrapper.Program.MainUI.StdUI:GlueTop(this.UIContainer.GrindWhenWaiting, this.UIContainer.Container, 0, - 130, "TOP")
     end
     Pulse = function (this)
       if WrapperWoW.ObjectManager.getInstance().Player == nil or not (__LB__.Navigator ~= nil) then
@@ -23959,6 +23964,15 @@ System.namespace("Wrapper.BotBases", function (namespace)
       if GetItemCount("Crate of Battlefield Goods") > 1 then
         UseItemByName("Crate of Battlefield Goods")
       end
+
+
+      if this.UIContainer.GrindWhenWaiting:GetChecked() then
+        if this.NativeGrindInstance == nil then
+          this.NativeGrindInstance = WrapperBotBases.NativeGrindBotBase()
+        end
+
+        this.NativeGrindInstance:Pulse()
+      end
     end
     RunBattleGroundLogic = function (this)
       -- Console.WriteLine("In Battleground");
@@ -23969,7 +23983,6 @@ System.namespace("Wrapper.BotBases", function (namespace)
       local BestMoveScored = this.SmartMove:GetBestUnit()
       local BestTargetScored = this.SmartTarget:GetBestUnit()
 
-      local BestMove = BestMoveScored.Player
       local BestTarget = BestTargetScored
 
 
@@ -24003,7 +24016,9 @@ System.namespace("Wrapper.BotBases", function (namespace)
       end
 
 
-      if BestMove ~= nil then
+      if BestMoveScored ~= nil then
+        local BestMove = BestMoveScored.Player
+
         if not (this.LastDestination ~= nil) or WrapperWoW.Vector3.Distance(BestMove.Position, System.Nullable.Value(this.LastDestination)) > 25 then
           if BestMove.GUID ~= this.LastMoveGUID then
             if math.Abs(BestMoveScored.Score - this.LastMoveScore) < 250 then
@@ -24335,6 +24350,164 @@ System.namespace("Wrapper.Database", function (namespace)
   namespace.class("GatherableTypes", function (namespace)
     local static
     static = function (this)
+      local default = ListString()
+      default:Add("Schooner Wreckage")
+      default:Add("Deep Sea Monsterbelly School")
+      default:Add("Floating Wreckage")
+      default:Add("Highland Mixed School")
+      default:Add("Waterlogged Wreckage")
+      default:Add("Dragonfin Angelfish School")
+      default:Add("Musselback Sculpin School")
+      default:Add("Glacial Salmon School")
+      default:Add("Moonglow Cuttlefish School")
+      default:Add("Steam Pump Flotsam")
+      default:Add("School of Darter")
+      default:Add("Bloodsail Wreckage")
+      default:Add("Bluefish School")
+      default:Add("Fangtooth Herring School")
+      default:Add("Abyssal Gulper School")
+      default:Add("Mudfish School")
+      default:Add("Borean Man O' War School")
+      default:Add("Brackish Mixed School")
+      default:Add("Nettlefish School")
+      default:Add("Jawless Skulker School")
+      default:Add("Albino Cavefish School")
+      default:Add("Giant Mantis Shrimp Swarm")
+      default:Add("Glassfin Minnow School")
+      default:Add("Elysian Thade School")
+      default:Add("Blind Lake Sturgeon School")
+      default:Add("Sagefish School")
+      default:Add("Fire Ammonite School")
+      default:Add("Firefin Snapper School")
+      default:Add("Oily Blackmouth School")
+      default:Add("Imperial Manta Ray School")
+      default:Add("Iridescent Amberjack School")
+      default:Add("Blackwater Whiptail School")
+      default:Add("Mixed Ocean School")
+      default:Add("Sporefish School")
+      default:Add("Jade Lungfish School")
+      default:Add("Redbelly Mandarin School")
+      default:Add("Jewel Danio School")
+      default:Add("Tiger Gourami School")
+      default:Add("Lagoon Pool")
+      default:Add("Crowded Redbelly Mandarin")
+      default:Add("Greater Sagefish School")
+      default:Add("School of Deviate Fish")
+      default:Add("Emperor Salmon School")
+      default:Add("Large Pool of Crowded Redbelly Mandarin")
+      default:Add("Pool of Fire")
+      default:Add("Reef Octopus Swarm")
+      default:Add("Sea Scorpion School")
+      default:Add("Fat Sleeper School")
+      default:Add("Shipwreck Debris")
+      default:Add("Great Sea Catfish School")
+      default:Add("Pure Water")
+      default:Add("Floating Debris")
+      default:Add("Deepsea Sagefish School")
+      default:Add("Silvergill Pike School")
+      default:Add("Spinefin Piranha School")
+      default:Add("Fathom Eel Swarm")
+      default:Add("Shimmering Whorl")
+      default:Add("Hyper-Compressed Ocean")
+      default:Add("Large Pool of Glimmering Jewel Danio")
+      default:Add("Slimy Mackerel School")
+      default:Add("Blackbelly Mudfish School")
+      default:Add("Cursed Queenfish School")
+      default:Add("Highland Guppy School")
+      default:Add("Krasarang Paddlefish School")
+      default:Add("Brew Frenzied Emperor Salmon")
+      default:Add("Ghostly Queenfish School")
+      default:Add("Glimmering Jewel Danio Pool")
+      default:Add("Glowing Jade Lungfish")
+      default:Add("School of Golden Minnows")
+      default:Add("Shipwreck Debris")
+      default:Add("Strange Pool")
+      default:Add("Tangled Mantis Shrimp Cluster")
+      default:Add("Black Barracuda School")
+      default:Add("Felmouth Frenzy School")
+      default:Add("Mountain Trout School")
+      default:Add("Stonescale Eel Swarm")
+      default:Add("U'taka School")
+      default:Add("Huge Fever of Stormrays")
+      default:Add("Ionized Minnows")
+      default:Add("Large Swarm of Migrated Reef Octopus")
+      default:Add("Oily Abyssal Gulper School")
+      default:Add("Pocked Bonefish School")
+      default:Add("Pool of Blood")
+      default:Add("Shipwreck Debris")
+      default:Add("Sparkling Pool")
+      default:Add("Large Pool of Glowing Jade Lungfish")
+      default:Add("Lively Highmountain Salmon School")
+      default:Add("Viper Fish School")
+      default:Add("Fever of Stormrays")
+      default:Add("Lane Snapper School")
+      default:Add("Lively Mossgill Perch School")
+      default:Add("Rasboralus School")
+      default:Add("Sand Shifter School")
+      default:Add("Savage Piranha Pool")
+      default:Add("Sha-Touched Spinefish")
+      default:Add("Swarm of Panicked Paddlefish")
+      default:Add("Tiragarde Perch School")
+      default:Add("Frenzied Pool")
+      default:Add("Huge Mossgill Perch School")
+      default:Add("Large Tangled Mantis Shrimp Cluster")
+      default:Add("Oily Sea Scorpion School")
+      default:Add("Roiling Whirlpool")
+      default:Add("Sentry Fish School")
+      default:Add("Spinefish School")
+      default:Add("Aberrant Voidfin School")
+      default:Add("Felmouth Frenzy School")
+      default:Add("Floating Garbage")
+      default:Add("Frenzied Fish")
+      default:Add("Frenzied Fish")
+      default:Add("Huge Cursed Queenfish School")
+      default:Add("Huge Cursed Queenfish School")
+      default:Add("Huge Fever of Stormrays")
+      default:Add("Huge Fever of Stormrays")
+      default:Add("Huge Highmountain Salmon School")
+      default:Add("Huge Mossgill Perch School")
+      default:Add("Huge Runescale Koi School")
+      default:Add("Huge Runescale Koi School")
+      default:Add("Large Pool of Sha-Touched Spinefish")
+      default:Add("Large Swarm of Panicked Paddlefish")
+      default:Add("Lively Cursed Queenfish School")
+      default:Add("Lively Cursed Queenfish School")
+      default:Add("Lively Highmountain Salmon School")
+      default:Add("Lively Mossgill Perch School")
+      default:Add("Lively Runescale Koi School")
+      default:Add("Lively Runescale Koi School")
+      default:Add("Lively Stormray School")
+      default:Add("Malformed Gnasher School")
+      default:Add("Mauve Stinger School")
+      default:Add("Oodelfjiskenpool")
+      default:Add("Redtail Loach School")
+      default:Add("Runescale Koi School")
+      default:Add("Wild Northern Barracuda School")
+      default:Add("Albino Barracuda School")
+      default:Add("Blue Barracuda School")
+      default:Add("Crane Yolk Pool")
+      default:Add("Frenzied Fangtooth School")
+      default:Add("Frenzied Fish")
+      default:Add("Highmountain Salmon School")
+      default:Add("Huge Cursed Queenfish School")
+      default:Add("Huge Highmountain Salmon School")
+      default:Add("Huge Mossgill Perch School")
+      default:Add("Huge Runescale Koi School")
+      default:Add("Large Pool of Brew Frenzied Emperor Salmon")
+      default:Add("Large Pool of Tiger Gourami Slush")
+      default:Add("Lively Cursed Queenfish School")
+      default:Add("Lively Highmountain Salmon School")
+      default:Add("Lively Mossgill Perch School")
+      default:Add("Lively Stormray School")
+      default:Add("Lost Sole School")
+      default:Add("Submarine Tar")
+      default:Add("Swarm of Migrated Reef Octopus")
+      default:Add("Tiger Gourami Slush")
+      default:Add("Bubble-Eyed Rolly School")
+      default:Add("Lively Runescale Koi School")
+      default:Add("Mossgill Perch School")
+      default:Add("Shipwreck Debris")
+      this.FishingSpots = default
       local default = ListString()
       default:Add("Anchor Weed")
       default:Add("Draenic Seeds")
@@ -24756,6 +24929,7 @@ System.namespace("Wrapper.Database", function (namespace)
       this.FlightMaster = ListNPCLocationInfo()
       this.Vendors = ListNPCLocationInfo()
       this.Repair = ListNPCLocationInfo()
+      this.Beasts = ListNPCLocationInfo()
       this.Nodes = ListNodeLocationInfo()
       this.PlayerDeathSpots = ListVector3()
     end
@@ -24859,6 +25033,20 @@ System.namespace("Wrapper.Database", function (namespace)
         this.MailBoxes:Add(default)
       end
 
+
+      for _, node in System.each(mapDataEntry.Beasts) do
+        local default = WrapperDatabase.NPCLocationInfo()
+        default.X = node.X
+        default.Y = node.Y
+        default.Z = node.Z
+        default.Name = node.Name
+        default.NodeType = node.NodeType
+        default.MapID = node.MapID
+        default.ObjectId = node.ObjectId
+        this.Beasts:Add(default)
+      end
+
+
       --[[
             foreach(var node in mapDataEntry.PlayerDeathSpots)
             {
@@ -24902,9 +25090,11 @@ System.namespace("Wrapper.Database", function (namespace)
     return {
       Ore = 1,
       Herb = 2,
+      FishingHole = 3,
       __metadata__ = function (out)
         return {
           fields = {
+            { "FishingHole", 0xE, System.Int32 },
             { "Herb", 0xE, System.Int32 },
             { "Ore", 0xE, System.Int32 }
           }
@@ -25031,10 +25221,11 @@ System.namespace("Wrapper.Database", function (namespace)
       local MapId =  __LB__.GetMapId()
       local IsRepair =  __LB__.UnitHasNpcFlag(Unit.GUID, 4096 --[[ENpcFlags.Repair]])
       local IsVendor =  __LB__.UnitHasNpcFlag(Unit.GUID, 128 --[[ENpcFlags.Vendor]])
-      local IsInnKeeper = false
-      local IsFlightmaster = false
-      local IsMailBox = false
-      --LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Mailbox);
+      local IsInnKeeper =  __LB__.UnitHasNpcFlag(Unit.GUID, 65536 --[[ENpcFlags.Innkeeper]])
+      local IsFlightmaster =  __LB__.UnitHasNpcFlag(Unit.GUID, 8192 --[[ENpcFlags.FlightMaster]])
+      local IsMailBox = Unit.Name == "Mailbox"
+      local IsBeast = __LB__.UnitTagHandler(UnitCreatureType, Unit.GUID) == "Beast"
+
 
       if (not IsRepair and not IsVendor and not IsInnKeeper and not IsFlightmaster and not IsMailBox) or __LB__.UnitTagHandler(GetUnitSpeed, Unit.GUID) > 1 or class.BannedObjectIDs:Contains(Unit.ObjectId) then
         return
@@ -25257,11 +25448,11 @@ System.namespace("Wrapper.Database", function (namespace)
     InsertNodeIfRequired = function (Unit)
       local MapId =  __LB__.GetMapId()
       local IsHerbOrOre = (Unit:getIsHerb() or Unit:getIsOre())
-      local IsMailBox = __LB__.GameObjectType(Unit.GUID) == 19 --[[EGameObjectTypes.Mailbox]]
+      local IsMailBox = Unit.Name == "Mailbox"
+      local IsFishingSpot = Unit:getIsFishingSpot()
 
 
-
-      if (not IsHerbOrOre and not IsMailBox) or class.BannedObjectIDs:Contains(Unit.ObjectId) then
+      if (not IsHerbOrOre and not IsMailBox and not IsFishingSpot) or class.BannedObjectIDs:Contains(Unit.ObjectId) then
         return
       end
 
@@ -25294,7 +25485,24 @@ System.namespace("Wrapper.Database", function (namespace)
       end
 
 
+      if IsFishingSpot then
+        if not Linq.Any(MapDatabase.Nodes, function (x)
+          return x.ObjectId == Unit.ObjectId and WrapperWoW.Vector3.Distance(Unit.Position, WrapperWoW.Vector3(x.X, x.Y, x.Z)) < System.div(class.GRID_SIZE, 4)
+        end) then
+          local default = WrapperDatabase.NodeLocationInfo()
+          default.X = Unit.Position.X
+          default.Y = Unit.Position.Y
+          default.Z = Unit.Position.Z
+          default.ObjectId = Unit.ObjectId
+          default.MapID = MapId
+          default.NodeType = 3 --[[NodeType.FishingHole]]
+          default.Name = Unit.Name
+          MapDatabase.Nodes:Add(default)
 
+          System.Console.WriteLine("[WoWDatabase] Found New Fishing Node: " .. System.toString(Unit.Name))
+          IsDirty = true
+        end
+      end
 
 
 
@@ -25993,7 +26201,7 @@ System.namespace("Wrapper.UI", function (namespace)
           System.Console.WriteLine("Switching to Grind Bot base")
           Wrapper.Program.Base = WrapperBotBases.NativeGrindBotBase()
         elseif Value == 3 then
-          System.Console.WriteLine("Switching to Grind Bot base")
+          System.Console.WriteLine("Switching to DataRecorder Bot base")
           Wrapper.Program.Base = Wrapper.DataLoggerBase()
         else
           System.Console.WriteLine("Selected Empty Bot Base")
@@ -26177,7 +26385,7 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.WoW", function (namespace)
   namespace.class("WoWGameObject", function (namespace)
-    local getIsHerb, getIsOre, Update, GetUpdateRate, DistanceToPlayer, __ctor__
+    local getIsHerb, getIsOre, getIsFishingSpot, Update, GetUpdateRate, DistanceToPlayer, __ctor__
     __ctor__ = function (this, _GUID)
       this.Position = System.default(WrapperWoW.Vector3)
       this.GUID = _GUID
@@ -26204,6 +26412,15 @@ System.namespace("Wrapper.WoW", function (namespace)
       end
 
       return System.Nullable.Value(this.WasOre)
+    end
+    getIsFishingSpot = function (this)
+      if this.WasFishingSpot == nil then
+        this.WasFishingSpot = Linq.Any(WrapperDatabase.GatherableTypes.FishingSpots, function (x)
+          return x == this.Name
+        end)
+      end
+
+      return System.Nullable.Value(this.WasFishingSpot)
     end
     Update = function (this)
       this.Position = WrapperAPI.LuaBox.getInstance():ObjectPositionVector3(this.GUID)
@@ -26240,6 +26457,7 @@ System.namespace("Wrapper.WoW", function (namespace)
       NextUpdate = 0,
       getIsHerb = getIsHerb,
       getIsOre = getIsOre,
+      getIsFishingSpot = getIsFishingSpot,
       Update = Update,
       GetUpdateRate = GetUpdateRate,
       DistanceToPlayer = DistanceToPlayer,
@@ -26418,8 +26636,8 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.WoW", function (namespace)
   namespace.class("ObjectManager", function (namespace)
-    local _instance, getInstance, RegisterFilteredList, Pulse, CreateWowObject, GetAllPlayers, FindNPCByObjectID, class, 
-    __ctor__
+    local _instance, getInstance, RegisterFilteredList, Pulse, FindByName, CreateWowObject, GetAllPlayers, FindNPCByObjectID, 
+    class, __ctor__
     __ctor__ = function (this)
       this.AllObjects = DictStringWoWGameObject()
       this.Pendings = ListWoWGameObject()
@@ -26523,6 +26741,13 @@ System.namespace("Wrapper.WoW", function (namespace)
         System.Console.WriteLine("OM Error: " .. System.toString(E:getMessage()) .. "StackTrace: " .. System.toString(debugstack()))
       end)
     end
+    FindByName = function (this, Name)
+      return Linq.ToList(Linq.Select(Linq.Where(this.AllObjects, function (x)
+        return x.Value.Name == Name
+      end), function (x)
+        return x.Value
+      end, WrapperWoW.WoWGameObject))
+    end
     CreateWowObject = function (this, GUID)
       repeat
         local default = __LB__.ObjectType(GUID)
@@ -26555,6 +26780,7 @@ System.namespace("Wrapper.WoW", function (namespace)
       ObjectManagerScanRange = 999999999,
       LastFilterListUpdate = 0,
       Pulse = Pulse,
+      FindByName = FindByName,
       GetAllPlayers = GetAllPlayers,
       FindNPCByObjectID = FindNPCByObjectID,
       __ctor__ = __ctor__
@@ -26683,6 +26909,8 @@ System.namespace("Wrapper.WoW", function (namespace)
       this.IsBossOrElite = (__LB__.UnitTagHandler(UnitClassification, this.GUID) == "worldboss"
           or __LB__.UnitTagHandler(UnitClassification, this.GUID) == "elite"
           or __LB__.UnitTagHandler(UnitClassification, this.GUID) == "rareelite")
+
+      this:Update()
     end
     getFriend = function (this)
       return this.Reaction > 4
@@ -26725,10 +26953,6 @@ System.namespace("Wrapper.WoW", function (namespace)
       this.Reaction = __LB__.UnitTagHandler(UnitReaction, "player", this.GUID)
       this.Dead = __LB__.UnitTagHandler(UnitIsDeadOrGhost, this.GUID)
       this.TargetGUID =  __LB__.UnitTarget(this.GUID)
-
-      if this.Name == "Unknown" then
-        this.Name = __LB__.ObjectName(this.GUID)
-      end
 
 
 
@@ -27894,10 +28118,12 @@ System.namespace("Wrapper.WoW.Filters", function (namespace)
       local Result = GameObject.ObjectType == 6 --[[EObjectType.Player]]
 
       if Result and this.AllowFriendly and GameObject:getFriend() then
+        System.Console.WriteLine("Found Player F")
         return true
       end
 
       if Result and this.AllowHostile and GameObject:getHostile() then
+        System.Console.WriteLine("Found Player H")
         return true
       end
 

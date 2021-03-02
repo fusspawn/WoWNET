@@ -33,6 +33,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             {
                 Console.WriteLine("Database has no repair NPC?!");
                 return;
+
             }
 
 

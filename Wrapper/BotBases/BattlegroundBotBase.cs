@@ -4,6 +4,8 @@ using System.Text;
 using Wrapper.API;
 using Wrapper.Helpers;
 using Wrapper.WoW;
+using Wrapper.WoW.Filters;
+using static Wrapper.StdUI;
 
 namespace Wrapper.BotBases
 {
@@ -22,6 +24,8 @@ namespace Wrapper.BotBases
         string LastMoveGUID = "";
 
         private BattleGroundUIContainer UIContainer;
+        private NativeGrindBotBase NativeGrindInstance;
+
 
         public class BattleGroundUIContainer
         {
@@ -29,19 +33,12 @@ namespace Wrapper.BotBases
             public StdUI.StdUiLabel BGLabel;
             public StdUiDropdown SelectedBGS;
             public StdUiDropdown SelectedRoles;
+            public StdUiCheckBox GrindWhenWaiting;
         }
 
         public class BattleGroundUIConfigOptions
         {
-            public bool AllowGather;
-            public bool AllowSkin;
-            public bool AllowLoot;
-            public bool AllowPullingMobs;
-            public bool AllowSelfDefense;
-
-            public float CombatRange;
-            internal bool AllowPullingYellows;
-            internal bool IgnoreElitesAndBosses;
+            
         }
 
         public override void BuildConfig(StdUI.StdUiFrame Container)
@@ -84,6 +81,11 @@ namespace Wrapper.BotBases
             UIContainer.SelectedRoles.SetOptions(OptionsRoles);
             UIContainer.SelectedRoles.SetPlaceholder("~-- Please Select a Role --~");
             Program.MainUI.StdUI.GlueTop(UIContainer.SelectedRoles, UIContainer.Container, 0, -90, "TOP");
+
+
+            UIContainer.GrindWhenWaiting = Program.MainUI.StdUI.Checkbox(UIContainer.Container, "Grind Whilst Waiting", 200, 25);
+            UIContainer.GrindWhenWaiting.SetChecked(false);
+            Program.MainUI.StdUI.GlueTop(UIContainer.GrindWhenWaiting, UIContainer.Container, 0, -130, "TOP");
 
         }
 
@@ -134,6 +136,15 @@ namespace Wrapper.BotBases
             {
                 WoWAPI.UseItemByName("Crate of Battlefield Goods");
             }
+
+
+            if(UIContainer.GrindWhenWaiting.GetChecked())
+            {
+                if (NativeGrindInstance == null)
+                    NativeGrindInstance = new NativeGrindBotBase();
+
+                NativeGrindInstance.Pulse();
+            }
         }
 
         private void RunBattleGroundLogic()
@@ -146,7 +157,6 @@ namespace Wrapper.BotBases
             var BestMoveScored = SmartMove.GetBestUnit();
             var BestTargetScored = SmartTarget.GetBestUnit();
 
-            var BestMove = BestMoveScored.Player;
             WoWPlayer BestTarget = BestTargetScored;
 
 
@@ -190,9 +200,11 @@ namespace Wrapper.BotBases
                 //--Rotation?!
             }
 
-
-            if (BestMove != null)
+            
+            if (BestMoveScored != null)
             {
+                var BestMove = BestMoveScored.Player;
+
                 if (!LastDestination.HasValue || Vector3.Distance(BestMove.Position, LastDestination.Value) > 25)
                 {
 

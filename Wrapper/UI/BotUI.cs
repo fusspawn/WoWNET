@@ -96,7 +96,7 @@ namespace Wrapper.UI
                 }
                 else if (Value == 3)
                 {
-                    Console.WriteLine("Switching to Grind Bot base");
+                    Console.WriteLine("Switching to DataRecorder Bot base");
                     Program.Base = new DataLoggerBase();
                 } else
                 {

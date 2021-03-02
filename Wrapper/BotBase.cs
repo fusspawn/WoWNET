@@ -69,6 +69,7 @@ namespace Wrapper
             //NativeGrind 
             public StdUiCheckBox NativeGrindEnabledCheckBox;
             public StdUiDropdown BotBaseSelector;
+            internal StdUiLabel NumberOfFishingSpots;
         }
 
         public DataLoggerBase()
@@ -181,6 +182,7 @@ namespace Wrapper
                 UIData.NumberOfInnKeepers = _StdUI.Label(UIData.MainUIFrame, "InnKeepers: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).InnKeepers.Count, 12, null, 150, 25);
                 UIData.NumberOfMailBoxes = _StdUI.Label(UIData.MainUIFrame, "MailBoxes: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).MailBoxes.Count, 12, null, 150, 25);
 
+                UIData.NumberOfFishingSpots = _StdUI.Label(UIData.MainUIFrame, "Fishing Spots: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).Nodes.Where(x => x.NodeType == NodeType.FishingHole).ToList().Count, 12, null, 150, 25);
 
                 UIData.ScanCurrentArea = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Scan Current Area");
                 UIData.ScanCurrentArea.SetScript<Action>("OnClick", () =>
@@ -292,9 +294,10 @@ namespace Wrapper
                 _StdUI.GlueTop(UIData.NumberOfFlightMasters, UIData.MainUIFrame, 75, -200, "TOP");
                 _StdUI.GlueTop(UIData.NumberOfInnKeepers, UIData.MainUIFrame, 75, -230, "TOP");
                 _StdUI.GlueTop(UIData.NumberOfMailBoxes, UIData.MainUIFrame, 75, -260, "TOP");
+                _StdUI.GlueTop(UIData.NumberOfFishingSpots, UIData.MainUIFrame, 75, -290, "TOP");
 
                 UIData.NativeGrindEnabledCheckBox = _StdUI.Checkbox(UIData.MainUIFrame, "Pulse SmartGrind", 150, 25);
-                _StdUI.GlueTop(UIData.NativeGrindEnabledCheckBox, UIData.MainUIFrame, 75, -290, "TOP");
+                _StdUI.GlueTop(UIData.NativeGrindEnabledCheckBox, UIData.MainUIFrame, 75, -320, "TOP");
 
                 StdUiDropdown.StdUiDropdownItems[] Options = null;
 
@@ -323,7 +326,7 @@ namespace Wrapper
                         Program.Base = new NativeGrindBotBase();
                     }
                 };
-                _StdUI.GlueTop(UIData.BotBaseSelector, UIData.MainUIFrame, 75, -350, "TOP");    
+                _StdUI.GlueTop(UIData.BotBaseSelector, UIData.MainUIFrame, 75, -380, "TOP");    
 
                 WoWAPI.NewTicker(() =>
                 {
@@ -356,6 +359,7 @@ namespace Wrapper
                     UIData.NumberOfFlightMasters.SetText("FlightMasters: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).FlightMaster.Count);
                     UIData.NumberOfMailBoxes.SetText("MailBoxes: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).MailBoxes.Count);
                     UIData.NumberOfInnKeepers.SetText("InnKeepers: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).InnKeepers.Count);
+                    UIData.NumberOfFishingSpots.SetText("Fishing Spots: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).Nodes.Where(x => x.NodeType == NodeType.FishingHole).ToList().Count);
                 }, 2f);
 
 

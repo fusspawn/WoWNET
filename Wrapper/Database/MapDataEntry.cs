@@ -12,6 +12,7 @@ namespace Wrapper.Database
         public List<NPCLocationInfo> FlightMaster = new List<NPCLocationInfo>();
         public List<NPCLocationInfo> Vendors = new List<NPCLocationInfo>();
         public List<NPCLocationInfo> Repair = new List<NPCLocationInfo>();
+        public List<NPCLocationInfo> Beasts = new List<NPCLocationInfo>();
         public List<NodeLocationInfo> Nodes = new List<NodeLocationInfo>();
         public List<Vector3> PlayerDeathSpots = new List<Vector3>();
 
@@ -112,6 +113,22 @@ namespace Wrapper.Database
                     ObjectId = node.ObjectId
                 });
             }
+
+
+            foreach (var node in mapDataEntry.Beasts)
+            {
+                Beasts.Add(new NPCLocationInfo()
+                {
+                    X = node.X,
+                    Y = node.Y,
+                    Z = node.Z,
+                    Name = node.Name,
+                    NodeType = node.NodeType,
+                    MapID = node.MapID,
+                    ObjectId = node.ObjectId
+                });
+            }
+
 
             /*
             foreach(var node in mapDataEntry.PlayerDeathSpots)

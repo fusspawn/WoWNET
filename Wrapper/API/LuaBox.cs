@@ -234,6 +234,7 @@ namespace Wrapper.API
             Stunned = 262144,
             TaxiFlight = 1048576,
         }
+
         public enum EUnitFlags2
         {
             AllowChangingTalents = 512,

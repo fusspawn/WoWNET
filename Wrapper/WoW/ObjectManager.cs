@@ -153,6 +153,11 @@ namespace Wrapper.WoW
             }
         }
 
+        public List<WoWGameObject> FindByName(string Name)
+        {
+            return AllObjects.Where(x => x.Value.Name == Name).Select( x=> x.Value).ToList();
+        }
+
         private WoWGameObject CreateWowObject(string GUID)
         {
             switch (LuaBox.Instance.ObjectType(GUID))

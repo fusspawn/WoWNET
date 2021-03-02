@@ -63,9 +63,11 @@ namespace Wrapper.Database
             var MapId = LuaBox.Instance.GetMapId();
             var IsRepair = LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Repair);
             var IsVendor = LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Vendor);
-            var IsInnKeeper = false;
-            var IsFlightmaster = false;
-            var IsMailBox = false; //LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Mailbox);
+            var IsInnKeeper = LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.Innkeeper);
+            var IsFlightmaster = LuaBox.Instance.UnitHasNpcFlag(Unit.GUID, LuaBox.ENpcFlags.FlightMaster);
+            var IsMailBox = Unit.Name == "Mailbox";
+            var IsBeast = WoWAPI.UnitCreatureType(Unit.GUID) == "Beast";
+
 
             if ((!IsRepair && !IsVendor && !IsInnKeeper && !IsFlightmaster && !IsMailBox)
                 || WoWAPI.GetUnitSpeed(Unit.GUID) > 1
@@ -316,11 +318,11 @@ namespace Wrapper.Database
         {
             var MapId = LuaBox.Instance.GetMapId();
             var IsHerbOrOre = (Unit.IsHerb || Unit.IsOre);
-            var IsMailBox = LuaBox.Instance.GameObjectType(Unit.GUID) == LuaBox.EGameObjectTypes.Mailbox;
-
+            var IsMailBox = Unit.Name == "Mailbox";
+            var IsFishingSpot = Unit.IsFishingSpot;
             
 
-            if ((!IsHerbOrOre && !IsMailBox)
+            if ((!IsHerbOrOre && !IsMailBox && !IsFishingSpot)
                 || BannedObjectIDs.Contains(Unit.ObjectId))
             // Dont record moving NPCS. Itll ruin shit.
             {
@@ -360,7 +362,27 @@ namespace Wrapper.Database
             }
 
 
+            if(IsFishingSpot)
+            {
+                if (!MapDatabase.Nodes.Any(x => x.ObjectId == Unit.ObjectId
+                    && Vector3.Distance(Unit.Position, new Vector3(x.X, x.Y, x.Z)) < GRID_SIZE / 4))
+                // If we cant find a matching ObjectID within GRID_SIZE yards. Lets add this entry
+                {
+                    MapDatabase.Nodes.Add(new NodeLocationInfo()
+                    {
+                        X = Unit.Position.X,
+                        Y = Unit.Position.Y,
+                        Z = Unit.Position.Z,
+                        ObjectId = Unit.ObjectId,
+                        MapID = MapId,
+                        NodeType = NodeType.FishingHole,
+                        Name = Unit.Name
+                    });
 
+                    Console.WriteLine("[WoWDatabase] Found New Fishing Node: " + Unit.Name);
+                    IsDirty = true;
+                }
+            }
 
 
 
