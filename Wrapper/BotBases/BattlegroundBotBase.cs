@@ -4,7 +4,6 @@ using System.Text;
 using Wrapper.API;
 using Wrapper.Helpers;
 using Wrapper.WoW;
-using Wrapper.WoW.Filters;
 
 namespace Wrapper.BotBases
 {
@@ -22,7 +21,71 @@ namespace Wrapper.BotBases
         float LastMoveScore = 0;
         string LastMoveGUID = "";
 
+        private BattleGroundUIContainer UIContainer;
 
+        public class BattleGroundUIContainer
+        {
+            public StdUI.StdUiFrame Container;
+            public StdUI.StdUiLabel BGLabel;
+            public StdUiDropdown SelectedBGS;
+            public StdUiDropdown SelectedRoles;
+        }
+
+        public class BattleGroundUIConfigOptions
+        {
+            public bool AllowGather;
+            public bool AllowSkin;
+            public bool AllowLoot;
+            public bool AllowPullingMobs;
+            public bool AllowSelfDefense;
+
+            public float CombatRange;
+            internal bool AllowPullingYellows;
+            internal bool IgnoreElitesAndBosses;
+        }
+
+        public override void BuildConfig(StdUI.StdUiFrame Container)
+        {
+            if (UIContainer != null)
+            {
+                Program.MainUI.SetConfigPanel(UIContainer.Container);
+                return; //Already created. Just set and continue;
+            }
+
+            UIContainer = new BattleGroundUIContainer();
+            UIContainer.Container = Program.MainUI.StdUI.Frame(Container, Container.GetWidth(), Container.GetHeight() - 150, null);
+            Program.MainUI.StdUI.GlueTop(UIContainer.Container, Container, 0, -100, "TOP");
+
+            UIContainer.BGLabel = Program.MainUI.StdUI.Label(UIContainer.Container, "~== Native BG Config ==~", 18, null, Container.GetWidth() - 10, 25);
+            Program.MainUI.StdUI.GlueTop(UIContainer.BGLabel, UIContainer.Container, 50, 0, "TOP");
+
+            StdUiDropdown.StdUiDropdownItems[] Options = null;
+            /*[[
+                  local Options = { 
+                        {text="wsg", value=0},
+                        {text="av", value=1}, 
+                        {text="abs", value=2}
+                            }
+            ]]*/
+            UIContainer.SelectedBGS = Program.MainUI.StdUI.Dropdown(UIContainer.Container, 200, 25, Options, null, true, false);
+            UIContainer.SelectedBGS.SetOptions(Options);
+            UIContainer.SelectedBGS.SetPlaceholder("~-- Please Select a BG --~");
+            Program.MainUI.StdUI.GlueTop(UIContainer.SelectedBGS, UIContainer.Container, 0, -40, "TOP");
+
+            StdUiDropdown.StdUiDropdownItems[] OptionsRoles = null;
+            /*[[
+                  local OptionsRoles = { 
+                        {text="tank", value=0},
+                        {text="healer", value=1}, 
+                        {text="dps", value=2}
+                            }
+            ]]*/
+            UIContainer.SelectedRoles = Program.MainUI.StdUI.Dropdown(UIContainer.Container, 200, 25, OptionsRoles, null, true, false);
+            UIContainer.SelectedRoles.SetOptions(OptionsRoles);
+            UIContainer.SelectedRoles.SetPlaceholder("~-- Please Select a Role --~");
+            Program.MainUI.StdUI.GlueTop(UIContainer.SelectedRoles, UIContainer.Container, 0, -90, "TOP");
+
+        }
 
         public PVPBotBase()
         {

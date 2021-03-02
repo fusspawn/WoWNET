@@ -10173,7 +10173,7 @@ System.define("System.Random", (function ()
   end
   GenerateSeed = function ()
     if not rnd then
-      --math.randomseed(GetTime())
+--      math.randomseed(GetTime())
       rnd = math.random
     end
     return rnd(0, 2147483647)
@@ -23862,21 +23862,74 @@ end)
 end
 do
 local System = System
+local Wrapper
 local WrapperHelpers
 local WrapperWoW
 local WrapperWoWFilters
 System.import(function (out)
+  Wrapper = out.Wrapper
   WrapperHelpers = Wrapper.Helpers
   WrapperWoW = Wrapper.WoW
   WrapperWoWFilters = Wrapper.WoW.Filters
 end)
 System.namespace("Wrapper.BotBases", function (namespace)
   namespace.class("PVPBotBase", function (namespace)
-    local Pulse, RunQueueLogic, RunBattleGroundLogic, __ctor__
+    local BuildConfig, Pulse, RunQueueLogic, RunBattleGroundLogic, class, __ctor__
+    namespace.class("BattleGroundUIContainer", function (namespace)
+      return {}
+    end)
+    namespace.class("BattleGroundUIConfigOptions", function (namespace)
+      return {
+        AllowGather = false,
+        AllowSkin = false,
+        AllowLoot = false,
+        AllowPullingMobs = false,
+        AllowSelfDefense = false,
+        CombatRange = 0,
+        AllowPullingYellows = false,
+        IgnoreElitesAndBosses = false
+      }
+    end)
     __ctor__ = function (this)
       this.Players = WrapperWoWFilters.PlayerFilterList(true, true)
       this.SmartTarget = WrapperHelpers.SmartTargetPVP(this.Players)
       this.SmartMove = WrapperHelpers.SmartMovePVP(this.Players)
+    end
+    BuildConfig = function (this, Container)
+      if this.UIContainer ~= nil then
+        Wrapper.Program.MainUI:SetConfigPanel(this.UIContainer.Container)
+        return
+        --Already created. Just set and continue;
+      end
+
+      this.UIContainer = class.BattleGroundUIContainer()
+      this.UIContainer.Container = Wrapper.Program.MainUI.StdUI:Frame(Container, Container:GetWidth(), Container:GetHeight() - 150)
+      Wrapper.Program.MainUI.StdUI:GlueTop(this.UIContainer.Container, Container, 0, - 100, "TOP")
+
+      this.UIContainer.BGLabel = Wrapper.Program.MainUI.StdUI:Label(this.UIContainer.Container, "~== Native BG Config ==~", 18, nil, Container:GetWidth() - 10, 25)
+      Wrapper.Program.MainUI.StdUI:GlueTop(this.UIContainer.BGLabel, this.UIContainer.Container, 50, 0, "TOP")
+
+      local Options = nil
+      local Options = { 
+            {text="wsg", value=0},
+            {text="av", value=1}, 
+            {text="abs", value=2}
+                }
+      this.UIContainer.SelectedBGS = Wrapper.Program.MainUI.StdUI:Dropdown(this.UIContainer.Container, 200, 25, Options, nil, true, false)
+      this.UIContainer.SelectedBGS:SetOptions(Options)
+      this.UIContainer.SelectedBGS:SetPlaceholder("~-- Please Select a BG --~")
+      Wrapper.Program.MainUI.StdUI:GlueTop(this.UIContainer.SelectedBGS, this.UIContainer.Container, 0, - 40, "TOP")
+
+      local OptionsRoles = nil
+      local OptionsRoles = { 
+            {text="tank", value=0},
+            {text="healer", value=1}, 
+            {text="dps", value=2}
+                }
+      this.UIContainer.SelectedRoles = Wrapper.Program.MainUI.StdUI:Dropdown(this.UIContainer.Container, 200, 25, OptionsRoles, nil, true, false)
+      this.UIContainer.SelectedRoles:SetOptions(OptionsRoles)
+      this.UIContainer.SelectedRoles:SetPlaceholder("~-- Please Select a Role --~")
+      Wrapper.Program.MainUI.StdUI:GlueTop(this.UIContainer.SelectedRoles, this.UIContainer.Container, 0, - 90, "TOP")
     end
     Pulse = function (this)
       if WrapperWoW.ObjectManager.getInstance().Player == nil or not (__LB__.Navigator ~= nil) then
@@ -23977,7 +24030,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
         end
       end
     end
-    return {
+    class = {
       base = function (out)
         return {
           out.Wrapper.BotBase
@@ -23987,9 +24040,11 @@ System.namespace("Wrapper.BotBases", function (namespace)
       MinScoreJumpToSwap = 100,
       LastMoveScore = 0,
       LastMoveGUID = "",
+      BuildConfig = BuildConfig,
       Pulse = Pulse,
       __ctor__ = __ctor__
     }
+    return class
   end)
 end)
 
@@ -27919,6 +27974,7 @@ System.init({
     "Wrapper.API.LuaBox",
     "Wrapper.API.WoWAPI",
     "Wrapper.BotBases.NativeGrindBotBase",
+    "Wrapper.BotBases.PVPBotBase",
     "Wrapper.Database.LocationInfo",
     "Wrapper.DataLoggerBase",
     "Wrapper.NativeBehaviors.BehaviorStateMachine.StateMachineState",
@@ -27950,7 +28006,8 @@ System.init({
     "Wrapper.API.WoWTexture",
     "Wrapper.BotBases.NativeGrindBotBase.NativeGrindConfigOptions",
     "Wrapper.BotBases.NativeGrindBotBase.NativeGrindUIContainer",
-    "Wrapper.BotBases.PVPBotBase",
+    "Wrapper.BotBases.PVPBotBase.BattleGroundUIConfigOptions",
+    "Wrapper.BotBases.PVPBotBase.BattleGroundUIContainer",
     "Wrapper.Database.FactionID",
     "Wrapper.Database.GatherableTypes",
     "Wrapper.Database.MapDataEntry",
