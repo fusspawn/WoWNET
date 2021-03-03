@@ -275,6 +275,8 @@ namespace Wrapper.BotBases
                 }
             }
 
+
+            StateMachine.DebugRender();
             base.DrawDebug();
         }
     }

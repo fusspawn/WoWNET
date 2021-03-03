@@ -15,10 +15,8 @@ namespace Wrapper
 			: WoWFrame
 		{
 			public dynamic config;
-
 			public extern List<StdUiFrame> GetChildrenWidgets();
 			public extern void SetFullWidth(bool Flag);
-
 
 		}
 
@@ -30,6 +28,31 @@ namespace Wrapper
             public _OnValueChanged OnValueChanged;
 
             public extern void SetMinMaxValue(float min, float max);
+        }
+
+        public class StdUiScrollTable
+            : StdUiFrame
+        {
+            public class StdUiScrollTableColumnDefinition {
+                public string name;
+                public int width;
+                public object index; //string or number
+                public string format;
+                public string align;
+                public StdUiScrollTableColumnColor color;
+                public bool sortable;
+            }
+
+            public class StdUiScrollTableColumnColor
+            {
+                public double r;
+                public double g;
+                public double b;
+                public double a;
+            }
+
+            public extern void SetData(List<Object> Data);
+
         }
 
 		public class StdUiInputFrame
@@ -44,9 +67,7 @@ namespace Wrapper
 		{
 			public delegate void _OnValueChanged(StdUiCheckBox self, bool State, bool value);
 			public _OnValueChanged OnValueChanged;
-
             public extern void SetChecked(bool Checked);
-
             public extern bool GetChecked();
         }
 
@@ -82,7 +103,6 @@ namespace Wrapper
 
 
         public extern StdUiDropdown Dropdown(WoWFrame parent, int width, int height, StdUiDropdownItems[] options, object value, bool multi, bool assoc);
-
 		public extern StdUiFrame Frame(WoWFrame Parent, int Width, int Height, string Inherits);
         public extern StdUiFrame Panel(WoWFrame Parent, int Width, int Height, string Inherits);
         public extern StdUiFrame PanelWithLabel(WoWFrame Parent, int Width, int Height, string Inherits, string Text);
@@ -102,7 +122,7 @@ namespace Wrapper
 #pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
         public extern StdUiLabel Label(WoWFrame UIParent, string Text, int size, string? inherit, int width, int height);
         public extern void GlueTop(WoWFrame Frame, WoWFrame ParentFrame, int XOffset, int YOffset, string Relation);
-
+        public extern StdUiScrollTable ScrollTable(WoWFrame ParentFrame, int cols, int numRows, int rowHeight);
 
 		public static void Init()
         {

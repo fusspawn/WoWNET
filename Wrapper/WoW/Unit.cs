@@ -53,6 +53,11 @@ namespace Wrapper.WoW
 
         public bool IsBossOrElite;
 
+        public bool IsTargettingMeOrPet
+        {
+            get { return (TargetGUID != null && TargetGUID != ObjectManager.Instance.Player.GUID && TargetGUID != ObjectManager.Instance.Player.Pet?.GUID); }
+        }
+
 
         public WoWUnit(string _GUID) 
             : base(_GUID)

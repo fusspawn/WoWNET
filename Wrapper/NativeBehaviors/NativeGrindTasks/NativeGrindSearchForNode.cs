@@ -20,18 +20,45 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
             this.ObjectiveScanner = SmartObjective;
         }
 
+        public override void DebugRender()
+        {
+            if (TargetNode == null)
+                return;
+
+            var Purple = new LibDraw.LibDrawColor()
+            {
+                R = 1,
+                G = 0,
+                B = 1,
+                A = 1,
+            };
+
+            var Pos = new Vector3(TargetNode.X, TargetNode.Y, TargetNode.Z);
+            LibDraw.Circle(Pos, 2, 1, Purple);
+            LibDraw.Text("Dest: " + TargetNode.Name, Pos - new WoW.Vector3(0,0,-0.25), 12, Purple, null);
+        }
+
         public override bool Complete()
         {
             if (WoWAPI.UnitIsDeadOrGhost("player"))
                 return true;
 
-            if(ObjectManager.Instance.Player.IsInCombat)
+            var IsInCombat = ObjectManager.Instance.Player.IsInCombat;
+            var NextTask = ObjectiveScanner.GetNextTask();
+
+
+            if (ObjectManager.Instance.Player.IsInCombat)
             {
-                DebugLog.Log("BroBot", "Switching to Combat?!");
+                DebugLog.Log("SearchForNode", "Switching to Combat?!");
                 return true;
             }
-            return ObjectiveScanner.GetNextTask() != null
-                || ObjectManager.Instance.Player.IsInCombat;
+            if (NextTask != null)
+            {
+                DebugLog.Log("SearchForNode", "Next Task Is: " + NextTask.TaskType);
+                return true;
+            }
+        
+            return false;
         }
 
         public override void Tick()
@@ -62,11 +89,29 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 if (AllNodes.Count > 0)
                 {
                     TargetNode = AllNodes[new Random().Next(0, AllNodes.Count - 1)];
+                    
+
+                    bool IsReachable = true;
+
+                    /*
+                    [[
+                        if not __LB__.NavMgr_IsReachable(this.TargetNode.X, this.TargetNode.Y, this.TargetNode.Z) then
+                            IsReachable = false;
+                        end                    
+                    ]]
+                    */
+
+                    if (!IsReachable)
+                    {
+                        DebugLog.Log("SearchForNode", "Intended Destination wasnt reachable reject it");
+                        return;
+                    }
+
                     _StringRepr = $"Moving to new destination: {(int)TargetNode.X} / {(int)TargetNode.Y} / {(int)TargetNode.Z}";
                 }
                 else
                 {
-                    DebugLog.Log("BroBot", "Unable to find a valid node in the database? Has the map been scanned?!");
+                    DebugLog.Log("SearchForNode", "Unable to find a valid node in the database? Has the map been scanned?!");
                     return;
                 }
             }
@@ -76,7 +121,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
             if (Vector3.Distance(new Vector3(TargetNode.X, TargetNode.Y, TargetNode.Z), ObjectManager.Instance.Player.Position) < 10)
             {
-                DebugLog.Log("BroBot", "Got to target node with nothing to do. Lets give this one up and grab another");
+                DebugLog.Log("SearchForNode", "Got to target node with nothing to do. Lets give this one up and grab another");
                 TargetNode = null;
             }
             

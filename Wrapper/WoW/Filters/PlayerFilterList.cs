@@ -25,19 +25,21 @@ namespace Wrapper.WoW.Filters
 
         public override bool FilterUnit(WoWUnit GameObject)
         {
-
             var Result = GameObject.ObjectType == LuaBox.EObjectType.Player;
+
+            if (Result)
+                DebugLog.Log("PlayerFilterList", $"Found Player {GameObject.Name}");
 
             if (Result && AllowFriendly && GameObject.Friend)
             {
-                DebugLog.Log("BroBot", "Found Player F");
+                DebugLog.Log("PlayerFilterList", "Found Player F");
                 return true;
             }
 
             if (Result && AllowHostile && GameObject.Hostile)
             {
 
-                DebugLog.Log("BroBot", "Found Player H");
+                DebugLog.Log("PlayerFilterList", "Found Player H");
                 return true;
             }
 

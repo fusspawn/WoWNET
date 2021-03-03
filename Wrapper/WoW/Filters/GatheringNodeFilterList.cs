@@ -11,7 +11,6 @@ namespace Wrapper.WoW.Filters
         public bool RequireProfessions = false;
 
         public GatheringNodeFilterList(bool OnlyViableProfessions = false)
-         
         {
             RequireProfessions = OnlyViableProfessions;
             DebugLog.Log("GatheringNodeFilter", "Gathering Node filter created with only Professions: " + OnlyViableProfessions);
@@ -34,6 +33,7 @@ namespace Wrapper.WoW.Filters
             {
                 DebugLog.Log("GatheringNodeFilter", "Found Filter with Profession: " + GameObject.Name + " Herb: " + GameObject.IsHerb + " Ore " + GameObject.IsOre);
             }
+
             return HasProfession;
         }
     }

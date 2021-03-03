@@ -84,6 +84,15 @@ namespace Wrapper.WoW
 
                         switch (AllObjects[GUID].ObjectType)
                         {
+                            case LuaBox.EObjectType.Player:
+                                FilteredLists.ForEach(x => {
+                                    if (x.FilterUnit(AllObjects[GUID] as WoWUnit))
+                                    {
+                                        x.TrackUnit(AllObjects[GUID] as WoWUnit);
+                                    }
+                                });
+
+                                break;
                             case LuaBox.EObjectType.Unit:
                                 if (OnNewUnit != null)
                                 {

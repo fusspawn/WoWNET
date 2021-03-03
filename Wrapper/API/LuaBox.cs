@@ -476,6 +476,7 @@ namespace Wrapper.API
         /// </summary>
         public extern int ObjectId(string GuidOrUnitId);
 
+
         /// <summary>
         /// @CSharpLua.Template = "local func = function (...) return __LB__.Unlock(__LB__.ObjectInteract, ...) end func({0})"
         /// </summary>
@@ -707,13 +708,19 @@ namespace Wrapper.API
             var Distance = Vector3.Distance(ObjectManager.Instance.Player.Position, Destination);
             AllowMounting(false);
 
-            //DebugLog.Log("Navigator", "AllowMounting: " + (Distance > 20) + " Dist: " + Distance);
+            //DebugLog.Log("Navigator", "AllowMounting: " + (Distance > 50) + " Dist: " + Distance);
 
-            if(Distance > 20)
+            if(Distance > 50)
             {
-                if(WoWAPI.IsOutdoors() && !WoWAPI.IsMounted() && WoWAPI.IsUsableSpell("Summon Random Favorite Mount"))
+                if(WoWAPI.IsOutdoors() && !WoWAPI.IsMounted() 
+                    && !WoWAPI.UnitAffectingCombat("player") 
+                    && !WoWAPI.UnitIsDeadOrGhost("player"))
                 {
-                    WoWAPI.CastSpellByName("Summon Random Favorite Mount", null);
+                    Stop();
+                    /*[[
+                    CallCompanion("MOUNT", random(GetNumCompanions("MOUNT")))
+                    ]]*/
+                    return;
                 }
             }
 

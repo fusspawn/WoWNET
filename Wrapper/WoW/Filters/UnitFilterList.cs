@@ -22,6 +22,9 @@ namespace Wrapper.WoW.Filters
 
         public override bool FilterUnit(WoWUnit GameObject)
         {
+            if (GameObject.ObjectType == LuaBox.EObjectType.Player)
+                return false;
+
             if(!AllowCritter)
             {
                if (WoWAPI.UnitCreatureType(GameObject.GUID) == "Critter")

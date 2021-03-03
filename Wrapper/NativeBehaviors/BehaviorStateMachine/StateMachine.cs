@@ -29,5 +29,11 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
                 }
             }
         }
+
+        public void DebugRender()
+        {
+            if (States.Count > 0)
+                States.Peek().DebugRender();
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Wrapper.API;
 using Wrapper.Database;
@@ -12,7 +13,10 @@ namespace Wrapper.WoW
 
         private WoWFrame CombatTrackingFrame;
         public bool IsInCombat = false;
-
+        public WoWUnit Pet
+        {
+            get { return FindPet(); }
+        }
 
         public LocalPlayer()
             : base("player")
@@ -208,6 +212,21 @@ end
 		            math.atan((Z1 - Z2) / math.sqrt(math.pow(X1 - X2, 2) + math.pow(Y1 - Y2, 2))) % math.pi
 		         lb.SetPlayerAngles(angle)
             ]]*/
+        }
+
+        public WoWUnit FindPet()
+        {
+            var Instance = ObjectManager.Instance.AllObjects.Where(x =>
+            {
+                /*[[  if 1==1 then return __LB__.UnitTagHandler(UnitIsUnit, x.Value.GUID, "pet") end ]] */
+                return false;
+            }).SingleOrDefault();
+            
+            if (Instance.Value != null)
+                return Instance.Value as WoWUnit;
+            
+            return null;
+
         }
     }
 }

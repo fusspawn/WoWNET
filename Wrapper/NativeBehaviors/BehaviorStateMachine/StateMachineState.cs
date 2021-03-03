@@ -57,5 +57,10 @@ namespace Wrapper.NativeBehaviors.BehaviorStateMachine
                 EntryTime =Program.CurrentTime;
             }
         }
+
+        public virtual void DebugRender()
+        {
+
+        }
     }
 }

@@ -101,12 +101,14 @@ namespace Wrapper.NativeBehaviors
         public GatheringNodeFilterList GatheringNodes;
         public UnitFilterList Units;
         public DeadUnitsFilterList DeadUnits;
+        public PlayerFilterList Players;
 
         public NativeGrindSmartObjective()
         {
             GatheringNodes = new GatheringNodeFilterList(true);
             Units = new UnitFilterList(true, false);
             DeadUnits = new DeadUnitsFilterList();
+            Players = new PlayerFilterList(true, true);
         }
 
         public void Update()
@@ -133,7 +135,7 @@ namespace Wrapper.NativeBehaviors
                     foreach (var GameObject in
                         GatheringNodes.GetObjects().Where(x => !Blacklist.IsOnBlackList(x.Value.GUID)))
                     {
-                        double score = 0;
+                        double score = 25;
                         score = score + (BASE_SCORE - Vector3.Distance(GameObject.Value.Position, ObjectManager.Instance.Player.Position));
 
 
@@ -203,10 +205,10 @@ namespace Wrapper.NativeBehaviors
                     ObjectManager.Instance.Player.Position)) + 0.25;
 
                 if (WoWAPI.UnitAffectingCombat(_Unit.GUID)
-                    && _Unit.TargetGUID == ObjectManager.Instance.Player.GUID
+                    && _Unit.IsTargettingMeOrPet
                     && NativeGrindBotBase.ConfigOptions.AllowSelfDefense)
                 {
-                    DebugLog.Log("BroBot", "Found In Combat Unit");
+                    DebugLog.Log("SmartObjective", "Found In Combat Unit");
                     score = score + 500;
                 }
                 else
@@ -232,7 +234,26 @@ namespace Wrapper.NativeBehaviors
                 {
                     score = score - 500;
                 }
-                
+
+                DebugLog.Log("SmartObjective", $"There are {Players.GetUnits().Count} Players nearby");
+
+                if (Players.GetUnits().Any(x =>
+                {
+                    if (x.Value.GUID == ObjectManager.Instance.Player.GUID)
+                        return false;
+
+                    var PlayerNear = WoW.Vector3.Distance(Unit.Value.Position, x.Value.Position) < 50;
+
+                    if(PlayerNear)
+                    {
+                        DebugLog.Log("SmartObjective", $"Deweighting {x.Value.Name} due to proximity to another player"); 
+                    }
+
+                    return PlayerNear
+                            && !_Unit.IsTargettingMeOrPet;
+                })) {
+                    score = score - 200; // Was to close to another player. Move away
+                }
 
                 Tasks.Add(new SmartObjectiveTask()
                 {
