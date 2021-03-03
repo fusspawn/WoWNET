@@ -65,13 +65,21 @@ namespace Wrapper.UI
                     align = "LEFT",
                     width = 125
                 },
+                 new StdUiScrollTable.StdUiScrollTableColumnDefinition()
+                {
+                    name = "Distance",
+                    index = "Distance",
+                    align = "LEFT",
+                    width = 125
+                },
 
             }, 10 , 25);
+
 
             Program.MainUI.StdUI.GlueTop(UIContainer.ScrollTable, UIContainer.MainFrame, 0, -50, "TOP");
 
             UIContainer.ScrollTable.SetData(ObjectManager.Instance.AllObjects.Values.Where(x => x.ObjectType == LuaBox.EObjectType.Unit).Select(x => new { Name=x.Name,
-                GUID=x.GUID, IsTargettingMeOrPet= (x as WoWUnit).IsTargettingMeOrPet.ToString(), HP=(x as WoWUnit).Health  }).ToList<Object>());
+                GUID=x.GUID, IsTargettingMeOrPet= (x as WoWUnit).IsTargettingMeOrPet.ToString(), HP=(x as WoWUnit).Health, Distance=Vector3.Distance(ObjectManager.Instance.Player.Position, x.Position)}).OrderBy(x => x.Distance).ToList<Object>());
         }
 
         public void UpdateUI()
@@ -80,8 +88,9 @@ namespace Wrapper.UI
                  Name = x.Name,
                  GUID = x.GUID,
                  IsTargettingMeOrPet = (x as WoWUnit).TargetGUID,
-                 HP = (x as WoWUnit).Health
-             }).ToList<Object>());
+                 HP = (x as WoWUnit).Health,
+                 Distance = Vector3.Distance(ObjectManager.Instance.Player.Position, x.Position)
+            }).OrderBy(x=> x.Distance).ToList<Object>());
         }
     }
 }

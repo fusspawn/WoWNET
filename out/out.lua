@@ -10173,7 +10173,7 @@ System.define("System.Random", (function ()
   end
   GenerateSeed = function ()
     if not rnd then
---      math.randomseed(GetTime())
+      --math.randomseed(GetTime())
       rnd = math.random
     end
     return rnd(0, 2147483647)
@@ -26497,32 +26497,45 @@ System.namespace("Wrapper.UI", function (namespace)
       extern.align = "LEFT"
       extern.width = 125
       default:Add(extern)
+      local extern = WrapperStdUiScrollTable.StdUiScrollTableColumnDefinition()
+      extern.name = "Distance"
+      extern.index = "Distance"
+      extern.align = "LEFT"
+      extern.width = 125
+      default:Add(extern)
       this.UIContainer.ScrollTable = Wrapper.Program.MainUI.StdUI:ScrollTable(this.UIContainer.MainFrame, default, 10, 25)
+
 
       Wrapper.Program.MainUI.StdUI:GlueTop(this.UIContainer.ScrollTable, this.UIContainer.MainFrame, 0, - 50, "TOP")
 
-      this.UIContainer.ScrollTable:SetData(Linq.ToList(Linq.Select(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects:getValues(), function (x)
+      this.UIContainer.ScrollTable:SetData(Linq.ToList(Linq.OrderBy(Linq.Select(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects:getValues(), function (x)
         return x.ObjectType == 5 --[[EObjectType.Unit]]
       end), function (x)
         return System.AnonymousType({
           Name = x.Name,
           GUID = x.GUID,
           IsTargettingMeOrPet = System.Boolean.ToString((System.as(x, WrapperWoW.WoWUnit)):getIsTargettingMeOrPet()),
-          HP = (System.as(x, WrapperWoW.WoWUnit)).Health
+          HP = (System.as(x, WrapperWoW.WoWUnit)).Health,
+          Distance = WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, x.Position)
         })
-      end, System.AnonymousType)))
+      end, System.AnonymousType), function (x)
+        return x.Distance
+      end, nil, System.Double)))
     end
     UpdateUI = function (this)
-      this.UIContainer.ScrollTable:SetData(Linq.ToList(Linq.Select(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects:getValues(), function (x)
+      this.UIContainer.ScrollTable:SetData(Linq.ToList(Linq.OrderBy(Linq.Select(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects:getValues(), function (x)
         return x.ObjectType == 5 --[[EObjectType.Unit]]
       end), function (x)
         return System.AnonymousType({
           Name = x.Name,
           GUID = x.GUID,
           IsTargettingMeOrPet = (System.as(x, WrapperWoW.WoWUnit)).TargetGUID,
-          HP = (System.as(x, WrapperWoW.WoWUnit)).Health
+          HP = (System.as(x, WrapperWoW.WoWUnit)).Health,
+          Distance = WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, x.Position)
         })
-      end, System.AnonymousType)))
+      end, System.AnonymousType), function (x)
+        return x.Distance
+      end, nil, System.Double)))
     end
     class = {
       UpdateUI = UpdateUI,
