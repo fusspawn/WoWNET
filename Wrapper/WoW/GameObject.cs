@@ -9,6 +9,7 @@ using Wrapper.Database;
 namespace Wrapper.WoW
 {
     public class WoWGameObject
+        : Object
     {
         public string GUID;
         public string Name;

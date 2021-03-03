@@ -24,10 +24,16 @@ namespace Wrapper.UI
         public StdUI StdUI;
        
         public BotUIDataContainer UIContainer;
+        public UnitViewer Viewer;
 
         public BotMainUI()
         {
             CreateMainFrame();
+
+            WoWAPI.After(() =>
+            {
+                Viewer = new UnitViewer();
+            }, 2);
         }
 
         public void SetConfigPanel(StdUI.StdUiFrame Frame)

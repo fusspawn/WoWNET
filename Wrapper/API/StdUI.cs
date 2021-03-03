@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Wrapper.API;
 using static Wrapper.StdUI.StdUiDropdown;
+using static Wrapper.StdUI.StdUiScrollTable;
 
 namespace Wrapper
 {
@@ -52,6 +53,7 @@ namespace Wrapper
             }
 
             public extern void SetData(List<Object> Data);
+
 
         }
 
@@ -122,7 +124,7 @@ namespace Wrapper
 #pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
         public extern StdUiLabel Label(WoWFrame UIParent, string Text, int size, string? inherit, int width, int height);
         public extern void GlueTop(WoWFrame Frame, WoWFrame ParentFrame, int XOffset, int YOffset, string Relation);
-        public extern StdUiScrollTable ScrollTable(WoWFrame ParentFrame, int cols, int numRows, int rowHeight);
+        public extern StdUiScrollTable ScrollTable(WoWFrame ParentFrame, List<StdUiScrollTableColumnDefinition> cols, int numRows, int rowHeight);
 
 		public static void Init()
         {
