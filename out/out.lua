@@ -10173,7 +10173,7 @@ System.define("System.Random", (function ()
   end
   GenerateSeed = function ()
     if not rnd then
-      --math.randomseed(GetTime())
+--      math.randomseed(GetTime())
       rnd = math.random
     end
     return rnd(0, 2147483647)
@@ -18045,12 +18045,15 @@ System.namespace("Wrapper", function (namespace)
       WrapperAPI.DebugLog.Log("BroBot", "BroBot V2 Loaded Libs", false)
 
       class.MainUI = WrapperUI.BotMainUI()
+      class.UnitViewer = WrapperUI.UnitViewer()
 
       C_Timer.NewTicker(0.2, function ()
         if not ThrowWowErrors then
           System.try(function ()
             class.CurrentTime = GetTime()
             WrapperWoW.ObjectManager.getInstance():Pulse()
+            class.UnitViewer:UpdateUI()
+
 
             if class.IsRunning then
               if class.Base ~= nil then
@@ -18070,7 +18073,7 @@ System.namespace("Wrapper", function (namespace)
           end)
         else
           WrapperWoW.ObjectManager.getInstance():Pulse()
-
+          class.UnitViewer:UpdateUI()
           if class.IsRunning then
             if class.Base ~= nil then
               class.Base:Pulse()
@@ -26245,12 +26248,10 @@ local System = System
 local Wrapper
 local WrapperAPI
 local WrapperBotBases
-local WrapperUI
 System.import(function (out)
   Wrapper = out.Wrapper
   WrapperAPI = Wrapper.API
   WrapperBotBases = Wrapper.BotBases
-  WrapperUI = Wrapper.UI
 end)
 System.namespace("Wrapper.UI", function (namespace)
   namespace.class("BotMainUI", function (namespace)
@@ -26260,10 +26261,6 @@ System.namespace("Wrapper.UI", function (namespace)
     end)
     __ctor__ = function (this)
       CreateMainFrame(this)
-
-      C_Timer.After(2, function ()
-        this.Viewer = WrapperUI.UnitViewer()
-      end)
     end
     SetConfigPanel = function (this, Frame)
       if this.UIContainer.ConfigFrame ~= nil then
@@ -26462,7 +26459,7 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.UI", function (namespace)
   namespace.class("UnitViewer", function (namespace)
-    local CreateUI, class, __ctor__
+    local CreateUI, UpdateUI, class, __ctor__
     namespace.class("UnitViewerUIContainer", function (namespace)
       return {}
     end)
@@ -26492,7 +26489,13 @@ System.namespace("Wrapper.UI", function (namespace)
       extern.name = "Targetting Us"
       extern.index = "IsTargettingMeOrPet"
       extern.align = "LEFT"
-      extern.width = 250
+      extern.width = 125
+      default:Add(extern)
+      local extern = WrapperStdUiScrollTable.StdUiScrollTableColumnDefinition()
+      extern.name = "HP"
+      extern.index = "HP"
+      extern.align = "LEFT"
+      extern.width = 125
       default:Add(extern)
       this.UIContainer.ScrollTable = Wrapper.Program.MainUI.StdUI:ScrollTable(this.UIContainer.MainFrame, default, 10, 25)
 
@@ -26504,11 +26507,25 @@ System.namespace("Wrapper.UI", function (namespace)
         return System.AnonymousType({
           Name = x.Name,
           GUID = x.GUID,
-          IsTargettingMeOrPet = System.Boolean.ToString((System.as(x, WrapperWoW.WoWUnit)):getIsTargettingMeOrPet())
+          IsTargettingMeOrPet = System.Boolean.ToString((System.as(x, WrapperWoW.WoWUnit)):getIsTargettingMeOrPet()),
+          HP = (System.as(x, WrapperWoW.WoWUnit)).Health
+        })
+      end, System.AnonymousType)))
+    end
+    UpdateUI = function (this)
+      this.UIContainer.ScrollTable:SetData(Linq.ToList(Linq.Select(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects:getValues(), function (x)
+        return x.ObjectType == 5 --[[EObjectType.Unit]]
+      end), function (x)
+        return System.AnonymousType({
+          Name = x.Name,
+          GUID = x.GUID,
+          IsTargettingMeOrPet = (System.as(x, WrapperWoW.WoWUnit)).TargetGUID,
+          HP = (System.as(x, WrapperWoW.WoWUnit)).Health
         })
       end, System.AnonymousType)))
     end
     class = {
+      UpdateUI = UpdateUI,
       __ctor__ = __ctor__
     }
     return class

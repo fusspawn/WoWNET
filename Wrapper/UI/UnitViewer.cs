@@ -56,7 +56,14 @@ namespace Wrapper.UI
                     name = "Targetting Us",
                     index = "IsTargettingMeOrPet",
                     align = "LEFT",
-                    width = 250
+                    width = 125
+                },
+                new StdUiScrollTable.StdUiScrollTableColumnDefinition()
+                {
+                    name = "HP",
+                    index = "HP",
+                    align = "LEFT",
+                    width = 125
                 },
 
             }, 10 , 25);
@@ -64,7 +71,17 @@ namespace Wrapper.UI
             Program.MainUI.StdUI.GlueTop(UIContainer.ScrollTable, UIContainer.MainFrame, 0, -50, "TOP");
 
             UIContainer.ScrollTable.SetData(ObjectManager.Instance.AllObjects.Values.Where(x => x.ObjectType == LuaBox.EObjectType.Unit).Select(x => new { Name=x.Name,
-                GUID=x.GUID, IsTargettingMeOrPet= (x as WoWUnit).IsTargettingMeOrPet.ToString()  }).ToList<Object>());
+                GUID=x.GUID, IsTargettingMeOrPet= (x as WoWUnit).IsTargettingMeOrPet.ToString(), HP=(x as WoWUnit).Health  }).ToList<Object>());
+        }
+
+        public void UpdateUI()
+        {
+            UIContainer.ScrollTable.SetData(ObjectManager.Instance.AllObjects.Values.Where(x => x.ObjectType == LuaBox.EObjectType.Unit).Select(x => new {
+                 Name = x.Name,
+                 GUID = x.GUID,
+                 IsTargettingMeOrPet = (x as WoWUnit).TargetGUID,
+                 HP = (x as WoWUnit).Health
+             }).ToList<Object>());
         }
     }
 }

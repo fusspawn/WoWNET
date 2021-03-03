@@ -28,12 +28,7 @@ namespace Wrapper.UI
 
         public BotMainUI()
         {
-            CreateMainFrame();
-
-            WoWAPI.After(() =>
-            {
-                Viewer = new UnitViewer();
-            }, 2);
+            CreateMainFrame();         
         }
 
         public void SetConfigPanel(StdUI.StdUiFrame Frame)

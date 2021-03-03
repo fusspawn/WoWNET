@@ -40,7 +40,6 @@ namespace Wrapper.BotBases
         {
             
         }
-
         public override void BuildConfig(StdUI.StdUiFrame Container)
         {
             if (UIContainer != null)

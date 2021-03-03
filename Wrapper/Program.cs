@@ -14,6 +14,7 @@ namespace Wrapper
         public static double CurrentTime = 0f;
         public static bool IsRunning = false;
         public static BotMainUI MainUI;
+        public static UnitViewer UnitViewer;
 
         public static void Main(string[] args)
         {
@@ -29,6 +30,7 @@ namespace Wrapper
             DebugLog.Log("BroBot", "BroBot V2 Loaded Libs");
 
             Program.MainUI = new BotMainUI();
+            Program.UnitViewer = new UnitViewer();
 
             WoWAPI.NewTicker(() =>
             {
@@ -38,7 +40,9 @@ namespace Wrapper
                     {
                         CurrentTime = WoWAPI.GetTime();
                         ObjectManager.Instance.Pulse();
-                        
+                        UnitViewer.UpdateUI();
+
+
                         if (Program.IsRunning)
                         {
                             if (Base != null) { Base.Pulse(); }
@@ -63,7 +67,7 @@ namespace Wrapper
                 else
                 {
                     ObjectManager.Instance.Pulse();
-
+                    UnitViewer.UpdateUI();
                     if (Program.IsRunning)
                     {
                         if (Base != null) { Base.Pulse(); }
