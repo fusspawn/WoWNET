@@ -282,6 +282,11 @@ namespace Wrapper.API
         /// @CSharpLua.Template = "IsMounted()" 
         /// </summary>
         public static extern bool IsMounted();
+
+        /// <summary>
+        /// @CSharpLua.Template = "__LB__.UnitTagHandler(UnitIsUnit, {0}, {1})" 
+        /// </summary>
+        public static extern bool UnitIsUnit(string GUID, string Type);
     }
 
     public class WoWFrame

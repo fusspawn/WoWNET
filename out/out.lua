@@ -25760,7 +25760,7 @@ do
 local System = System
 System.namespace("Wrapper.Helpers", function (namespace)
   namespace.class("LuaHelper", function (namespace)
-    local GetGlobalFrom_G_Namespace
+    local GetGlobalFrom_G_Namespace, Lua_ToString
     GetGlobalFrom_G_Namespace = function (PropertyChain, T)
       local CurrentObject = _G[PropertyChain:get(0)]
       --DebugLog.Log("BroBot", "Aquired Global Object: " + PropertyChain[0]);
@@ -25774,6 +25774,13 @@ System.namespace("Wrapper.Helpers", function (namespace)
       end
 
       return System.cast(T, CurrentObject)
+    end
+    Lua_ToString = function (this, value)
+      if 1==1 then
+       return tostring(value)
+      end
+
+      return ""
     end
     return {
       GetGlobalFrom_G_Namespace = GetGlobalFrom_G_Namespace
@@ -26139,31 +26146,31 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
         repeat
           local _Unit = Unit.Value
 
-          if __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) or _Unit.Reaction > (WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowPullingYellows and 4 or 3) or not _Unit:getAttackable() then
-            --DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} Its dead or shit reaction");
+          if __LB__.UnitTagHandler(UnitIsDeadOrGhost, Unit.Value.GUID) or (_Unit.Reaction > (WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowPullingYellows and 4 or 3) and not _Unit:getIsTargettingMeOrPet()) or not _Unit:getAttackable() then
+            WrapperAPI.DebugLog.Log("SmartObjective", "Skipping " .. System.toString(Unit.Value.GUID) .. " Its dead or shit reaction", false)
             continue = true
             break
           end
 
           if __LB__.UnitTagHandler(UnitIsTrivial, Unit.Value.GUID) or __LB__.UnitTagHandler(UnitCreatureType, Unit.Value.GUID) == "Critter" then
             if not __LB__.UnitTagHandler(UnitAffectingCombat, Unit.Value.GUID) or not WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowSelfDefense then
-              -- DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} Its Trivial or a Critter");
+              WrapperAPI.DebugLog.Log("SmartObjective", "Skipping " .. System.toString(Unit.Value.GUID) .. " Its Trivial or a Critter", false)
               continue = true
               break
             end
           end
 
-          -- DebugLog.Log("BroBot", "Found Valid Combat Target");
+          WrapperAPI.DebugLog.Log("SmartObjective", "Found Valid Combat Target", false)
 
           local score = 0
           score = score + (this.BASE_SCORE - WrapperWoW.Vector3.Distance(Unit.Value.Position, WrapperWoW.ObjectManager.getInstance().Player.Position)) + 0.25
 
-          if __LB__.UnitTagHandler(UnitAffectingCombat, _Unit.GUID) and _Unit:getIsTargettingMeOrPet() and WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowSelfDefense then
-            WrapperAPI.DebugLog.Log("SmartObjective", "Found In Combat Unit", false)
+          if _Unit:getIsTargettingMeOrPet() and WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowSelfDefense then
+            WrapperAPI.DebugLog.Log("SmartObjective", "Found In Combat Unit " .. System.toString(_Unit.GUID), false)
             score = score + 500
           else
             if not WrapperBotBases.NativeGrindBotBase.ConfigOptions.AllowPullingMobs then
-              --DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} AllowPull Is off");
+              WrapperAPI.DebugLog.Log("SmartObjective", "Skipping " .. System.toString(Unit.Value.GUID) .. " AllowPull Is off", false)
               --dont pull this one if allow pulling is off.
               continue = true
               break
@@ -26172,6 +26179,7 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
 
 
           if _Unit.IsBossOrElite and WrapperBotBases.NativeGrindBotBase.ConfigOptions.IgnoreElitesAndBosses and not __LB__.UnitTagHandler(UnitAffectingCombat, _Unit.GUID) then
+            WrapperAPI.DebugLog.Log("SmartObjective", "Skipping Elite Unit " .. System.toString(_Unit.GUID), false)
             continue = true
             break
           end
@@ -26181,7 +26189,7 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
             score = score - 500
           end
 
-          WrapperAPI.DebugLog.Log("SmartObjective", "There are " .. this.Players:GetUnits():getCount() .. " Players nearby", false)
+
 
           if Linq.Any(this.Players:GetUnits(), function (x)
             if x.Value.GUID == WrapperWoW.ObjectManager.getInstance().Player.GUID then
@@ -26190,9 +26198,6 @@ System.namespace("Wrapper.NativeBehaviors", function (namespace)
 
             local PlayerNear = WrapperWoW.Vector3.Distance(Unit.Value.Position, x.Value.Position) < 50
 
-            if PlayerNear then
-              WrapperAPI.DebugLog.Log("SmartObjective", "Deweighting " .. System.toString(x.Value.Name) .. " due to proximity to another player", false)
-            end
 
             return PlayerNear and not _Unit:getIsTargettingMeOrPet()
           end) then
@@ -26477,7 +26482,7 @@ System.namespace("Wrapper.UI", function (namespace)
       extern.name = "Name"
       extern.index = "Name"
       extern.align = "LEFT"
-      extern.width = 250
+      extern.width = 100
       default:Add(extern)
       local extern = WrapperStdUiScrollTable.StdUiScrollTableColumnDefinition()
       extern.name = "GUID"
@@ -26495,7 +26500,7 @@ System.namespace("Wrapper.UI", function (namespace)
       extern.name = "HP"
       extern.index = "HP"
       extern.align = "LEFT"
-      extern.width = 125
+      extern.width = 75
       default:Add(extern)
       local extern = WrapperStdUiScrollTable.StdUiScrollTableColumnDefinition()
       extern.name = "Distance"
@@ -26516,11 +26521,11 @@ System.namespace("Wrapper.UI", function (namespace)
           GUID = x.GUID,
           IsTargettingMeOrPet = System.Boolean.ToString((System.as(x, WrapperWoW.WoWUnit)):getIsTargettingMeOrPet()),
           HP = (System.as(x, WrapperWoW.WoWUnit)).Health,
-          Distance = WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, x.Position)
+          Distance = System.ToInt32(WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, x.Position))
         })
       end, System.AnonymousType), function (x)
         return x.Distance
-      end, nil, System.Double)))
+      end, nil, System.Int32)))
     end
     UpdateUI = function (this)
       this.UIContainer.ScrollTable:SetData(Linq.ToList(Linq.OrderBy(Linq.Select(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects:getValues(), function (x)
@@ -26529,13 +26534,13 @@ System.namespace("Wrapper.UI", function (namespace)
         return System.AnonymousType({
           Name = x.Name,
           GUID = x.GUID,
-          IsTargettingMeOrPet = (System.as(x, WrapperWoW.WoWUnit)).TargetGUID,
+          IsTargettingMeOrPet = (System.as(x, WrapperWoW.WoWUnit)):getIsTargettingMeOrPet() and "True" or "False",
           HP = (System.as(x, WrapperWoW.WoWUnit)).Health,
-          Distance = WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, x.Position)
+          Distance = System.ToInt32(WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, x.Position))
         })
       end, System.AnonymousType), function (x)
         return x.Distance
-      end, nil, System.Double)))
+      end, nil, System.Int32)))
     end
     class = {
       UpdateUI = UpdateUI,
@@ -26823,14 +26828,15 @@ System.namespace("Wrapper.WoW", function (namespace)
       		         lb.SetPlayerAngles(angle)
     end
     FindPet = function (this)
-      local Instance = Linq.SingleOrDefault(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
-        if 1==1 then return __LB__.UnitTagHandler(UnitIsUnit, x.Value.GUID, "pet") end 
-        return false
+      local Instance = Linq.FirstOrDefault(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects, function (x)
+        return __LB__.UnitTagHandler(UnitIsUnit, x.Value.GUID, "pet")
       end))
 
+
       if Instance.Value ~= nil then
-        return System.as(Instance.Value, WrapperWoW.WoWUnit)
+        return System.cast(WrapperWoW.WoWUnit, Instance.Value)
       end
+
 
       return nil
     end
@@ -27193,17 +27199,23 @@ System.namespace("Wrapper.WoW", function (namespace)
       return not System.String.IsNullOrEmpty(CastID)
     end
     getIsTargettingMeOrPet = function (this)
-      local default
-      if this.TargetGUID ~= nil and this.TargetGUID ~= WrapperWoW.ObjectManager.getInstance().Player.GUID then
-        local default = WrapperWoW.ObjectManager.getInstance().Player:getPet()
-        if default ~= nil then
-          default = default.GUID
-        end
-        if this.TargetGUID ~= default then
-          default = true
+      if this.TargetGUID == nil then
+        return false
+      end
+
+
+      if this.TargetGUID == WrapperWoW.ObjectManager.getInstance().Player.GUID then
+        return true
+      end
+
+      if WrapperWoW.ObjectManager.getInstance().Player:getPet() ~= nil then
+        if this.TargetGUID == WrapperWoW.ObjectManager.getInstance().Player:getPet().GUID then
+          return true
         end
       end
-      return default
+
+
+      return false
     end
     Interact = function (this)
       local func = function (...) return __LB__.Unlock(__LB__.ObjectInteract, ...) end func(this.GUID)
@@ -28289,13 +28301,12 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
         local KnowsHerbalism = Player:HasProfession("Herbalism")
         local KnowsMining = Player:HasProfession("Mining")
         local AllNodes = Linq.ToList((Linq.Where(WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).Nodes, function (p)
-          return ((p.NodeType == 2 --[[NodeType.Herb]] and KnowsHerbalism) or (p.NodeType == 1 --[[NodeType.Ore]] and KnowsMining)) and WrapperWoW.Vector3.Distance(WrapperWoW.Vector3(p.X, p.Y, p.Z), PlayerPosition:__clone__()) > 100 and not WrapperDatabase.WoWDatabase.IsConsideredDeathSpot(p.X, p.Y, p.Z)
+          return ((p.NodeType == 2 --[[NodeType.Herb]] and KnowsHerbalism) or (p.NodeType == 1 --[[NodeType.Ore]] and KnowsMining)) and WrapperWoW.Vector3.Distance(WrapperWoW.Vector3(p.X, p.Y, p.Z), PlayerPosition:__clone__()) > 50 and WrapperWoW.Vector3.Distance(WrapperWoW.Vector3(p.X, p.Y, p.Z), PlayerPosition:__clone__()) < 1000 and not WrapperDatabase.WoWDatabase.IsConsideredDeathSpot(p.X, p.Y, p.Z)
         end)))
+
 
         if #AllNodes > 0 then
           this.TargetNode = AllNodes:get(System.Random():Next(0, #AllNodes - 1))
-
-
           local IsReachable = true
 
           if not __LB__.NavMgr_IsReachable(this.TargetNode.X, this.TargetNode.Y, this.TargetNode.Z) then

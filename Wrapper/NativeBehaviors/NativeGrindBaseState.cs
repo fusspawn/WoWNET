@@ -178,10 +178,11 @@ namespace Wrapper.NativeBehaviors
                 var _Unit = Unit.Value as WoWUnit;
 
                 if (WoWAPI.UnitIsDeadOrGhost(Unit.Value.GUID) 
-                    || _Unit.Reaction > (NativeGrindBotBase.ConfigOptions.AllowPullingYellows ? 4 : 3) 
+                    || (_Unit.Reaction > (NativeGrindBotBase.ConfigOptions.AllowPullingYellows ? 4 : 3)
+                    && !_Unit.IsTargettingMeOrPet)
                     || !_Unit.Attackable)
                 {
-                    //DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} Its dead or shit reaction");
+                    DebugLog.Log("SmartObjective", $"Skipping {Unit.Value.GUID} Its dead or shit reaction");
                     continue;
                 }
 
@@ -193,22 +194,22 @@ namespace Wrapper.NativeBehaviors
                         || !NativeGrindBotBase.ConfigOptions.AllowSelfDefense)
                     {
 
-                        // DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} Its Trivial or a Critter");
+                         DebugLog.Log("SmartObjective", $"Skipping {Unit.Value.GUID} Its Trivial or a Critter");
                         continue;
                     }
                 }
 
-                // DebugLog.Log("BroBot", "Found Valid Combat Target");
+                DebugLog.Log("SmartObjective", "Found Valid Combat Target");
 
                 double score = 0;
                 score = score + (BASE_SCORE - Vector3.Distance(Unit.Value.Position,
                     ObjectManager.Instance.Player.Position)) + 0.25;
 
-                if (WoWAPI.UnitAffectingCombat(_Unit.GUID)
-                    && _Unit.IsTargettingMeOrPet
+                if (/*WoWAPI.UnitAffectingCombat(_Unit.GUID) && */
+                     _Unit.IsTargettingMeOrPet
                     && NativeGrindBotBase.ConfigOptions.AllowSelfDefense)
                 {
-                    DebugLog.Log("SmartObjective", "Found In Combat Unit");
+                    DebugLog.Log("SmartObjective", $"Found In Combat Unit {_Unit.GUID}");
                     score = score + 500;
                 }
                 else
@@ -216,7 +217,7 @@ namespace Wrapper.NativeBehaviors
                     
                     if (!NativeGrindBotBase.ConfigOptions.AllowPullingMobs)
                     {
-                        //DebugLog.Log("BroBot", $"Skipping {Unit.Value.Name} AllowPull Is off");
+                        DebugLog.Log("SmartObjective", $"Skipping {Unit.Value.GUID} AllowPull Is off");
                         //dont pull this one if allow pulling is off.
                         continue;
                     }
@@ -226,6 +227,7 @@ namespace Wrapper.NativeBehaviors
 
                 if (_Unit.IsBossOrElite && NativeGrindBotBase.ConfigOptions.IgnoreElitesAndBosses && !WoWAPI.UnitAffectingCombat(_Unit.GUID))
                 {
+                    DebugLog.Log("SmartObjective", $"Skipping Elite Unit {_Unit.GUID}");
                     continue;
                 }
 
@@ -235,7 +237,7 @@ namespace Wrapper.NativeBehaviors
                     score = score - 500;
                 }
 
-                DebugLog.Log("SmartObjective", $"There are {Players.GetUnits().Count} Players nearby");
+               
 
                 if (Players.GetUnits().Any(x =>
                 {
@@ -243,11 +245,7 @@ namespace Wrapper.NativeBehaviors
                         return false;
 
                     var PlayerNear = WoW.Vector3.Distance(Unit.Value.Position, x.Value.Position) < 50;
-
-                    if(PlayerNear)
-                    {
-                        DebugLog.Log("SmartObjective", $"Deweighting {x.Value.Name} due to proximity to another player"); 
-                    }
+                   
 
                     return PlayerNear
                             && !_Unit.IsTargettingMeOrPet;

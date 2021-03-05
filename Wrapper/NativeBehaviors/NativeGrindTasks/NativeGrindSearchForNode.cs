@@ -82,15 +82,15 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                                 where
                                     ((p.NodeType == NodeType.Herb && KnowsHerbalism)
                                     || (p.NodeType == NodeType.Ore && KnowsMining))
-                                    && Vector3.Distance(new Vector3(p.X, p.Y, p.Z), PlayerPosition) > 100
+                                    && Vector3.Distance(new Vector3(p.X, p.Y, p.Z), PlayerPosition) > 50
+                                    && Vector3.Distance(new Vector3(p.X, p.Y, p.Z), PlayerPosition) < 1000
                                     && !WoWDatabase.IsConsideredDeathSpot(p.X, p.Y, p.Z)
                                 select p).ToList();
+
 
                 if (AllNodes.Count > 0)
                 {
                     TargetNode = AllNodes[new Random().Next(0, AllNodes.Count - 1)];
-                    
-
                     bool IsReachable = true;
 
                     /*

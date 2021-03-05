@@ -55,7 +55,31 @@ namespace Wrapper.WoW
 
         public bool IsTargettingMeOrPet
         {
-            get { return (TargetGUID != null && TargetGUID != ObjectManager.Instance.Player.GUID && TargetGUID != ObjectManager.Instance.Player.Pet?.GUID); }
+            get
+            {
+
+                if (TargetGUID == null)
+                {
+                    return false;
+                }
+
+              
+                if (TargetGUID == ObjectManager.Instance.Player.GUID)
+                {
+                      return true;
+                }
+
+                if (ObjectManager.Instance.Player.Pet != null)
+                {
+                    if (TargetGUID == ObjectManager.Instance.Player.Pet.GUID)
+                    {
+                        return true;
+                    }
+                }
+
+
+                return false;
+            }
         }
 
 

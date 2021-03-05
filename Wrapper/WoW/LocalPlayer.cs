@@ -218,15 +218,17 @@ end
         {
             var Instance = ObjectManager.Instance.AllObjects.Where(x =>
             {
-                /*[[  if 1==1 then return __LB__.UnitTagHandler(UnitIsUnit, x.Value.GUID, "pet") end ]] */
-                return false;
-            }).SingleOrDefault();
-            
-            if (Instance.Value != null)
-                return Instance.Value as WoWUnit;
-            
-            return null;
+                return WoWAPI.UnitIsUnit(x.Value.GUID, "pet");
+            }).FirstOrDefault();
 
+
+            if (Instance.Value != null)
+            {
+                return (WoWUnit)Instance.Value;
+            }
+
+
+            return null;
         }
     }
 }

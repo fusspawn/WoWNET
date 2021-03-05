@@ -40,7 +40,7 @@ namespace Wrapper.UI
                     name = "Name",
                     index = "Name",
                     align = "LEFT",
-                    width = 250
+                    width = 100
                 },
                 
                 new StdUiScrollTable.StdUiScrollTableColumnDefinition()
@@ -63,7 +63,7 @@ namespace Wrapper.UI
                     name = "HP",
                     index = "HP",
                     align = "LEFT",
-                    width = 125
+                    width = 75
                 },
                  new StdUiScrollTable.StdUiScrollTableColumnDefinition()
                 {
@@ -79,7 +79,7 @@ namespace Wrapper.UI
             Program.MainUI.StdUI.GlueTop(UIContainer.ScrollTable, UIContainer.MainFrame, 0, -50, "TOP");
 
             UIContainer.ScrollTable.SetData(ObjectManager.Instance.AllObjects.Values.Where(x => x.ObjectType == LuaBox.EObjectType.Unit).Select(x => new { Name=x.Name,
-                GUID=x.GUID, IsTargettingMeOrPet= (x as WoWUnit).IsTargettingMeOrPet.ToString(), HP=(x as WoWUnit).Health, Distance=Vector3.Distance(ObjectManager.Instance.Player.Position, x.Position)}).OrderBy(x => x.Distance).ToList<Object>());
+                GUID=x.GUID, IsTargettingMeOrPet= (x as WoWUnit).IsTargettingMeOrPet.ToString(), HP=(x as WoWUnit).Health, Distance=(int)Vector3.Distance(ObjectManager.Instance.Player.Position, x.Position)}).OrderBy(x => x.Distance).ToList<Object>());
         }
 
         public void UpdateUI()
@@ -87,9 +87,9 @@ namespace Wrapper.UI
             UIContainer.ScrollTable.SetData(ObjectManager.Instance.AllObjects.Values.Where(x => x.ObjectType == LuaBox.EObjectType.Unit).Select(x => new {
                  Name = x.Name,
                  GUID = x.GUID,
-                 IsTargettingMeOrPet = (x as WoWUnit).TargetGUID,
+                 IsTargettingMeOrPet = (x as WoWUnit).IsTargettingMeOrPet ? "True" : "False",
                  HP = (x as WoWUnit).Health,
-                 Distance = Vector3.Distance(ObjectManager.Instance.Player.Position, x.Position)
+                 Distance = (int)Vector3.Distance(ObjectManager.Instance.Player.Position, x.Position)
             }).OrderBy(x=> x.Distance).ToList<Object>());
         }
     }

@@ -48,5 +48,16 @@ namespace Wrapper.Helpers
 
             return (T)CurrentObject;  
         }
+
+        private string Lua_ToString(object value)
+        {
+            /*[[
+             if 1==1 then
+              return tostring(value)
+             end
+            ]]*/
+
+            return "";
+        }
     }
 }
