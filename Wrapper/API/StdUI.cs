@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Wrapper.API;
+using Wrapper.WoW;
 using static Wrapper.StdUI.StdUiDropdown;
 using static Wrapper.StdUI.StdUiScrollTable;
 
@@ -21,14 +22,45 @@ namespace Wrapper
 
 		}
 
+        public class StdUiOVCInputFrame<T>
+            : StdUiInputFrame
+        {
+            public delegate void _OnValueChanged(StdUiOVCInputFrame<T> self, T value);
+            public _OnValueChanged OnValueChanged;
+        }
+
         public class StdUiNumericInputFrame :
-            StdUiInputFrame
+            StdUiOVCInputFrame<float>
+        {         
+            
+            public extern void SetMinMaxValue(float min, float max);
+        }
+
+        public class StdUiEditBox :
+            StdUiOVCInputFrame<string>
         {
 
-            public delegate void _OnValueChanged(StdUiNumericInputFrame self, float value);
-            public _OnValueChanged OnValueChanged;
+            public extern bool IsValid();   // Returns if current value is valid according to validator
 
-            public extern void SetMinMaxValue(float min, float max);
+            public extern void Validate();  // Calls the validator and changes value is it is valid
+
+            //GetValue: Gets the current (or last valid) value
+
+
+        }
+
+        public class StdUiMultiLineBox:
+            WoWFrame
+        {
+            public extern string GetValue();
+            public extern void SetValue(string value);
+            public extern void setFont(string fontPath, int size, params Object[] flags);
+            public extern void Enable();
+            public extern void Disable();
+            public extern void SetFocus();
+            public extern void ClearFocus();
+            public extern bool HasFocus();
+
         }
 
         public class StdUiScrollTable
@@ -54,7 +86,6 @@ namespace Wrapper
 
             public extern void SetData(List<Object> Data);
 
-
         }
 
 		public class StdUiInputFrame
@@ -64,6 +95,8 @@ namespace Wrapper
             public extern void SetValue(object value);
 		}
 
+
+
 		public class StdUiCheckBox
 				: StdUiInputFrame
 		{
@@ -71,18 +104,16 @@ namespace Wrapper
 			public _OnValueChanged OnValueChanged;
             public extern void SetChecked(bool Checked);
             public extern bool GetChecked();
+
+            public extern void AutoWidth();
+
+            public extern void SetText(string text);
         }
 
         public class StdUiLabel 
             : StdUiFrame
         {
             public extern void SetText(string Text);
-        }
-
-        public class StdUiButton
-            : StdUiFrame
-        {
-         //   StdUi:HighlightButton(parent, width, height, text)
         }
 
         public class StdUiDropdown 
@@ -98,10 +129,124 @@ namespace Wrapper
             public extern T GetValue<T>();
             public extern void SetPlaceholder(string Text);
             public extern void SetOptions(StdUiDropdownItems[] options);
+            public extern void ShowOptions();
+            public extern void HideOptions();
+            public extern void ToggleOptions();
+            public extern string FindValueText(string text);
 
             public delegate void _OnValueChanged(StdUiCheckBox self, object value);
             public _OnValueChanged OnValueChanged;
         }
+
+        public class StdUiButton
+            : StdUiFrame
+        {
+            public extern void Click();
+            public extern void Disable();
+            public extern void Enable();
+            public extern string GetButtonState(); // PUSHED or NORMAL
+            public extern FontObject GetDisabledFontObject();
+            public extern WoWTexture GetDisabledTexture();
+            public extern FontString GetFontString();
+            public extern FontObject GetHighlightFontObject();
+            public extern WoWTexture GetHighlightTexture();
+            public extern WoWTexture GetNormalTexture();
+            public extern FontObject GetNormalFontObject();
+            public extern TextOffset GetPushedTextOffset();
+            public extern WoWTexture GetPushedTexture();
+            public extern string GetText();
+            public extern int GetTextHeight();
+            public extern int GetTextWidth();
+            public extern bool IsEnabled();
+            public extern void LockHighlight();
+            public extern void RegisterForClicks(StdUiButtonClickRegister type, params StdUiButtonClickRegister[] more);
+            public extern void SetButtonState(string state, bool locked);
+            public extern void SetDisabledFontObject(FontObject font);
+            public extern void SetDisabledTexture(Object texture);
+            public extern void SetFont(string fontPath, int size, params Object[] flags);
+            public extern void SetFontString(string fontString);
+            public extern void SetFormattedText(string text, params Object[] args);
+            public extern void SetHighlightFontObject(Object[] font);
+            public extern void SetHighlightTexture(Object texture);
+            public extern void SetNormalTexture(Object texture);
+            public extern void SetNormalFontObject(FontObject fontString);
+            public extern void SetPushedTextOffset(int x, int y);
+            public extern void SetPushedTexture(Object texture);
+            public extern void SetText(string text);
+            public extern void UnlockHighlight();
+
+            public class TextOffset
+            {
+                public int x;
+                public int y;
+            }
+            public class StdUiButtonState
+            {
+                public static string PUSHED = "PUSHED";
+                public static string NORMAL = "NORMAL";
+            }
+
+            public class StdUiButtonClickRegister
+            {
+                public string Value { get; set; }
+                private StdUiButtonClickRegister(string value) { Value = value; }
+                public static StdUiButtonClickRegister LeftButtonUp { get { return new StdUiButtonClickRegister("LeftButtonUp"); } }
+                public static StdUiButtonClickRegister RightButtonUp { get { return new StdUiButtonClickRegister("RightButtonUp"); } }
+                public static StdUiButtonClickRegister MiddleButtonUp { get { return new StdUiButtonClickRegister("MiddleButtonUp"); } }
+                public static StdUiButtonClickRegister Button4Up { get { return new StdUiButtonClickRegister("Button4Up"); } }
+                public static StdUiButtonClickRegister Button5Up { get { return new StdUiButtonClickRegister("Button5Up"); } }
+                public static StdUiButtonClickRegister LeftButtonDown { get { return new StdUiButtonClickRegister("LeftButtonDown"); } }
+                public static StdUiButtonClickRegister RightButtonDown { get { return new StdUiButtonClickRegister("RightButtonDown"); } }
+                public static StdUiButtonClickRegister MiddleButtonDown { get { return new StdUiButtonClickRegister("MiddleButtonDown"); } }
+                public static StdUiButtonClickRegister Button4Down { get { return new StdUiButtonClickRegister("Button4Down"); } }
+                public static StdUiButtonClickRegister Button5Down { get { return new StdUiButtonClickRegister("Button5Down"); } }
+                public static StdUiButtonClickRegister AnyUp { get { return new StdUiButtonClickRegister("AnyUp"); } }
+                public static StdUiButtonClickRegister AnyDown { get { return new StdUiButtonClickRegister("AnyDown"); } }
+            }
+        }
+
+        public class StdUiProgressBar
+            : StdUiInputFrame
+        {
+            public extern double GetPercentageValue(); // returns value in percentage, not rounded
+
+            public extern string TextUpdate(double min, double max, double value); // returns formatted text to display on progress bar,
+            public extern StdUiProgressBarMinMaxValues GetMinMaxValues();
+            public extern string GetOrientation();
+            public extern StdUiProgressBarColor GetStatusBarColor();
+            public extern WoWTexture GetStatusBarTexture();
+            public extern void SetMinMaxValues(double min, double max);
+            public extern void SetOrientation(string value); //'HORIZONTAL' or 'VERTICAL'.
+            public extern void SetStatusBarColor(double r, double g, double b, double alpha);
+            public extern void SetStatusBarTexture(Object texture, Object layer); // texture or file, layer opt
+
+            public class StdUiProgressBarMinMaxValues
+            {
+                public double min;
+                public double max;
+            }
+            public class StdUiProgressBarColor
+            {
+                public double r;
+                public double g;
+                public double b;
+                public double a;
+            }
+        }
+
+        public class StdUiToolTip
+            : StdUiFrame
+        {
+            public extern string GetText();
+            public extern void SetText(string value);
+            public extern void AddLine(string text, double r, double g, double a);
+
+            public extern void RecalculateSize(); // It is being called automatically on Show. If you provide a function as text in constructor. You need to override this function.
+
+        }
+
+
+
 
 
         public extern StdUiDropdown Dropdown(WoWFrame parent, int width, int height, StdUiDropdownItems[] options, object value, bool multi, bool assoc);
@@ -115,18 +260,25 @@ namespace Wrapper
 		public extern StdUiCheckBox Checkbox(WoWFrame UIParent, string Text, int width, int height);
 		public extern StdUiInputFrame SimpleEditBox(WoWFrame UIParent, int Width, int Height, string Text);
 		public extern StdUiInputFrame SearchEditBox(WoWFrame UIParent, int Width, int Height, string Text);
-		public extern StdUiInputFrame EditBox(WoWFrame UIParent, int Width, int Height, string Text, Func<bool> Validator);
+		public extern StdUiEditBox EditBox(WoWFrame UIParent, int Width, int Height, string Text, Func<bool> Validator);
 		public extern StdUiNumericInputFrame NumericBox(WoWFrame UIParent, int Width, int Height, string Text, Func<bool> Validator);
 		public extern StdUiInputFrame MoneyBox(WoWFrame UIParent, int Width, int Height, string Text, Func<bool> Validator, bool ignoreCopper);
+        public extern StdUiMultiLineBox MultiLineBox(WoWFrame UIParent, int width, int height, string text);
         public extern StdUiButton HighlightButton(WoWFrame ParentFrame, int width, int height, string Text);
+        public extern StdUiButton SquareButton(WoWFrame ParentFrame, int width, int height, string Text);
 #pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+        public extern WoWButton SliderButton(WoWFrame ParentFrame, int width, int height, string direction);
         public extern StdUiLabel AddLabel(WoWFrame UIParent, StdUiFrame AttachParent, string Text, string? LabelPosition, int? LabelWidth);
 #pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
         public extern StdUiLabel Label(WoWFrame UIParent, string Text, int size, string? inherit, int width, int height);
         public extern void GlueTop(WoWFrame Frame, WoWFrame ParentFrame, int XOffset, int YOffset, string Relation);
         public extern StdUiScrollTable ScrollTable(WoWFrame ParentFrame, List<StdUiScrollTableColumnDefinition> cols, int numRows, int rowHeight);
+        public extern StdUiProgressBar ProgressBar(WoWFrame ParentFrame, int width, int height, bool vertical);
+        public extern StdUiToolTip FrameToolTip(WoWFrame ParentFrame, string text, string tooltipName, string anchor, bool automatic);
+        public extern WoWSlider StdUiSlider(WoWFrame ParentFrame, int width, int height, double value, bool vertical, double min, double max);
+        public extern WoWFrame StdUiTabPanel(WoWFrame ParentFrame, int width, int height, Object tabs);
 
-		public static void Init()
+        public static void Init()
         {
             if (!IsInjected)
             {

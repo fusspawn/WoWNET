@@ -331,6 +331,15 @@ namespace Wrapper.API
         public extern void SetNormalTexture(WoWTexture Texture);
     }
 
+    public class WoWSlider
+        : WoWFrame
+    {
+        private static WoWSlider _holder = new WoWSlider();
+        public extern void SetWidth(int width);
+        public extern void SetHeight(int height);
+        public extern void SetOrientation(string orientation);
+    }
+
 
     public interface DataProviderBase 
     {
@@ -347,6 +356,18 @@ namespace Wrapper.API
         public extern dynamic GetMap();
     }
 
+    public class FontString 
+    {
+
+    }
+
+    public class FontObject
+    {
+
+    }
+
    
+
+
 
 }
