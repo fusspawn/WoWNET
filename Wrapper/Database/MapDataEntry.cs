@@ -14,13 +14,16 @@ namespace Wrapper.Database
         public List<NPCLocationInfo> Vendors = new List<NPCLocationInfo>();
         public List<NPCLocationInfo> Repair = new List<NPCLocationInfo>();
         public List<NPCLocationInfo> Beasts = new List<NPCLocationInfo>();
+        public Dictionary<NodeType, List<NodeLocationInfo>> NodesByType = new Dictionary<NodeType, List<NodeLocationInfo>>();
         public List<NodeLocationInfo> Nodes = new List<NodeLocationInfo>();
         public List<Vector3> PlayerDeathSpots = new List<Vector3>();
 
         public void RestoreFromJson(MapDataEntry mapDataEntry)
         {
             foreach(var node in mapDataEntry.Nodes) {
-                Nodes.Add(new NodeLocationInfo()
+                List<NodeLocationInfo> xNodes = GetOrCreate(NodesByType, node.NodeType);
+
+                NodeLocationInfo nodeLocationInfo = new NodeLocationInfo()
                 {
                     X = node.X,
                     Y = node.Y,
@@ -29,7 +32,10 @@ namespace Wrapper.Database
                     NodeType = node.NodeType,
                     MapID = node.MapID,
                     ObjectId = node.ObjectId
-                });
+                };
+
+                xNodes.Add(nodeLocationInfo);
+                Nodes.Add(nodeLocationInfo);
             }
 
             foreach (var node in mapDataEntry.Repair)
@@ -144,5 +150,27 @@ namespace Wrapper.Database
             */
 
         }
+
+        private List<NodeLocationInfo> GetOrCreate(Dictionary<NodeType, List<NodeLocationInfo>> dict, NodeType key)
+        {
+            List<NodeLocationInfo> val;
+
+            if (!dict.TryGetValue(key, out val))
+            {
+                val = new List<NodeLocationInfo>();
+                dict.Add(key, val);
+            }
+
+            return val;
+        }
+
+        public List<NodeLocationInfo> GetNodesByType(NodeType key)
+        {
+            return NodesByType[key];
+        }
     }
+
+    
+
+
 }

@@ -78,20 +78,31 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
                 var PlayerPosition = Player.Position;
                 var KnowsHerbalism = Player.HasProfession("Herbalism");
                 var KnowsMining = Player.HasProfession("Mining");
-                var AllNodes = (from p in WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).Nodes
-                                where
-                                    ((p.NodeType == NodeType.Herb && KnowsHerbalism)
-                                    || (p.NodeType == NodeType.Ore && KnowsMining))
-                                    && Vector3.Distance(new Vector3(p.X, p.Y, p.Z), PlayerPosition) > 50
-                                    && Vector3.Distance(new Vector3(p.X, p.Y, p.Z), PlayerPosition) < 1000
-                                    && !WoWDatabase.IsConsideredDeathSpot(p.X, p.Y, p.Z)
-                                select p).ToList();
+                var AllNodes = new List<NodeLocationInfo>();
+                
+                if(KnowsHerbalism)
+                {
+                    AllNodes.AddRange(WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).GetNodesByType(NodeType.Herb));
+                }
+
+                if(KnowsMining)
+                {
+                    AllNodes.AddRange(WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).GetNodesByType(NodeType.Ore));
+                }               
 
 
                 if (AllNodes.Count > 0)
                 {
                     TargetNode = AllNodes[new Random().Next(0, AllNodes.Count - 1)];
                     bool IsReachable = true;
+
+                    if(Vector3.Distance(new Vector3(TargetNode.X, TargetNode.Y, TargetNode.Z), PlayerPosition) < 50
+                                    || Vector3.Distance(new Vector3(TargetNode.X, TargetNode.Y, TargetNode.Z), PlayerPosition) > 1000
+                                    || WoWDatabase.IsConsideredDeathSpot(TargetNode.X, TargetNode.Y, TargetNode.Z))
+                    {
+                        DebugLog.Log("SearchForNode", "Intended Destination was too near, too far or deathspot");
+                        return;
+                    }
 
                     /*
                     [[
