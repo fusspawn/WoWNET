@@ -9,12 +9,29 @@ namespace Wrapper
     public class Program
     {
         public static BotBase Base = null;
-        public static Tracker Tracker = new Tracker();
+        public static Tracker Tracker;
         static bool ThrowWowErrors = true;
         public static double CurrentTime = 0f;
         public static bool IsRunning = false;
         public static BotMainUI MainUI;
         public static UnitViewer UnitViewer;
+        public static bool IsDeveloperMode = false;
+
+        public static void EnableDevMode()
+        {
+            if (Program.UnitViewer.UIContainer.MainFrame != null)
+            {
+                Program.UnitViewer.UIContainer.MainFrame.Show();
+                Program.MainUI.UIContainer.ToggleUnitViewer.Show();
+            }
+
+        
+            if(Tracker.MainUIFrame != null)
+            {
+                Tracker.MainUIFrame.Show();
+            }
+        }
+
 
         public static void Main(string[] args)
         {
@@ -31,6 +48,10 @@ namespace Wrapper
 
             Program.MainUI = new BotMainUI();
             Program.UnitViewer = new UnitViewer();
+            Program.UnitViewer.UIContainer.MainFrame.Hide();
+
+            Tracker = new Tracker();
+            Tracker.MainUIFrame.Hide();
 
             WoWAPI.NewTicker(() =>
             {
@@ -58,7 +79,7 @@ namespace Wrapper
                           ]]
                         */
 
-                        DebugLog.Log("BroBot", "Exception in mainBot Thread: " + E.Message + " StackTrace: "  + DebugStack);
+                        DebugLog.Log("BotExceptions", "Exception in mainBot Thread: " + E.Message + " StackTrace: "  + DebugStack);
 
 
                         NativeErrorLoggerUI.Instance.AddErrorMessage(E.Message, WoWAPI.DebugStack());

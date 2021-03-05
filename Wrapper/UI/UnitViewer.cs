@@ -18,7 +18,7 @@ namespace Wrapper.UI
             public StdUiScrollTable ScrollTable;
         }
 
-        UnitViewerUIContainer UIContainer;
+        public UnitViewerUIContainer UIContainer;
 
 
         public UnitViewer()
@@ -84,13 +84,17 @@ namespace Wrapper.UI
 
         public void UpdateUI()
         {
-            UIContainer.ScrollTable.SetData(ObjectManager.Instance.AllObjects.Values.Where(x => x.ObjectType == LuaBox.EObjectType.Unit).Select(x => new {
-                 Name = x.Name,
-                 GUID = x.GUID,
-                 IsTargettingMeOrPet = (x as WoWUnit).IsTargettingMeOrPet ? "True" : "False",
-                 HP = (x as WoWUnit).Health,
-                 Distance = (int)Vector3.Distance(ObjectManager.Instance.Player.Position, x.Position)
-            }).OrderBy(x=> x.Distance).ToList<Object>());
+            if (UIContainer.MainFrame.IsShown())
+            {
+                UIContainer.ScrollTable.SetData(ObjectManager.Instance.AllObjects.Values.Where(x => x.ObjectType == LuaBox.EObjectType.Unit).Select(x => new
+                {
+                    Name = x.Name,
+                    GUID = x.GUID,
+                    IsTargettingMeOrPet = (x as WoWUnit).IsTargettingMeOrPet ? "True" : "False",
+                    HP = (x as WoWUnit).Health,
+                    Distance = (int)Vector3.Distance(ObjectManager.Instance.Player.Position, x.Position)
+                }).OrderBy(x => x.Distance).ToList<Object>());
+            }
         }
     }
 }

@@ -18027,11 +18027,19 @@ System.import(function (out)
 end)
 System.namespace("Wrapper", function (namespace)
   namespace.class("Program", function (namespace)
-    local ThrowWowErrors, Main, class, static
-    static = function (this)
-      this.Tracker = WrapperUI.Tracker()
-    end
+    local ThrowWowErrors, EnableDevMode, Main, class
     ThrowWowErrors = true
+    EnableDevMode = function ()
+      if class.UnitViewer.UIContainer.MainFrame ~= nil then
+        class.UnitViewer.UIContainer.MainFrame:Show()
+        class.MainUI.UIContainer.ToggleUnitViewer:Show()
+      end
+
+
+      if class.Tracker.MainUIFrame ~= nil then
+        class.Tracker.MainUIFrame:Show()
+      end
+    end
     Main = function (args)
       WrapperAPI.DebugLog.Log("BroBot", "BroBot V2 Loading", false)
       __LB__.LoadScript("NavigatorNightly")
@@ -18046,6 +18054,10 @@ System.namespace("Wrapper", function (namespace)
 
       class.MainUI = WrapperUI.BotMainUI()
       class.UnitViewer = WrapperUI.UnitViewer()
+      class.UnitViewer.UIContainer.MainFrame:Hide()
+
+      class.Tracker = WrapperUI.Tracker()
+      class.Tracker.MainUIFrame:Hide()
 
       C_Timer.NewTicker(0.2, function ()
         if not ThrowWowErrors then
@@ -18066,7 +18078,7 @@ System.namespace("Wrapper", function (namespace)
             local DebugStack = debugstack()
             if DLAPI then DLAPI.DebugLog("ObjectManagerError", E.Message + " StackTrace: " + DebugStack) end                          
 
-            WrapperAPI.DebugLog.Log("BroBot", "Exception in mainBot Thread: " .. System.toString(E:getMessage()) .. " StackTrace: " .. System.toString(DebugStack), false)
+            WrapperAPI.DebugLog.Log("BotExceptions", "Exception in mainBot Thread: " .. System.toString(E:getMessage()) .. " StackTrace: " .. System.toString(DebugStack), false)
 
 
             WrapperUI.NativeErrorLoggerUI.getInstance():AddErrorMessage(E:getMessage(), debugstack())
@@ -18095,8 +18107,9 @@ System.namespace("Wrapper", function (namespace)
     class = {
       CurrentTime = 0,
       IsRunning = false,
-      Main = Main,
-      static = static
+      IsDeveloperMode = false,
+      EnableDevMode = EnableDevMode,
+      Main = Main
     }
     return class
   end)
@@ -19335,6 +19348,7 @@ System.namespace("Wrapper.API", function (namespace)
       if Distance > 50 then
         if IsOutdoors() and not IsMounted() and not __LB__.UnitTagHandler(UnitAffectingCombat, "player") and not __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then
           __LB__.Navigator.Stop()
+          __LB__.Navigator.PauseForMounting()
           CallCompanion("MOUNT", random(GetNumCompanions("MOUNT")))
           return
         end
@@ -26346,6 +26360,21 @@ System.namespace("Wrapper.UI", function (namespace)
       end, System.Delegate)
 
       this.StdUI:GlueTop(this.UIContainer.ToggleBotUI, _G["UIParent"], 20, 5, "TOP")
+
+
+
+
+      this.UIContainer.ToggleUnitViewer = this.StdUI:HighlightButton(this.UIContainer.MainBotUIFrame, 100, 25, "Unit View")
+      this.UIContainer.ToggleUnitViewer:SetScript("OnClick", function ()
+        if not Wrapper.Program.UnitViewer.UIContainer.MainFrame:IsShown() then
+          Wrapper.Program.UnitViewer.UIContainer.MainFrame:Show()
+        else
+          Wrapper.Program.UnitViewer.UIContainer.MainFrame:Hide()
+        end
+      end, System.Delegate)
+
+      this.StdUI:GlueTop(this.UIContainer.ToggleUnitViewer, this.UIContainer.MainBotUIFrame, 150, - 40, "TOP")
+      this.UIContainer.ToggleUnitViewer:Hide()
     end
     class = {
       SetConfigPanel = SetConfigPanel,
@@ -26410,12 +26439,16 @@ end
 do
 local System = System
 local Linq = System.Linq.Enumerable
+local Wrapper
+System.import(function (out)
+  Wrapper = out.Wrapper
+end)
 System.namespace("Wrapper.UI", function (namespace)
   namespace.class("Tracker", function (namespace)
-    local Pulse, UpdateStack
-    Pulse = function (this)
+    local Pulse, UpdateStack, __ctor__
+    __ctor__ = function (this)
       if this.MainUIFrame == nil then
-        this._StdUI = LibStub("StdUi"):NewInstance()
+        this._StdUI = Wrapper.Program.MainUI.StdUI
         this.MainUIFrame = this._StdUI:Window(_G["UIParent"], 500, 600, "BroBot Tracker")
         this.MainUIFrame:SetPoint("CENTER", 0, 0)
         this.MainUIFrame:Show()
@@ -26427,14 +26460,18 @@ System.namespace("Wrapper.UI", function (namespace)
         this._StdUI:GlueTop(this.StateStack, this.MainUIFrame, 0, - 100, "TOP")
       end
     end
+    Pulse = function (this)
+    end
     UpdateStack = function (this, States)
-      local returnstring = ""
+      if this.MainUIFrame:IsShown() then
+        local returnstring = ""
 
-      for _, state in System.each(Linq.Skip(States, 1)) do
-        returnstring = System.toString(returnstring) .. (System.toString(state:StringRepr()) .. "\n")
+        for _, state in System.each(Linq.Skip(States, 1)) do
+          returnstring = System.toString(returnstring) .. (System.toString(state:StringRepr()) .. "\n")
+        end
+
+        this.StateStack:SetText(returnstring)
       end
-
-      this.StateStack:SetText(returnstring)
     end
     return {
       base = function (out)
@@ -26443,7 +26480,8 @@ System.namespace("Wrapper.UI", function (namespace)
         }
       end,
       Pulse = Pulse,
-      UpdateStack = UpdateStack
+      UpdateStack = UpdateStack,
+      __ctor__ = __ctor__
     }
   end)
 end)
@@ -26528,19 +26566,21 @@ System.namespace("Wrapper.UI", function (namespace)
       end, nil, System.Int32)))
     end
     UpdateUI = function (this)
-      this.UIContainer.ScrollTable:SetData(Linq.ToList(Linq.OrderBy(Linq.Select(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects:getValues(), function (x)
-        return x.ObjectType == 5 --[[EObjectType.Unit]]
-      end), function (x)
-        return System.AnonymousType({
-          Name = x.Name,
-          GUID = x.GUID,
-          IsTargettingMeOrPet = (System.as(x, WrapperWoW.WoWUnit)):getIsTargettingMeOrPet() and "True" or "False",
-          HP = (System.as(x, WrapperWoW.WoWUnit)).Health,
-          Distance = System.ToInt32(WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, x.Position))
-        })
-      end, System.AnonymousType), function (x)
-        return x.Distance
-      end, nil, System.Int32)))
+      if this.UIContainer.MainFrame:IsShown() then
+        this.UIContainer.ScrollTable:SetData(Linq.ToList(Linq.OrderBy(Linq.Select(Linq.Where(WrapperWoW.ObjectManager.getInstance().AllObjects:getValues(), function (x)
+          return x.ObjectType == 5 --[[EObjectType.Unit]]
+        end), function (x)
+          return System.AnonymousType({
+            Name = x.Name,
+            GUID = x.GUID,
+            IsTargettingMeOrPet = (System.as(x, WrapperWoW.WoWUnit)):getIsTargettingMeOrPet() and "True" or "False",
+            HP = (System.as(x, WrapperWoW.WoWUnit)).Health,
+            Distance = System.ToInt32(WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, x.Position))
+          })
+        end, System.AnonymousType), function (x)
+          return x.Distance
+        end, nil, System.Int32)))
+      end
     end
     class = {
       UpdateUI = UpdateUI,
@@ -27205,6 +27245,7 @@ System.namespace("Wrapper.WoW", function (namespace)
 
 
       if this.TargetGUID == WrapperWoW.ObjectManager.getInstance().Player.GUID then
+        WrapperAPI.DebugLog.Log("Unit", System.toString(this.Name) .. " Is Targetting me", false)
         return true
       end
 

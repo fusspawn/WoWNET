@@ -717,8 +717,9 @@ namespace Wrapper.API
                     && !WoWAPI.UnitIsDeadOrGhost("player"))
                 {
                     Stop();
+                    PauseForMounting();
                     /*[[
-                    CallCompanion("MOUNT", random(GetNumCompanions("MOUNT")))
+                        CallCompanion("MOUNT", random(GetNumCompanions("MOUNT")))
                     ]]*/
                     return;
                 }
@@ -738,6 +739,11 @@ namespace Wrapper.API
         /// @CSharpLua.Template = "__LB__.Navigator.AllowMounting({0})"
         /// </summary>
         public extern void AllowMounting(bool Allow);
+
+        /// <summary>
+        /// @CSharpLua.Template = "__LB__.Navigator.PauseForMounting()"
+        /// </summary>
+        public extern void PauseForMounting();
     }
 
 }

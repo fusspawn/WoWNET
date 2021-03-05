@@ -17,6 +17,9 @@ namespace Wrapper.UI
             public StdUiDropdown SelectedBotBase;
             public StdUiButton ToggleBotUI;
 
+            public StdUiButton ToggleUnitViewer;
+            public StdUiButton ToggleTracker;
+
             public StdUiFrame ConfigFrame;
         }
 
@@ -124,7 +127,20 @@ namespace Wrapper.UI
             
             StdUI.GlueTop(UIContainer.ToggleBotUI, LuaHelper.GetGlobalFrom_G<WoWFrame>("UIParent"), 20, 5, "TOP");
 
-            
+
+
+
+            UIContainer.ToggleUnitViewer = StdUI.HighlightButton(UIContainer.MainBotUIFrame, 100, 25, "Unit View");
+            UIContainer.ToggleUnitViewer.SetScript<Action>("OnClick", () =>
+            {
+                if (!Program.UnitViewer.UIContainer.MainFrame.IsShown())
+                    Program.UnitViewer.UIContainer.MainFrame.Show();
+                else
+                    Program.UnitViewer.UIContainer.MainFrame.Hide();
+            });
+
+            StdUI.GlueTop(UIContainer.ToggleUnitViewer, UIContainer.MainBotUIFrame, 150, -40, "TOP");
+            UIContainer.ToggleUnitViewer.Hide();
         }
     }
 }

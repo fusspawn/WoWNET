@@ -18,11 +18,11 @@ namespace Wrapper.UI
         public StdUiLabel TaskLabel;
         public StdUiLabel StateStack;
 
-        public override void Pulse()
+        public Tracker()
         {
             if (MainUIFrame == null)
             {
-                _StdUI = new LibStub().GetNewInstance<StdUI>("StdUi");
+                _StdUI = Program.MainUI.StdUI;
                 MainUIFrame = _StdUI.Window(LuaHelper.GetGlobalFrom_G<WoWFrame>("UIParent"), 500, 600, "BroBot Tracker");
                 MainUIFrame.SetPoint("CENTER", 0, 0);
                 MainUIFrame.Show();
@@ -34,16 +34,25 @@ namespace Wrapper.UI
                 _StdUI.GlueTop(StateStack, MainUIFrame, 0, -100, "TOP");
             }
         }
+
+        public override void Pulse()
+        {
+          
+        }
+
         public void UpdateStack(Stack<StateMachineState> States)
         {
-            var returnstring = "";
-           
-            foreach (var state in States.Skip(1))
+            if (MainUIFrame.IsShown())
             {
-                returnstring += state.StringRepr() + "\n";
-            }
+                var returnstring = "";
 
-            StateStack.SetText(returnstring);
+                foreach (var state in States.Skip(1))
+                {
+                    returnstring += state.StringRepr() + "\n";
+                }
+
+                StateStack.SetText(returnstring);
+            }
         }
     }
 }
