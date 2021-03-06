@@ -35,7 +35,7 @@ namespace Wrapper.NativeBehaviors.NativeGrindTasks
 
             var Pos = new Vector3(TargetNode.X, TargetNode.Y, TargetNode.Z);
             LibDraw.Circle(Pos, 2, 1, Purple);
-            LibDraw.Text("Dest: " + TargetNode.Name, Pos - new WoW.Vector3(0,0,-0.25), 12, Purple, null);
+            LibDraw.Text("Dest: Last Seen At Location: " + TargetNode.Name, Pos - new WoW.Vector3(0,0,-0.25), 12, Purple, null);
         }
 
         public override bool Complete()

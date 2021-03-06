@@ -19,12 +19,11 @@ namespace Wrapper.BotBases
         Vector3? LastDestination;
         bool HasBGStart = false;
 
-        float MinScoreJumpToSwap = 100;
-        float LastMoveScore = 0;
-        string LastMoveGUID = "";
 
         private BattleGroundUIContainer UIContainer;
         private NativeGrindBotBase NativeGrindInstance;
+        private WoWFrame EventTrackerFrame;
+
 
 
         public class BattleGroundUIContainer
@@ -40,6 +39,7 @@ namespace Wrapper.BotBases
         {
             
         }
+
         public override void BuildConfig(StdUI.StdUiFrame Container)
         {
             if (UIContainer != null)
@@ -93,6 +93,43 @@ namespace Wrapper.BotBases
             Players = new PlayerFilterList(true, true);
             SmartTarget = new SmartTargetPVP(Players);
             SmartMove = new SmartMovePVP(Players);
+
+            if(EventTrackerFrame == null)
+            {
+                CreateEventTrackerFrame();
+            }
+
+        }
+
+        private void CreateEventTrackerFrame()
+        {
+            /*
+               BaseBG.EventFrame = CreateFrame("Frame")
+                BaseBG.EventFrame:RegisterEvent("CHAT_MSG_BG_SYSTEM_NEUTRAL")
+                BaseBG.EventFrame:RegisterEvent("CHAT_MSG_BG_SYSTEM_ALLIANCE")
+                BaseBG.EventFrame:RegisterEvent("CHAT_MSG_BG_SYSTEM_HORDE")
+                BaseBG.EventFrame:SetScript("OnEvent", function(self, event, msg, ...) 
+                    --print("BaseBG Message: " .. tostring(msg))
+                    if string.find(msg:lower(), "begun") then
+                        print("detected start - Starting BG")
+                        BaseBG.HasStarted = true
+                    end
+                end)
+            */
+            EventTrackerFrame = WoWAPI.CreateFrame<WoWFrame>("Frame");
+            EventTrackerFrame.RegisterEvent("CHAT_MSG_BG_SYSTEM_NEUTRAL");
+            EventTrackerFrame.RegisterEvent("CHAT_MSG_BG_SYSTEM_ALLIANCE");
+            EventTrackerFrame.RegisterEvent("CHAT_MSG_BG_SYSTEM_HORDE");
+            EventTrackerFrame.SetScript<Action<object, string, string>>("OnEvent", (self, _event, message) => {
+                var CString = new string(message);
+                
+                if(CString.ToLower().Contains("begun"))
+                {
+                    HasBGStart = true;
+                }
+            });
+
+            DebugLog.Log("BGBot", "Created Pvp Event Tracker Frame");
         }
 
         public override void Pulse()
@@ -111,6 +148,7 @@ namespace Wrapper.BotBases
             }
             else
             {
+                HasBGStart = false;
                 RunQueueLogic();
             }
 
@@ -148,14 +186,21 @@ namespace Wrapper.BotBases
 
         private void RunBattleGroundLogic()
         {
-            // DebugLog.Log("BroBot", "In Battleground");
+
+            if(LuaHelper.GetGlobalFrom_G<WoWFrame>("TimerTrackerTimer1StatusBar") 
+                != null)
+            {
+
+            }
+
+
+            DebugLog.Log("BGBot", "In Battleground");
 
             SmartMove.Pulse();
             SmartTarget.Pulse();
 
             var BestMoveScored = SmartMove.GetBestUnit();
             var BestTargetScored = SmartTarget.GetBestUnit();
-
             WoWPlayer BestTarget = BestTargetScored;
 
 
@@ -204,37 +249,13 @@ namespace Wrapper.BotBases
             {
                 var BestMove = BestMoveScored.Player;
 
-                if (!LastDestination.HasValue || Vector3.Distance(BestMove.Position, LastDestination.Value) > 25)
+                // We need to do something to start.
+                LastDestination = BestMove.Position;
+
+                if (LastDestination != null
+                    && Vector3.Distance(ObjectManager.Instance.Player.Position, LastDestination.Value) > 10)
                 {
-
-                    if (BestMove.GUID != LastMoveGUID)
-                    {
-                        if (Math.Abs(BestMoveScored.Score - LastMoveScore) < 250) // Big Jump. Probally should giveup the chase.
-                        {
-                            //Dont update task lets not just spam around in the middle.
-                        }
-                    }
-                    else
-                    {
-
-                        // Same Target Keep Going
-                        LastMoveScore = BestMoveScored.Score;
-                        LastMoveGUID = BestMove.GUID;
-                        LastDestination = BestMove.Position;
-
-                    }
-                }
-                else
-                {
-                    // We need to do something to start.
-                    LastMoveScore = BestMoveScored.Score;
-                    LastMoveGUID = BestMove.GUID;
-                    LastDestination = BestMove.Position;
-                }
-
-                if (Vector3.Distance(ObjectManager.Instance.Player.Position, LastDestination.Value) > 15)
-                {
-                    LuaBox.Instance.Navigator.AllowMounting(Vector3.Distance(ObjectManager.Instance.Player.Position, LastDestination.Value) > 20);
+                    //LuaBox.Instance.Navigator.AllowMounting(Vector3.Distance(ObjectManager.Instance.Player.Position, LastDestination.Value) > 20);
                     LuaBox.Instance.Navigator.MoveTo(LastDestination.Value.X, LastDestination.Value.Y, LastDestination.Value.Z);
                 }
                 else

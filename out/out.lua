@@ -18076,12 +18076,10 @@ System.namespace("Wrapper", function (namespace)
           end, function (default)
             local E = default
             local DebugStack = debugstack()
-            if DLAPI then DLAPI.DebugLog("ObjectManagerError", E.Message + " StackTrace: " + DebugStack) end                          
-
             WrapperAPI.DebugLog.Log("BotExceptions", "Exception in mainBot Thread: " .. System.toString(E:getMessage()) .. " StackTrace: " .. System.toString(DebugStack), false)
 
 
-            WrapperUI.NativeErrorLoggerUI.getInstance():AddErrorMessage(E:getMessage(), debugstack())
+            --NativeErrorLoggerUI.Instance.AddErrorMessage(E.Message, WoWAPI.DebugStack());
           end)
         else
           WrapperWoW.ObjectManager.getInstance():Pulse()
@@ -24072,14 +24070,13 @@ System.namespace("Wrapper.BotBases", function (namespace)
       end
     end
     RunBattleGroundLogic = function (this)
-      -- DebugLog.Log("BroBot", "In Battleground");
+      WrapperAPI.DebugLog.Log("BGBot", "In Battleground", false)
 
       this.SmartMove:Pulse()
       this.SmartTarget:Pulse()
 
       local BestMoveScored = this.SmartMove:GetBestUnit()
       local BestTargetScored = this.SmartTarget:GetBestUnit()
-
       local BestTarget = BestTargetScored
 
 
@@ -24116,26 +24113,18 @@ System.namespace("Wrapper.BotBases", function (namespace)
       if BestMoveScored ~= nil then
         local BestMove = BestMoveScored.Player
 
-        if not (this.LastDestination ~= nil) or WrapperWoW.Vector3.Distance(BestMove.Position, System.Nullable.Value(this.LastDestination)) > 25 then
-          if BestMove.GUID ~= this.LastMoveGUID then
-            if math.Abs(BestMoveScored.Score - this.LastMoveScore) < 250 then
-              --Dont update task lets not just spam around in the middle.
-            end
-          else
-            -- Same Target Keep Going
-            this.LastMoveScore = BestMoveScored.Score
-            this.LastMoveGUID = BestMove.GUID
-            this.LastDestination = BestMove.Position:__clone__()
-          end
-        else
-          -- We need to do something to start.
-          this.LastMoveScore = BestMoveScored.Score
-          this.LastMoveGUID = BestMove.GUID
-          this.LastDestination = BestMove.Position:__clone__()
-        end
+        -- We need to do something to start.
+        this.LastDestination = BestMove.Position:__clone__()
 
-        if WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, System.Nullable.Value(this.LastDestination)) > 15 then
-          __LB__.Navigator.AllowMounting(WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, System.Nullable.Value(this.LastDestination)) > 20)
+        local default = this.LastDestination
+        local extern
+        if default ~= nil then
+          extern = WrapperWoW.Vector3.op_Inequality(default, nil)
+        else
+          extern = true
+        end
+        if extern and WrapperWoW.Vector3.Distance(WrapperWoW.ObjectManager.getInstance().Player.Position, System.Nullable.Value(this.LastDestination)) > 10 then
+          --LuaBox.Instance.Navigator.AllowMounting(Vector3.Distance(ObjectManager.Instance.Player.Position, LastDestination.Value) > 20);
           WrapperAPI.LuaBox.getInstance().Navigator:MoveTo(System.Nullable.Value(this.LastDestination).X, System.Nullable.Value(this.LastDestination).Y, System.Nullable.Value(this.LastDestination).Z, 1, 1)
         else
           __LB__.Navigator.Stop()
@@ -24149,9 +24138,6 @@ System.namespace("Wrapper.BotBases", function (namespace)
         }
       end,
       HasBGStart = false,
-      MinScoreJumpToSwap = 100,
-      LastMoveScore = 0,
-      LastMoveGUID = "",
       BuildConfig = BuildConfig,
       Pulse = Pulse,
       __ctor__ = __ctor__
@@ -28304,7 +28290,7 @@ System.namespace("Wrapper.NativeBehaviors.NativeGrindTasks", function (namespace
 
       local Pos = WrapperWoW.Vector3(this.TargetNode.X, this.TargetNode.Y, this.TargetNode.Z)
       WrapperAPI.LibDraw.Circle(Pos:__clone__(), 2, 1, Purple)
-      WrapperAPI.LibDraw.Text("Dest: " .. System.toString(this.TargetNode.Name), WrapperWoW.Vector3.op_Subtraction(Pos, WrapperWoW.Vector3(0, 0, - 0.25)), 12, Purple)
+      WrapperAPI.LibDraw.Text("Dest: Last Seen At Location: " .. System.toString(this.TargetNode.Name), WrapperWoW.Vector3.op_Subtraction(Pos, WrapperWoW.Vector3(0, 0, - 0.25)), 12, Purple)
     end
     Complete = function (this)
       if __LB__.UnitTagHandler(UnitIsDeadOrGhost, "player") then

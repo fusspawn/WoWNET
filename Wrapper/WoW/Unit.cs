@@ -66,7 +66,7 @@ namespace Wrapper.WoW
               
                 if (TargetGUID == ObjectManager.Instance.Player.GUID)
                 {
-                    DebugLog.Log("Unit", $"{Name} Is Targetting me");
+                      DebugLog.Log("Unit", $"{Name} Is Targetting me");
                       return true;
                 }
 

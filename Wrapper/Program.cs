@@ -73,16 +73,10 @@ namespace Wrapper
                     catch (Exception E)
                     {
                         var DebugStack = WoWAPI.DebugStack();
-                        /*
-                          [[
-                                if DLAPI then DLAPI.DebugLog("ObjectManagerError", E.Message + " StackTrace: " + DebugStack) end                          
-                          ]]
-                        */
-
                         DebugLog.Log("BotExceptions", "Exception in mainBot Thread: " + E.Message + " StackTrace: "  + DebugStack);
 
 
-                        NativeErrorLoggerUI.Instance.AddErrorMessage(E.Message, WoWAPI.DebugStack());
+                        //NativeErrorLoggerUI.Instance.AddErrorMessage(E.Message, WoWAPI.DebugStack());
                     }
                 }
                 else
