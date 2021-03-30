@@ -68,7 +68,6 @@ namespace Wrapper.API
         /// </summary>
         public static extern string GetRealmName();
 
-
         /// <summary>
         /// @CSharpLua.Template = "AcceptBattlefieldPort({0}, {1})" 
         /// </summary>

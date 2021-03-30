@@ -17695,7 +17695,6 @@ System.namespace("Wrapper", function (namespace)
         class.UIData.NumberOfFlightMasters = _StdUI:Label(class.UIData.MainUIFrame, "FlightMasters: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).FlightMaster, 12, nil, 150, 25)
         class.UIData.NumberOfInnKeepers = _StdUI:Label(class.UIData.MainUIFrame, "InnKeepers: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).InnKeepers, 12, nil, 150, 25)
         class.UIData.NumberOfMailBoxes = _StdUI:Label(class.UIData.MainUIFrame, "MailBoxes: " .. #WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).MailBoxes, 12, nil, 150, 25)
-
         class.UIData.NumberOfFishingSpots = _StdUI:Label(class.UIData.MainUIFrame, "Fishing Spots: " .. #Linq.ToList(Linq.Where(WrapperDatabase.WoWDatabase.GetMapDatabase( __LB__.GetMapId()).Nodes, function (x)
           return x.NodeType == 3 --[[NodeType.FishingHole]]
         end)), 12, nil, 150, 25)
@@ -23978,7 +23977,7 @@ System.import(function (out)
 end)
 System.namespace("Wrapper.BotBases", function (namespace)
   namespace.class("PVPBotBase", function (namespace)
-    local BuildConfig, Pulse, RunQueueLogic, RunBattleGroundLogic, class, __ctor__
+    local BuildConfig, CreateEventTrackerFrame, Pulse, RunQueueLogic, RunBattleGroundLogic, class, __ctor__
     namespace.class("BattleGroundUIContainer", function (namespace)
       return {}
     end)
@@ -23989,6 +23988,10 @@ System.namespace("Wrapper.BotBases", function (namespace)
       this.Players = WrapperWoWFilters.PlayerFilterList(true, true)
       this.SmartTarget = WrapperHelpers.SmartTargetPVP(this.Players)
       this.SmartMove = WrapperHelpers.SmartMovePVP(this.Players)
+
+      if this.EventTrackerFrame == nil then
+        CreateEventTrackerFrame(this)
+      end
     end
     BuildConfig = function (this, Container)
       if this.UIContainer ~= nil then
@@ -24031,6 +24034,34 @@ System.namespace("Wrapper.BotBases", function (namespace)
       this.UIContainer.GrindWhenWaiting:SetChecked(false)
       Wrapper.Program.MainUI.StdUI:GlueTop(this.UIContainer.GrindWhenWaiting, this.UIContainer.Container, 0, - 130, "TOP")
     end
+    CreateEventTrackerFrame = function (this)
+      --[[
+               BaseBG.EventFrame = CreateFrame("Frame")
+                BaseBG.EventFrame:RegisterEvent("CHAT_MSG_BG_SYSTEM_NEUTRAL")
+                BaseBG.EventFrame:RegisterEvent("CHAT_MSG_BG_SYSTEM_ALLIANCE")
+                BaseBG.EventFrame:RegisterEvent("CHAT_MSG_BG_SYSTEM_HORDE")
+                BaseBG.EventFrame:SetScript("OnEvent", function(self, event, msg, ...) 
+                    --print("BaseBG Message: " .. tostring(msg))
+                    if string.find(msg:lower(), "begun") then
+                        print("detected start - Starting BG")
+                        BaseBG.HasStarted = true
+                    end
+                end)
+            ]]
+      this.EventTrackerFrame = CreateFrame("Frame", nil, nil, nil)
+      this.EventTrackerFrame:RegisterEvent("CHAT_MSG_BG_SYSTEM_NEUTRAL")
+      this.EventTrackerFrame:RegisterEvent("CHAT_MSG_BG_SYSTEM_ALLIANCE")
+      this.EventTrackerFrame:RegisterEvent("CHAT_MSG_BG_SYSTEM_HORDE")
+      this.EventTrackerFrame:SetScript("OnEvent", function (self, _event, message)
+        local CString = System.String(System.String.op_Implicit(message))
+
+        if CString:ToLower():Contains("begun") then
+          this.HasBGStart = true
+        end
+      end, System.Delegate)
+
+      WrapperAPI.DebugLog.Log("BGBot", "Created Pvp Event Tracker Frame", false)
+    end
     Pulse = function (this)
       if WrapperWoW.ObjectManager.getInstance().Player == nil or not (__LB__.Navigator ~= nil) then
         WrapperAPI.DebugLog.Log("BroBot", "Waiting on Player to spawn in ObjectManager", false)
@@ -24041,6 +24072,7 @@ System.namespace("Wrapper.BotBases", function (namespace)
       if IsInInstance() then
         RunBattleGroundLogic(this)
       else
+        this.HasBGStart = false
         RunQueueLogic(this)
       end
 
@@ -24070,6 +24102,10 @@ System.namespace("Wrapper.BotBases", function (namespace)
       end
     end
     RunBattleGroundLogic = function (this)
+      if _G["TimerTrackerTimer1StatusBar"] ~= nil then
+      end
+
+
       WrapperAPI.DebugLog.Log("BGBot", "In Battleground", false)
 
       this.SmartMove:Pulse()
@@ -26293,7 +26329,6 @@ System.namespace("Wrapper.UI", function (namespace)
       this.UIContainer.EnabledCheckbox.OnValueChanged = System.DelegateCombine(this.UIContainer.EnabledCheckbox.OnValueChanged, function (self, state, value)
         Wrapper.Program.IsRunning = this.UIContainer.EnabledCheckbox:GetValue(System.Boolean)
         WrapperAPI.DebugLog.Log("BroBot", "Toggled Bot: Is Running: " .. System.toString(Wrapper.Program.IsRunning), false)
-
         __LB__.Navigator.Stop()
       end)
       this.StdUI:GlueTop(this.UIContainer.EnabledCheckbox, this.UIContainer.MainBotUIFrame, - 150, - 40, "TOP")
@@ -26499,7 +26534,6 @@ System.namespace("Wrapper.UI", function (namespace)
       this.UIContainer = class.UnitViewerUIContainer()
       this.UIContainer.MainFrame = Wrapper.Program.MainUI.StdUI:Window(_G["UIParent"], 800, 500, "UnitViewer")
       this.UIContainer.MainFrame:SetPoint("CENTER", 0, 0)
-
 
       local default = ListStdUiScrollTableColumnDefinition()
       local extern = WrapperStdUiScrollTable.StdUiScrollTableColumnDefinition()

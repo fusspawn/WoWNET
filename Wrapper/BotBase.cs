@@ -181,8 +181,8 @@ namespace Wrapper
                 UIData.NumberOfFlightMasters = _StdUI.Label(UIData.MainUIFrame, "FlightMasters: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).FlightMaster.Count, 12, null, 150, 25);
                 UIData.NumberOfInnKeepers = _StdUI.Label(UIData.MainUIFrame, "InnKeepers: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).InnKeepers.Count, 12, null, 150, 25);
                 UIData.NumberOfMailBoxes = _StdUI.Label(UIData.MainUIFrame, "MailBoxes: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).MailBoxes.Count, 12, null, 150, 25);
-
-                UIData.NumberOfFishingSpots = _StdUI.Label(UIData.MainUIFrame, "Fishing Spots: " + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).Nodes.Where(x => x.NodeType == NodeType.FishingHole).ToList().Count, 12, null, 150, 25);
+                UIData.NumberOfFishingSpots = _StdUI.Label(UIData.MainUIFrame, "Fishing Spots: " 
+                    + WoWDatabase.GetMapDatabase(LuaBox.Instance.GetMapId()).Nodes.Where(x => x.NodeType == NodeType.FishingHole).ToList().Count, 12, null, 150, 25);
 
                 UIData.ScanCurrentArea = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Scan Current Area");
                 UIData.ScanCurrentArea.SetScript<Action>("OnClick", () =>
@@ -225,9 +225,6 @@ namespace Wrapper
 
                     UIData.NumberOfManualScanNodes = _StdUI.Label(UIData.MainUIFrame, "Manual Scan Nodes Count: " + ManualScanLocations.Count, 12, null, 150, 25);
                     _StdUI.GlueTop(UIData.NumberOfManualScanNodes, UIData.MainUIFrame, -140, -430, "TOP");
-
-
-                   
                 }
 
                 UIData.ResetManualScanNodes = _StdUI.HighlightButton(UIData.MainUIFrame, 150, 25, "Reset Manual Scan Nodes");
@@ -494,7 +491,7 @@ namespace Wrapper
             }
             else
             {
-                if (WoWAPI.GetTime() - CastTimeStamp > 5)
+                if (WoWAPI.GetTime() - CastTimeStamp > 5   )
                 {
                     DebugLog.Log("BroBot", "Have been chilling a bit. Recast");
                     WoWAPI.MoveForwardStart();

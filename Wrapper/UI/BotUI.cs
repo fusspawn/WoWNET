@@ -65,7 +65,6 @@ namespace Wrapper.UI
             {
                 Program.IsRunning = UIContainer.EnabledCheckbox.GetValue<bool>();
                 DebugLog.Log("BroBot", "Toggled Bot: Is Running: " + Program.IsRunning);
-
                 LuaBox.Instance.Navigator.Stop();
             };
             StdUI.GlueTop(UIContainer.EnabledCheckbox, UIContainer.MainBotUIFrame, -150, -40, "TOP");

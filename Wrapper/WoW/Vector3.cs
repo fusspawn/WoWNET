@@ -391,7 +391,12 @@ namespace Wrapper.WoW
 
         public static bool operator ==(Vector3 value1, Vector3 value2)
         {
-           
+            if (value1 == null && value2 != null)
+                return false;
+
+            if (value2 == null && value1 != null)
+                return false;
+
             return value1.X == value2.X
                 && value1.Y == value2.Y
                 && value1.Z == value2.Z;
@@ -399,6 +404,12 @@ namespace Wrapper.WoW
 
         public static bool operator !=(Vector3 value1, Vector3 value2)
         {
+            if (value1 == null && value2 != null)
+                return false;
+
+            if (value2 == null && value1 != null)
+                return false;
+
             return !(value1 == value2);
         }
 

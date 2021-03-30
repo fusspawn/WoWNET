@@ -32,7 +32,6 @@ namespace Wrapper.UI
             UIContainer.MainFrame = Program.MainUI.StdUI.Window(LuaHelper.GetGlobalFrom_G<WoWFrame>("UIParent"), 800, 500, "UnitViewer");
             UIContainer.MainFrame.SetPoint("CENTER", 0, 0);
 
-
             UIContainer.ScrollTable = Program.MainUI.StdUI.ScrollTable(UIContainer.MainFrame, new List<StdUiScrollTable.StdUiScrollTableColumnDefinition>()
             {
                 new StdUiScrollTable.StdUiScrollTableColumnDefinition()
@@ -42,7 +41,6 @@ namespace Wrapper.UI
                     align = "LEFT",
                     width = 100
                 },
-                
                 new StdUiScrollTable.StdUiScrollTableColumnDefinition()
                 {
                     name = "GUID",
@@ -50,7 +48,6 @@ namespace Wrapper.UI
                     align = "LEFT",
                     width = 250
                 },
-
                 new StdUiScrollTable.StdUiScrollTableColumnDefinition()
                 {
                     name = "Targetting Us",
@@ -72,14 +69,26 @@ namespace Wrapper.UI
                     align = "LEFT",
                     width = 125
                 },
-
-            }, 10 , 25);
+                new StdUiScrollTable.StdUiScrollTableColumnDefinition()
+                {
+                    name = "LoS",
+                    index = "LoS",
+                    align = "LEFT",
+                    width = 125
+                },
+            }, 10, 25);
 
 
             Program.MainUI.StdUI.GlueTop(UIContainer.ScrollTable, UIContainer.MainFrame, 0, -50, "TOP");
 
-            UIContainer.ScrollTable.SetData(ObjectManager.Instance.AllObjects.Values.Where(x => x.ObjectType == LuaBox.EObjectType.Unit).Select(x => new { Name=x.Name,
-                GUID=x.GUID, IsTargettingMeOrPet= (x as WoWUnit).IsTargettingMeOrPet.ToString(), HP=(x as WoWUnit).Health, Distance=(int)Vector3.Distance(ObjectManager.Instance.Player.Position, x.Position)}).OrderBy(x => x.Distance).ToList<Object>());
+            UIContainer.ScrollTable.SetData(ObjectManager.Instance.AllObjects.Values.Where(x => x.ObjectType == LuaBox.EObjectType.Unit).Select(x => new
+            {
+                Name = x.Name,
+                GUID = x.GUID,
+                IsTargettingMeOrPet = (x as WoWUnit).IsTargettingMeOrPet.ToString(),
+                HP = (x as WoWUnit).Health,
+                Distance = (int)Vector3.Distance(ObjectManager.Instance.Player.Position, x.Position)
+            }).OrderBy(x => x.Distance).ToList<Object>());
         }
 
         public void UpdateUI()

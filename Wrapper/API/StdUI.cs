@@ -69,6 +69,7 @@ namespace Wrapper
 		{
 			public delegate void _OnValueChanged(StdUiCheckBox self, bool State, bool value);
 			public _OnValueChanged OnValueChanged;
+
             public extern void SetChecked(bool Checked);
             public extern bool GetChecked();
         }
@@ -99,8 +100,7 @@ namespace Wrapper
             public extern void SetPlaceholder(string Text);
             public extern void SetOptions(StdUiDropdownItems[] options);
 
-            public delegate void _OnValueChanged(StdUiCheckBox self, object value);
-            public _OnValueChanged OnValueChanged;
+           
         }
 
 
